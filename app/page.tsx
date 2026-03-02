@@ -223,7 +223,8 @@ export default function Home() {
                     alt=""
                     className="size-5 shrink-0 rounded object-contain"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
                     }}
                   />
 
