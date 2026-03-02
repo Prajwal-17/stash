@@ -1,43 +1,70 @@
 import { bookmarks } from "@/db/schema";
+import { createClient } from "@/lib/supabase/server";
 import { db } from "@/utils/db";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+// GET /api/bookmarks — fetch all bookmarks for the authenticated user
 export async function GET() {
   try {
-    const result = await db.select().from(bookmarks);
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
+      return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = data.user.id;
+
+    const result = await db
+      .select()
+      .from(bookmarks)
+      .where(eq(bookmarks.userId, userId))
+      .orderBy(bookmarks.createdAt);
 
     return NextResponse.json(
-      {
-        msg: "Successfully fetched all bookmarks",
-        data: result,
-      },
+      { msg: "Successfully fetched bookmarks", data: result },
       { status: 200 },
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
   }
 }
 
+// POST /api/bookmarks — create a new bookmark for the authenticated user
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
+      return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = data.user.id;
     const body = await req.json();
 
-    const result = await db.insert(bookmarks).values({
-      url: body.url,
-      title: body.title,
-      description: body.description,
-    });
-
-    if (!result) {
-      return NextResponse.json(
-        { msg: "Something went wrong" },
-        { status: 500 },
-      );
+    if (!body.url) {
+      return NextResponse.json({ msg: "URL is required" }, { status: 400 });
     }
-    return NextResponse.json({ msg: "Bookmark added" }, { status: 201 });
+
+    const [bookmark] = await db
+      .insert(bookmarks)
+      .values({
+        userId,
+        url: body.url,
+        title: body.title ?? null,
+        description: body.description ?? null,
+      })
+      .returning();
+
+    return NextResponse.json(
+      { msg: "Bookmark added", data: bookmark },
+      { status: 201 },
+    );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ export const bookmarks = pgTable("bookmarks", {
     .primaryKey()
     .notNull()
     .$defaultFn(() => uuidv4()),
+  userId: text("user_id").notNull(),
   url: text("url").notNull(),
   title: text("title"),
   description: text("description"),
