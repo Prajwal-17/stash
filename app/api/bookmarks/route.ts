@@ -35,6 +35,7 @@ export async function GET() {
 // POST /api/bookmarks — create a new bookmark for the authenticated user
 export async function POST(req: NextRequest) {
   try {
+    console.log(process.env.DATABASE_URL);
     const supabase = await createClient();
     const { data, error } = await supabase.auth.getUser();
 
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
     const userId = data.user.id;
     const body = await req.json();
 
+    console.log(userId, body);
     if (!body.url) {
       return NextResponse.json({ msg: "URL is required" }, { status: 400 });
     }
