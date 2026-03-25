@@ -16,10 +16,7 @@ export async function GET() {
 
     const userId = data.user.id;
 
-    const [allTags] = await db
-      .select()
-      .from(tags)
-      .where(eq(tags.userId, userId));
+    const allTags = await db.select().from(tags).where(eq(tags.userId, userId));
 
     return NextResponse.json(
       { msg: "Successfully fetch tags", data: allTags },
@@ -52,7 +49,7 @@ export async function POST(req: NextRequest) {
       .from(tags)
       .where(and(eq(tags.name, body.name), eq(tags.userId, userId)));
 
-    if (tagExists.id) {
+    if (tagExists && tagExists.id) {
       return NextResponse.json({ msg: "Tag Already Exists" }, { status: 400 });
     }
 
@@ -67,7 +64,51 @@ export async function POST(req: NextRequest) {
     if (!newTag.id) {
       return NextResponse.json({ msg: "Could not create tag" });
     }
-    return NextResponse.json({ msg: "Created a new tag" });
+    return NextResponse.json(
+      {
+        msg: "Created a new tag",
+        data: {
+          ...newTag,
+        },
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
+      return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = data.user.id;
+    const body = await req.json();
+
+    if (!body.tagId || !body.name) {
+      return NextResponse.json({ msg: "Missing body" }, { status: 400 });
+    }
+
+    const [updatedTag] = await db
+      .update(tags)
+      .set({
+        name: body.name,
+      })
+      .where(eq(tags.id, body.tagId))
+      .returning();
+
+    if (updatedTag && updatedTag.id) {
+      return NextResponse.json(
+        { msg: "Updated tag", data: updatedTag },
+        { status: 200 },
+      );
+    }
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });

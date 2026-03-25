@@ -1,4 +1,4 @@
-import { bookmarks, tags } from "@/db/schema";
+import { bookmarks } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/utils/db";
 import { and, eq } from "drizzle-orm";
@@ -14,12 +14,10 @@ export async function GET() {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = data.user.id;
-
     const result = await db
       .select()
       .from(bookmarks)
-      .where(eq(bookmarks.userId, userId))
+      .where(eq(bookmarks.userId, data.user.id))
       .orderBy(bookmarks.createdAt);
 
     return NextResponse.json(
@@ -33,6 +31,7 @@ export async function GET() {
 }
 
 // POST /api/bookmarks — create a new bookmark
+// Body: { tagId, url, title?, description? }
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -42,83 +41,89 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = data.user.id;
     const body = await req.json();
+    const { tagId, url, title, description } = body;
 
-    if (!body.url) {
-      return NextResponse.json({ msg: "URL is required" }, { status: 400 });
-    }
-
-    const url = new URL(body.url);
-
-    if (!body.tag) {
-      const [insertedInbox] = await db
-        .insert(tags)
-        .values({
-          userId: userId,
-          name: "Inbox",
-        })
-        .returning({
-          id: tags.id,
-        });
-
-      const [bookmark] = await db
-        .insert(bookmarks)
-        .values({
-          userId: userId,
-          tagId: insertedInbox.id,
-          url: body.url,
-          title: body.title ?? null,
-          hostname: url.hostname,
-          description: body.description ?? null,
-        })
-        .returning();
-
-      if (!bookmark.id) {
-        throw new Error("Could not create bookmark");
-      }
+    if (!tagId || !url) {
       return NextResponse.json(
-        { msg: "Url saved successfull" },
-        { status: 201 },
-      );
-    } else {
-      const [existingTag] = await db
-        .select()
-        .from(tags)
-        .where(and(eq(tags.name, body.tag), eq(tags.userId, userId)));
-
-      let newTag: string;
-      if (!existingTag.id) {
-        const [insertTag] = await db
-          .insert(tags)
-          .values({
-            userId: userId,
-            name: body.tag,
-          })
-          .returning();
-
-        newTag = insertTag.id;
-      }
-
-      const [bookmark] = await db
-        .insert(bookmarks)
-        .values({
-          userId: userId,
-          tagId: existingTag.id ?? newTag!,
-          url: body.url,
-          title: body.title ?? null,
-          hostname: url.hostname,
-          description: body.description ?? null,
-        })
-        .returning();
-      if (!bookmark.id) {
-        throw new Error("Could not create bookmark");
-      }
-      return NextResponse.json(
-        { msg: "Url saved successfull" },
-        { status: 201 },
+        { msg: "tagId and url are required" },
+        { status: 400 },
       );
     }
+
+    const parsedUrl = new URL(url);
+
+    const [bookmark] = await db
+      .insert(bookmarks)
+      .values({
+        userId: data.user.id,
+        tagId,
+        url,
+        title: title || null,
+        hostname: parsedUrl.hostname,
+        description: description || null,
+      })
+      .returning();
+
+    return NextResponse.json(
+      { msg: "Bookmark created", data: bookmark },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
+  }
+}
+
+// PATCH /api/bookmarks — update an existing bookmark
+// Body: { bookmarkId, tagId, url, title?, description? }
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
+      return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { bookmarkId, tagId, url, title, description } = body;
+
+    if (!bookmarkId || !tagId || !url) {
+      return NextResponse.json(
+        { msg: "bookmarkId, tagId, and url are required" },
+        { status: 400 },
+      );
+    }
+
+    const parsedUrl = new URL(url);
+
+    const [updated] = await db
+      .update(bookmarks)
+      .set({
+        tagId,
+        url,
+        title: title || null,
+        hostname: parsedUrl.hostname,
+        description: description || null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, data.user.id)),
+      )
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json(
+        { msg: "Bookmark not found or not owned by user" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json(
+      { msg: "Bookmark updated", data: updated },
+      { status: 200 },
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
