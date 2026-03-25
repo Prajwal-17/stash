@@ -1,11 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { CaretDown } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { FormEvent, InputHTMLAttributes, SelectHTMLAttributes, useState } from "react";
+import { FormEvent, InputHTMLAttributes, useState } from "react";
 
 export interface Tag {
   id: string;
@@ -94,18 +100,6 @@ function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={cn(
-        "h-11 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-100 outline-none focus:border-neutral-700",
-        props.className,
-      )}
-    />
-  );
-}
-
 export function ShareHandler({
   initialTags,
   sharedUrl,
@@ -132,15 +126,16 @@ export function ShareHandler({
 
   const [url, setUrl] = useState(defaultUrl);
   const [title, setTitle] = useState(sharedTitle);
-  const [tagId, setTagId] = useState<string | null>(getDefaultTagId(initialTags));
-  const [notice, setNotice] = useState<{ type: "error" | "success"; message: string } | null>(null);
+  const [tagId, setTagId] = useState<string | null>(
+    getDefaultTagId(initialTags),
+  );
+  const [notice, setNotice] = useState<{
+    type: "error" | "success";
+    message: string;
+  } | null>(null);
 
   const createBookmarkMutation = useMutation({
-    mutationFn: (payload: {
-      url: string;
-      tagId: string;
-      title?: string;
-    }) =>
+    mutationFn: (payload: { url: string; tagId: string; title?: string }) =>
       requestJson<{ id: string }>("/api/bookmarks", {
         method: "POST",
         body: JSON.stringify(payload),
@@ -199,7 +194,9 @@ export function ShareHandler({
         className="w-full max-w-sm rounded-xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl"
       >
         <h1 className="mb-2 text-lg font-medium text-white">Save Bookmark</h1>
-        <p className="mb-6 text-sm text-neutral-400">Review and save the shared link.</p>
+        <p className="mb-6 text-sm text-neutral-400">
+          Review and save the shared link.
+        </p>
 
         {notice && (
           <div
@@ -240,24 +237,26 @@ export function ShareHandler({
             <FieldLabel>Tag</FieldLabel>
             <div className="relative mt-1">
               <Select
-                value={tagId ?? ""}
-                onChange={(e) => setTagId(e.target.value || null)}
-                className="appearance-none pr-8"
+                value={tagId ?? "none"}
+                onValueChange={(value) =>
+                  setTagId(value === "none" ? null : value)
+                }
               >
-                {initialTags.length ? (
-                  initialTags.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name ?? "Untitled"}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">(Creates "Inbox" tag)</option>
-                )}
+                <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="Select a Tag" />
+                </SelectTrigger>
+                <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
+                  {initialTags.length ? (
+                    initialTags.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name ?? "Untitled"}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none">(Creates "Inbox" tag)</SelectItem>
+                  )}
+                </SelectContent>
               </Select>
-              <CaretDown
-                size={14}
-                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-neutral-500"
-              />
             </div>
           </div>
         </div>

@@ -1,11 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   ArrowSquareOut,
-  CaretDown,
   Check,
   Copy,
   PencilSimple,
@@ -24,7 +30,6 @@ import {
   KeyboardEvent as ReactKeyboardEvent,
   ReactNode,
   RefObject,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
   useEffect,
   useMemo,
@@ -252,18 +257,6 @@ function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
       {...props}
       className={cn(
         "min-h-24 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-neutral-700",
-        props.className,
-      )}
-    />
-  );
-}
-
-function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={cn(
-        "h-11 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-100 outline-none focus:border-neutral-700",
         props.className,
       )}
     />
@@ -648,7 +641,7 @@ export function BookmarkClient({
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="absolute top-11 right-0 w-56 rounded-xl border border-neutral-800 bg-[#1a1a1a] p-2 shadow-2xl"
+                  className="absolute top-11 right-0 z-50 w-56 rounded-xl border border-neutral-800 bg-[#1a1a1a] p-2 shadow-2xl"
                 >
                   <div className="rounded-lg px-3 py-2">
                     <p className="truncate text-sm text-neutral-100">
@@ -683,27 +676,25 @@ export function BookmarkClient({
             </button>
             <div className="relative flex-1">
               <Select
-                value={resolvedActiveTagId ?? ""}
-                onChange={(event) => {
-                  setActiveTagId(event.target.value || null);
-                  setComposerTagId(event.target.value || null);
+                value={resolvedActiveTagId ?? "all"}
+                onValueChange={(value) => {
+                  const tagId = value === "all" ? null : value;
+                  setActiveTagId(tagId);
+                  setComposerTagId(tagId);
                 }}
-                className="pr-8"
               >
-                {tags.length ? (
-                  tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>
+                <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="All Bookmarks" />
+                </SelectTrigger>
+                <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
+                  <SelectItem value="all">All Bookmarks</SelectItem>
+                  {tags.map((tag) => (
+                    <SelectItem key={tag.id} value={tag.id}>
                       {tag.name ?? "Untitled"}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">All Bookmarks</option>
-                )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
-              <CaretDown
-                size={14}
-                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-neutral-500"
-              />
             </div>
           </div>
 
@@ -784,9 +775,14 @@ export function BookmarkClient({
                           <p className="truncate text-sm font-medium text-neutral-100">
                             {title}
                           </p>
-                          <p className="truncate text-sm text-neutral-500">
-                            {hostname}
+                          <p className="mt-0.5 truncate text-xs text-neutral-400">
+                            {bookmark.url}
                           </p>
+                          {title !== hostname && (
+                            <p className="mt-0.5 truncate text-[11px] text-neutral-600">
+                              {hostname}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="mt-2 flex items-center gap-1 sm:hidden">
@@ -1023,19 +1019,22 @@ export function BookmarkClient({
               <FieldLabel>Tag</FieldLabel>
               <Select
                 value={bookmarkEditor?.tagId ?? ""}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setBookmarkEditor((current) =>
-                    current
-                      ? { ...current, tagId: event.target.value }
-                      : current,
+                    current ? { ...current, tagId: value } : current,
                   )
                 }
               >
-                {tags.map((tag) => (
-                  <option key={tag.id} value={tag.id}>
-                    {tag.name ?? "Untitled"}
-                  </option>
-                ))}
+                <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="Select a Tag" />
+                </SelectTrigger>
+                <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
+                  {tags.map((tag) => (
+                    <SelectItem key={tag.id} value={tag.id}>
+                      {tag.name ?? "Untitled"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
