@@ -20,7 +20,6 @@ export const bookmarks = pgTable("bookmarks", {
   url: text("url").notNull(),
   title: text("title"),
   hostname: varchar("hostname", { length: 255 }),
-  rootDomain: varchar("root_domain", { length: 255 }),
   description: varchar("description", { length: 255 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -32,6 +31,7 @@ export const tags = pgTable("tags", {
     .notNull()
     .$defaultFn(() => uuidv4()),
   name: varchar("name", { length: 50 }),
+  userId: text("user_id").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -1,5 +1,5 @@
 {
-  "id": "b52ff2f1-9d68-4a43-8284-b3219f2f58f8",
+  "id": "0fc9da9b-964c-4e05-beb7-f40583edbd55",
   "prevId": "48117f6d-a705-4313-a0bb-1f05edf38151",
   "version": "7",
   "dialect": "postgresql",
@@ -161,12 +161,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "root_domain": {
-          "name": "root_domain",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "description": {
           "name": "description",
           "type": "varchar(255)",
@@ -225,6 +219,12 @@
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",

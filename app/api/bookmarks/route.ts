@@ -1,7 +1,7 @@
-import { bookmarks } from "@/db/schema";
+import { bookmarks, tags } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/utils/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/bookmarks — fetch all bookmarks for the authenticated user
@@ -32,10 +32,9 @@ export async function GET() {
   }
 }
 
-// POST /api/bookmarks — create a new bookmark for the authenticated user
+// POST /api/bookmarks — create a new bookmark
 export async function POST(req: NextRequest) {
   try {
-    console.log(process.env.DATABASE_URL);
     const supabase = await createClient();
     const { data, error } = await supabase.auth.getUser();
 
@@ -46,25 +45,80 @@ export async function POST(req: NextRequest) {
     const userId = data.user.id;
     const body = await req.json();
 
-    console.log(userId, body);
     if (!body.url) {
       return NextResponse.json({ msg: "URL is required" }, { status: 400 });
     }
 
-    const [bookmark] = await db
-      .insert(bookmarks)
-      .values({
-        userId,
-        url: body.url,
-        title: body.title ?? null,
-        description: body.description ?? null,
-      })
-      .returning();
+    const url = new URL(body.url);
 
-    return NextResponse.json(
-      { msg: "Bookmark added", data: bookmark },
-      { status: 201 },
-    );
+    if (!body.tag) {
+      const [insertedInbox] = await db
+        .insert(tags)
+        .values({
+          userId: userId,
+          name: "Inbox",
+        })
+        .returning({
+          id: tags.id,
+        });
+
+      const [bookmark] = await db
+        .insert(bookmarks)
+        .values({
+          userId: userId,
+          tagId: insertedInbox.id,
+          url: body.url,
+          title: body.title ?? null,
+          hostname: url.hostname,
+          description: body.description ?? null,
+        })
+        .returning();
+
+      if (!bookmark.id) {
+        throw new Error("Could not create bookmark");
+      }
+      return NextResponse.json(
+        { msg: "Url saved successfull" },
+        { status: 201 },
+      );
+    } else {
+      const [existingTag] = await db
+        .select()
+        .from(tags)
+        .where(and(eq(tags.name, body.tag), eq(tags.userId, userId)));
+
+      let newTag: string;
+      if (!existingTag.id) {
+        const [insertTag] = await db
+          .insert(tags)
+          .values({
+            userId: userId,
+            name: body.tag,
+          })
+          .returning();
+
+        newTag = insertTag.id;
+      }
+
+      const [bookmark] = await db
+        .insert(bookmarks)
+        .values({
+          userId: userId,
+          tagId: existingTag.id ?? newTag!,
+          url: body.url,
+          title: body.title ?? null,
+          hostname: url.hostname,
+          description: body.description ?? null,
+        })
+        .returning();
+      if (!bookmark.id) {
+        throw new Error("Could not create bookmark");
+      }
+      return NextResponse.json(
+        { msg: "Url saved successfull" },
+        { status: 201 },
+      );
+    }
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
