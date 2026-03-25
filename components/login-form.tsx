@@ -1,22 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import {
+  GoogleLogo,
+} from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "motion/react";
+import { ComponentPropsWithoutRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({
   className,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: ComponentPropsWithoutRef<"div">) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,22 +40,39 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Welcome to Stash</CardTitle>
-          <CardDescription>Sign in to manage your bookmarks</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleGoogleLogin}>
-            <div className="flex flex-col gap-6">
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Redirecting..." : "Continue with Google"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-neutral-800 bg-[#1a1a1a] p-6 sm:p-7">
+        <p className="text-sm font-medium text-neutral-100">Stash</p>
+        <h1 className="mt-2 text-2xl font-medium text-white">
+          Sign in with Google
+        </h1>
+        <p className="mt-2 text-sm text-neutral-500">
+          Open your personal bookmark manager.
+        </p>
+
+        <form onSubmit={handleGoogleLogin} className="mt-6">
+          <AnimatePresence>
+            {error ? (
+              <motion.p
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-100"
+              >
+                {error}
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+
+          <Button
+            type="submit"
+            className="h-11 w-full rounded-lg bg-neutral-100 px-4 text-sm font-medium text-black hover:bg-white"
+            disabled={isLoading}
+          >
+            <GoogleLogo size={18} weight="fill" />
+            {isLoading ? "Redirecting..." : "Continue with Google"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

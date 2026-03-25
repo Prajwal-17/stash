@@ -1,4 +1,4 @@
-import { tags } from "@/db/schema";
+import { bookmarks, tags } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/utils/db";
 import { and, eq } from "drizzle-orm";
@@ -40,14 +40,16 @@ export async function POST(req: NextRequest) {
     const userId = data.user.id;
     const body = await req.json();
 
-    if (!body.name) {
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+
+    if (!name) {
       return NextResponse.json({ msg: "Name is required" }, { status: 400 });
     }
 
     const [tagExists] = await db
       .select()
       .from(tags)
-      .where(and(eq(tags.name, body.name), eq(tags.userId, userId)));
+      .where(and(eq(tags.name, name), eq(tags.userId, userId)));
 
     if (tagExists && tagExists.id) {
       return NextResponse.json({ msg: "Tag Already Exists" }, { status: 400 });
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
       .insert(tags)
       .values({
         userId: userId,
-        name: body.name,
+        name,
       })
       .returning();
 
@@ -91,16 +93,19 @@ export async function PATCH(req: NextRequest) {
     const userId = data.user.id;
     const body = await req.json();
 
-    if (!body.tagId || !body.name) {
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+
+    if (!body.tagId || !name) {
       return NextResponse.json({ msg: "Missing body" }, { status: 400 });
     }
 
     const [updatedTag] = await db
       .update(tags)
       .set({
-        name: body.name,
+        name,
+        updatedAt: new Date(),
       })
-      .where(eq(tags.id, body.tagId))
+      .where(and(eq(tags.id, body.tagId), eq(tags.userId, userId)))
       .returning();
 
     if (updatedTag && updatedTag.id) {
@@ -109,6 +114,53 @@ export async function PATCH(req: NextRequest) {
         { status: 200 },
       );
     }
+
+    return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
+      return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = data.user.id;
+    const body = await req.json();
+    const { tagId } = body;
+
+    if (!tagId) {
+      return NextResponse.json({ msg: "tagId is required" }, { status: 400 });
+    }
+
+    const [tag] = await db
+      .select()
+      .from(tags)
+      .where(and(eq(tags.id, tagId), eq(tags.userId, userId)));
+
+    if (!tag) {
+      return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
+    }
+
+    await db
+      .delete(bookmarks)
+      .where(and(eq(bookmarks.tagId, tagId), eq(bookmarks.userId, userId)));
+
+    const [deletedTag] = await db
+      .delete(tags)
+      .where(and(eq(tags.id, tagId), eq(tags.userId, userId)))
+      .returning();
+
+    return NextResponse.json(
+      { msg: "Deleted tag and its bookmarks", data: deletedTag },
+      { status: 200 },
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
