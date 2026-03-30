@@ -8,79 +8,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  createBookmark,
+  createTag,
+  fetchTags,
+  getDefaultTagId,
+  getTagLabel,
+  MutationError,
+  normalizeUrl,
+  stashQueryKeys,
+  Tag,
+} from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, InputHTMLAttributes, useState } from "react";
+import { FormEvent, InputHTMLAttributes, ReactNode, useState } from "react";
 
-export interface Tag {
-  id: string;
-  name: string | null;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse<T> {
-  msg: string;
-  data: T;
-}
-
-interface MutationError {
-  message: string;
-}
-
-async function requestJson<T>(input: string, init?: RequestInit) {
-  const response = await fetch(input, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  const payload: ApiResponse<T> = await response.json();
-  if (!response.ok) {
-    throw { message: payload.msg || "Request failed" } satisfies MutationError;
-  }
-  return payload.data;
-}
-
-type UrlValidationResult =
-  | { valid: true; value: string }
-  | { valid: false; message: string };
-
-function normalizeUrl(value: string): UrlValidationResult {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return { valid: false, message: "URL is required." };
-  }
-
-  const withProtocol =
-    trimmed.startsWith("http://") || trimmed.startsWith("https://")
-      ? trimmed
-      : `https://${trimmed}`;
-
-  try {
-    const url = new URL(withProtocol);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
-      return { valid: false, message: "Use an http or https URL." };
-    }
-    return { valid: true, value: withProtocol };
-  } catch {
-    return { valid: false, message: "Enter a valid URL." };
-  }
-}
-
-function getDefaultTagId(tags: Tag[]) {
-  return (
-    tags.find((tag) => tag.name?.toLowerCase() === "inbox")?.id ??
-    tags[0]?.id ??
-    null
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
+function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <label className="block text-[11px] font-medium tracking-[0.18em] text-neutral-500 uppercase">
       {children}
@@ -100,6 +49,27 @@ function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+function InlineStatus({
+  children,
+  tone = "muted",
+}: {
+  children: ReactNode;
+  tone?: "muted" | "error";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg px-3 py-2 text-sm",
+        tone === "error"
+          ? "bg-red-500/10 text-red-200"
+          : "bg-white/[0.04] text-neutral-400",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function ShareHandler({
   initialTags,
   sharedUrl,
@@ -112,8 +82,8 @@ export function ShareHandler({
   sharedText: string;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  // Attempt to extract URL from `text` if `url` is empty
   let defaultUrl = sharedUrl;
   if (!defaultUrl && sharedText) {
     const urlMatches = sharedText.match(/https?:\/\/[^\s]+/);
@@ -126,21 +96,29 @@ export function ShareHandler({
 
   const [url, setUrl] = useState(defaultUrl);
   const [title, setTitle] = useState(sharedTitle);
-  const [tagId, setTagId] = useState<string | null>(
-    getDefaultTagId(initialTags),
-  );
+  const [tagId, setTagId] = useState<string | null>(getDefaultTagId(initialTags));
   const [notice, setNotice] = useState<{
     type: "error" | "success";
     message: string;
   } | null>(null);
 
+  const tagsQuery = useQuery({
+    queryKey: stashQueryKeys.tags,
+    queryFn: fetchTags,
+    initialData: initialTags,
+  });
+
+  const tags = tagsQuery.data ?? initialTags;
+  const resolvedTagId =
+    tagId && tags.some((tag) => tag.id === tagId)
+      ? tagId
+      : getDefaultTagId(tags);
+
   const createBookmarkMutation = useMutation({
     mutationFn: (payload: { url: string; tagId: string; title?: string }) =>
-      requestJson<{ id: string }>("/api/bookmarks", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
+      createBookmark(payload),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: stashQueryKeys.bookmarks });
       router.push("/");
     },
     onError: (error: MutationError) => {
@@ -149,26 +127,28 @@ export function ShareHandler({
   });
 
   const createTagMutation = useMutation({
-    mutationFn: (name: string) =>
-      requestJson<Tag>("/api/tags", {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      }),
+    mutationFn: (name: string) => createTag(name),
+    onSuccess: (createdTag) => {
+      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) => [
+        ...current,
+        createdTag,
+      ]);
+    },
   });
 
   async function ensureInboxTag() {
-    const existingInbox = initialTags.find(
-      (t) => t.name?.toLowerCase() === "inbox",
-    );
+    const existingInbox = tags.find((tag) => tag.name?.toLowerCase() === "inbox");
     if (existingInbox) {
       return existingInbox.id;
     }
+
     const created = await createTagMutation.mutateAsync("Inbox");
     return created.id;
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+
     const validation = normalizeUrl(url);
     if (!validation.valid) {
       setNotice({ type: "error", message: validation.message });
@@ -176,16 +156,21 @@ export function ShareHandler({
     }
 
     try {
-      const actualTagId = tagId ?? (await ensureInboxTag());
+      const actualTagId = resolvedTagId ?? (await ensureInboxTag());
       await createBookmarkMutation.mutateAsync({
         url: validation.value,
         title: title.trim() || undefined,
         tagId: actualTagId,
       });
-    } catch (err) {
-      // errors handled by mutation hook
+    } catch {
+      // mutation errors are surfaced through state
     }
   }
+
+  const isSaving =
+    createBookmarkMutation.isPending || createTagMutation.isPending;
+  const showTagsLoading = tagsQuery.isPending && !tags.length;
+  const showTagsError = tagsQuery.isError && !tags.length;
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-[#141414] p-4 text-neutral-100">
@@ -198,7 +183,7 @@ export function ShareHandler({
           Review and save the shared link.
         </p>
 
-        {notice && (
+        {notice ? (
           <div
             className={cn(
               "mb-4 rounded-lg border px-3 py-2 text-sm",
@@ -209,7 +194,7 @@ export function ShareHandler({
           >
             {notice.message}
           </div>
-        )}
+        ) : null}
 
         <div className="space-y-4">
           <div>
@@ -217,7 +202,7 @@ export function ShareHandler({
             <TextInput
               className="mt-1"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(event) => setUrl(event.target.value)}
               placeholder="https://..."
               required
             />
@@ -228,36 +213,73 @@ export function ShareHandler({
             <TextInput
               className="mt-1"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="Page title"
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <FieldLabel>Tag</FieldLabel>
-            <div className="relative mt-1">
-              <Select
-                value={tagId ?? "none"}
-                onValueChange={(value) =>
-                  setTagId(value === "none" ? null : value)
-                }
-              >
-                <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
-                  <SelectValue placeholder="Select a Tag" />
-                </SelectTrigger>
-                <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
-                  {initialTags.length ? (
-                    initialTags.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name ?? "Untitled"}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none">(Creates "Inbox" tag)</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+
+            {showTagsLoading ? (
+              <InlineStatus>
+                <span className="inline-flex items-center gap-2">
+                  <LoaderCircle size={14} className="animate-spin" />
+                  Loading tags...
+                </span>
+              </InlineStatus>
+            ) : showTagsError ? (
+              <InlineStatus tone="error">
+                <div className="flex items-center justify-between gap-3">
+                  <span>Could not load tags.</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 px-2 text-red-100 hover:bg-red-500/10 hover:text-white"
+                    onClick={() => void tagsQuery.refetch()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </InlineStatus>
+            ) : (
+              <>
+                <div className="relative">
+                  <Select
+                    value={resolvedTagId ?? "none"}
+                    onValueChange={(value) =>
+                      setTagId(value === "none" ? null : value)
+                    }
+                  >
+                    <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                      <SelectValue placeholder="Select a Tag" />
+                    </SelectTrigger>
+                    <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
+                      {tags.length ? (
+                        tags.map((tag) => (
+                          <SelectItem key={tag.id} value={tag.id}>
+                            {getTagLabel(tag)}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none">
+                          (Creates &quot;Inbox&quot; tag)
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {tagsQuery.isFetching ? (
+                  <InlineStatus>
+                    <span className="inline-flex items-center gap-2">
+                      <RefreshCw size={14} className="animate-spin" />
+                      Syncing tags...
+                    </span>
+                  </InlineStatus>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
 
@@ -273,9 +295,9 @@ export function ShareHandler({
           <Button
             type="submit"
             className="flex-1 rounded-lg bg-neutral-100 text-black hover:bg-white"
-            disabled={createBookmarkMutation.isPending || !url.trim()}
+            disabled={isSaving || !url.trim() || showTagsError}
           >
-            {createBookmarkMutation.isPending ? "Saving..." : "Save bookmark"}
+            {isSaving ? "Saving..." : "Save bookmark"}
           </Button>
         </div>
       </form>

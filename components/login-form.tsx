@@ -1,8 +1,6 @@
 "use client";
 
-import {
-  GoogleLogo,
-} from "@phosphor-icons/react";
+import { Chrome } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ComponentPropsWithoutRef, useState } from "react";
 
@@ -68,7 +66,7 @@ export function LoginForm({
             className="h-11 w-full rounded-lg bg-neutral-100 px-4 text-sm font-medium text-black hover:bg-white"
             disabled={isLoading}
           >
-            <GoogleLogo size={18} weight="fill" />
+            <Chrome size={18} />
             {isLoading ? "Redirecting..." : "Continue with Google"}
           </Button>
         </form>

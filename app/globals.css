@@ -80,7 +80,7 @@ body {
   min-height: 100%;
   color-scheme: dark;
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 24%),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.05), transparent 24%),
     linear-gradient(180deg, #090909 0%, #0d0d0d 100%);
 }
 
@@ -88,14 +88,14 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: rgba(255, 255, 255, 0.02);
 }
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: rgba(115, 115, 115, 0.42);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: rgba(163, 163, 163, 0.5);
 }
 
 @theme inline {

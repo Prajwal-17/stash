@@ -8,20 +8,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Bookmark,
+  createBookmark,
+  createTag,
+  deleteBookmark,
+  deleteTag,
+  fetchBookmarks,
+  fetchTags,
+  getDefaultTagId,
+  getTagLabel,
+  MutationError,
+  normalizeUrl,
+  stashQueryKeys,
+  Tag,
+  updateBookmark,
+  updateTag,
+  validateTagName,
+} from "@/lib/stash-client";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowSquareOut,
   Check,
   Copy,
-  PencilSimple,
+  EllipsisVertical,
+  ExternalLink,
+  Link2,
+  LoaderCircle,
+  LogOut,
+  Pencil,
   Plus,
-  SignOut,
-  Trash,
+  RefreshCw,
+  Tag as TagIcon,
+  Trash2,
   X,
-} from "@phosphor-icons/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ComponentProps,
@@ -36,25 +60,6 @@ import {
   useRef,
   useState,
 } from "react";
-
-export interface Bookmark {
-  id: string;
-  tagId: string;
-  url: string;
-  title: string | null;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-  hostname: string | null;
-}
-
-export interface Tag {
-  id: string;
-  name: string | null;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface Props {
   initialBookmarks: Bookmark[];
@@ -86,63 +91,6 @@ interface ConfirmationState {
   confirmLabel: string;
 }
 
-interface ApiResponse<T> {
-  msg: string;
-  data: T;
-}
-
-interface MutationError {
-  message: string;
-}
-
-type UrlValidationResult =
-  | { valid: true; value: string }
-  | { valid: false; message: string };
-
-type TagValidationResult =
-  | { valid: true; value: string }
-  | { valid: false; message: string };
-
-function normalizeUrl(value: string): UrlValidationResult {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return { valid: false, message: "URL is required." };
-  }
-
-  const withProtocol =
-    trimmed.startsWith("http://") || trimmed.startsWith("https://")
-      ? trimmed
-      : `https://${trimmed}`;
-
-  try {
-    const url = new URL(withProtocol);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
-      return { valid: false, message: "Use an http or https URL." };
-    }
-    return { valid: true, value: withProtocol };
-  } catch {
-    return { valid: false, message: "Enter a valid URL." };
-  }
-}
-
-function validateTagName(value: string): TagValidationResult {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return { valid: false, message: "Tag name is required." };
-  }
-  if (trimmed.length > 50) {
-    return { valid: false, message: "Tag name must be 50 characters or less." };
-  }
-  return { valid: true, value: trimmed };
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}
-
 function getHostname(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -151,28 +99,12 @@ function getHostname(url: string) {
   }
 }
 
-function getDefaultTagId(tags: Tag[]) {
-  return (
-    tags.find((tag) => tag.name?.toLowerCase() === "inbox")?.id ??
-    tags[0]?.id ??
-    null
-  );
+function getBookmarkTitle(bookmark: Bookmark) {
+  return bookmark.title?.trim() || getHostname(bookmark.url);
 }
 
-async function requestJson<T>(input: string, init?: RequestInit) {
-  const response = await fetch(input, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  const payload: ApiResponse<T> = await response.json();
-  if (!response.ok) {
-    throw { message: payload.msg || "Request failed" } satisfies MutationError;
-  }
-  return payload.data;
+function getFaviconUrl(hostname: string) {
+  return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(hostname)}`;
 }
 
 function useDismissableLayer(
@@ -221,7 +153,7 @@ function SurfaceButton({
     <Button
       variant="outline"
       className={cn(
-        "h-9 rounded-lg border-neutral-800 bg-neutral-950 text-neutral-300 shadow-none hover:border-neutral-700 hover:bg-neutral-900 hover:text-white",
+        "h-10 rounded-2xl border border-white/10 bg-white/[0.04] text-neutral-200 shadow-none backdrop-blur hover:bg-white/[0.08] hover:text-white",
         className,
       )}
       {...props}
@@ -233,7 +165,7 @@ function SurfaceButton({
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <label className="block text-xs font-medium tracking-[0.18em] text-neutral-500 uppercase">
+    <label className="block text-[11px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
       {children}
     </label>
   );
@@ -244,7 +176,7 @@ function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "h-11 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-neutral-700",
+        "h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-white/20",
         props.className,
       )}
     />
@@ -256,7 +188,7 @@ function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
     <textarea
       {...props}
       className={cn(
-        "min-h-24 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-neutral-700",
+        "min-h-28 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-white/20",
         props.className,
       )}
     />
@@ -280,35 +212,33 @@ function Modal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-md rounded-xl border border-neutral-800 bg-neutral-900 p-5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.14 }}
+            className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[#111112] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)]"
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.16 }}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-medium text-neutral-100">
-                  {title}
-                </h2>
+                <h2 className="text-lg font-semibold text-white">{title}</h2>
                 {description ? (
-                  <p className="mt-1 text-sm text-neutral-400">{description}</p>
+                  <p className="mt-1 text-sm text-neutral-500">{description}</p>
                 ) : null}
               </div>
               <button
                 type="button"
-                className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
+                className="rounded-full border border-white/10 bg-white/[0.04] p-2 text-neutral-500 transition hover:text-white"
                 onClick={onClose}
               >
-                <X size={14} />
+                <X size={16} />
               </button>
             </div>
             <div className="mt-5">{children}</div>
@@ -316,6 +246,76 @@ function Modal({
         </motion.div>
       ) : null}
     </AnimatePresence>
+  );
+}
+
+function Drawer({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-end bg-black/55 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="w-full rounded-t-[28px] border-t border-white/10 bg-[#111112] px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-neutral-700" />
+            <div className="mb-4">
+              <h3 className="text-base font-semibold text-white">{title}</h3>
+              {description ? (
+                <p className="mt-1 text-sm text-neutral-500">{description}</p>
+              ) : null}
+            </div>
+            {children}
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+function QueryStatus({
+  children,
+  tone = "muted",
+  compact = false,
+}: {
+  children: ReactNode;
+  tone?: "muted" | "error";
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl px-3 py-2 text-sm",
+        compact ? "text-xs" : "text-sm",
+        tone === "error"
+          ? "bg-red-500/10 text-red-200"
+          : "bg-white/[0.04] text-neutral-400",
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -330,6 +330,9 @@ export function BookmarkClient({
   const queryClient = useQueryClient();
   const supabase = createClient();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const tagOverflowRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressTriggeredRef = useRef(false);
 
   const [activeTagId, setActiveTagId] = useState<string | null>(
     getDefaultTagId(initialTags),
@@ -350,23 +353,38 @@ export function BookmarkClient({
   const [confirmation, setConfirmation] = useState<ConfirmationState | null>(
     null,
   );
+  const [drawerBookmark, setDrawerBookmark] = useState<Bookmark | null>(null);
+  const [tagOverflowOpen, setTagOverflowOpen] = useState(false);
 
   useDismissableLayer(userMenuOpen, () => setUserMenuOpen(false), userMenuRef);
+  useDismissableLayer(
+    tagOverflowOpen,
+    () => setTagOverflowOpen(false),
+    tagOverflowRef,
+  );
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        window.clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
 
   const tagsQuery = useQuery({
-    queryKey: ["tags"],
-    queryFn: () => requestJson<Tag[]>("/api/tags"),
+    queryKey: stashQueryKeys.tags,
+    queryFn: fetchTags,
     initialData: initialTags,
   });
 
   const bookmarksQuery = useQuery({
-    queryKey: ["bookmarks"],
-    queryFn: () => requestJson<Bookmark[]>("/api/bookmarks"),
+    queryKey: stashQueryKeys.bookmarks,
+    queryFn: fetchBookmarks,
     initialData: initialBookmarks,
   });
 
-  const tags = tagsQuery.data;
-  const bookmarks = bookmarksQuery.data;
+  const tags = tagsQuery.data ?? initialTags;
+  const bookmarks = bookmarksQuery.data ?? initialBookmarks;
 
   const resolvedActiveTagId =
     activeTagId && tags.some((tag) => tag.id === activeTagId)
@@ -383,13 +401,42 @@ export function BookmarkClient({
     [resolvedActiveTagId, tags],
   );
 
-  const visibleBookmarks = useMemo(() => {
+  const orderedTags = useMemo(() => {
     if (!resolvedActiveTagId) {
-      return [];
+      return tags;
     }
 
-    return bookmarks
-      .filter((bookmark) => bookmark.tagId === resolvedActiveTagId)
+    const activeIndex = tags.findIndex((tag) => tag.id === resolvedActiveTagId);
+    if (activeIndex <= 3) {
+      return tags;
+    }
+
+    const active = tags[activeIndex];
+    return [
+      active,
+      ...tags.slice(0, activeIndex),
+      ...tags.slice(activeIndex + 1),
+    ];
+  }, [resolvedActiveTagId, tags]);
+
+  const visibleTagChips = useMemo(() => orderedTags.slice(0, 4), [orderedTags]);
+  const hiddenTags = useMemo(() => orderedTags.slice(4), [orderedTags]);
+
+  const bookmarkCountByTag = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const bookmark of bookmarks) {
+      counts.set(bookmark.tagId, (counts.get(bookmark.tagId) ?? 0) + 1);
+    }
+    return counts;
+  }, [bookmarks]);
+
+  const visibleBookmarks = useMemo(() => {
+    const filtered = resolvedActiveTagId
+      ? bookmarks.filter((bookmark) => bookmark.tagId === resolvedActiveTagId)
+      : bookmarks;
+
+    return filtered
+      .slice()
       .sort(
         (left, right) =>
           new Date(right.createdAt).getTime() -
@@ -398,18 +445,15 @@ export function BookmarkClient({
   }, [bookmarks, resolvedActiveTagId]);
 
   const createTagMutation = useMutation({
-    mutationFn: (name: string) =>
-      requestJson<Tag>("/api/tags", {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      }),
+    mutationFn: (name: string) => createTag(name),
     onSuccess: (tag) => {
-      queryClient.setQueryData<Tag[]>(["tags"], (current = []) => [
+      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) => [
         ...current,
         tag,
       ]);
       setActiveTagId(tag.id);
       setComposerTagId(tag.id);
+      setTagOverflowOpen(false);
       setNotice({ type: "success", message: "Tag created." });
     },
     onError: (error: MutationError) => {
@@ -419,12 +463,9 @@ export function BookmarkClient({
 
   const updateTagMutation = useMutation({
     mutationFn: ({ tagId, name }: { tagId: string; name: string }) =>
-      requestJson<Tag>("/api/tags", {
-        method: "PATCH",
-        body: JSON.stringify({ tagId, name }),
-      }),
+      updateTag({ tagId, name }),
     onSuccess: (updatedTag) => {
-      queryClient.setQueryData<Tag[]>(["tags"], (current = []) =>
+      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
         current.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag)),
       );
       setNotice({ type: "success", message: "Tag updated." });
@@ -435,18 +476,19 @@ export function BookmarkClient({
   });
 
   const deleteTagMutation = useMutation({
-    mutationFn: (tagId: string) =>
-      requestJson<Tag>("/api/tags", {
-        method: "DELETE",
-        body: JSON.stringify({ tagId }),
-      }),
+    mutationFn: (tagId: string) => deleteTag(tagId),
     onSuccess: (_, tagId) => {
-      queryClient.setQueryData<Tag[]>(["tags"], (current = []) =>
+      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
         current.filter((tag) => tag.id !== tagId),
       );
-      queryClient.setQueryData<Bookmark[]>(["bookmarks"], (current = []) =>
-        current.filter((bookmark) => bookmark.tagId !== tagId),
+      queryClient.setQueryData<Bookmark[]>(
+        stashQueryKeys.bookmarks,
+        (current = []) =>
+          current.filter((bookmark) => bookmark.tagId !== tagId),
       );
+      setActiveTagId((current) => (current === tagId ? null : current));
+      setComposerTagId((current) => (current === tagId ? null : current));
+      setTagOverflowOpen(false);
       setNotice({ type: "success", message: "Tag deleted." });
     },
     onError: (error: MutationError) => {
@@ -460,16 +502,12 @@ export function BookmarkClient({
       tagId: string;
       title?: string;
       description?: string;
-    }) =>
-      requestJson<Bookmark>("/api/bookmarks", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
+    }) => createBookmark(payload),
     onSuccess: (bookmark) => {
-      queryClient.setQueryData<Bookmark[]>(["bookmarks"], (current = []) => [
-        bookmark,
-        ...current,
-      ]);
+      queryClient.setQueryData<Bookmark[]>(
+        stashQueryKeys.bookmarks,
+        (current = []) => [bookmark, ...current],
+      );
       setUrlInput("");
       setNotice({ type: "success", message: "Bookmark saved." });
     },
@@ -485,18 +523,17 @@ export function BookmarkClient({
       url: string;
       title?: string;
       description?: string;
-    }) =>
-      requestJson<Bookmark>("/api/bookmarks", {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      }),
+    }) => updateBookmark(payload),
     onSuccess: (updatedBookmark) => {
-      queryClient.setQueryData<Bookmark[]>(["bookmarks"], (current = []) =>
-        current.map((bookmark) =>
-          bookmark.id === updatedBookmark.id ? updatedBookmark : bookmark,
-        ),
+      queryClient.setQueryData<Bookmark[]>(
+        stashQueryKeys.bookmarks,
+        (current = []) =>
+          current.map((bookmark) =>
+            bookmark.id === updatedBookmark.id ? updatedBookmark : bookmark,
+          ),
       );
       setBookmarkEditor(null);
+      setDrawerBookmark(null);
       setNotice({ type: "success", message: "Bookmark updated." });
     },
     onError: (error: MutationError) => {
@@ -505,15 +542,14 @@ export function BookmarkClient({
   });
 
   const deleteBookmarkMutation = useMutation({
-    mutationFn: (bookmarkId: string) =>
-      requestJson<Bookmark>("/api/bookmarks", {
-        method: "DELETE",
-        body: JSON.stringify({ bookmarkId }),
-      }),
+    mutationFn: (bookmarkId: string) => deleteBookmark(bookmarkId),
     onSuccess: (_, bookmarkId) => {
-      queryClient.setQueryData<Bookmark[]>(["bookmarks"], (current = []) =>
-        current.filter((bookmark) => bookmark.id !== bookmarkId),
+      queryClient.setQueryData<Bookmark[]>(
+        stashQueryKeys.bookmarks,
+        (current = []) =>
+          current.filter((bookmark) => bookmark.id !== bookmarkId),
       );
+      setDrawerBookmark(null);
       setNotice({ type: "success", message: "Bookmark deleted." });
     },
     onError: (error: MutationError) => {
@@ -528,6 +564,7 @@ export function BookmarkClient({
     if (existingInbox) {
       return existingInbox.id;
     }
+
     const created = await createTagMutation.mutateAsync("Inbox");
     return created.id;
   }
@@ -612,339 +649,571 @@ export function BookmarkClient({
     }
   }
 
+  function openBookmarkEditor(bookmark: Bookmark) {
+    setBookmarkEditor({
+      bookmarkId: bookmark.id,
+      url: bookmark.url,
+      title: bookmark.title ?? "",
+      description: bookmark.description ?? "",
+      tagId: bookmark.tagId,
+    });
+  }
+
+  function queueLongPress(bookmark: Bookmark) {
+    if (window.innerWidth >= 640) {
+      return;
+    }
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+    }
+    longPressTriggeredRef.current = false;
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTriggeredRef.current = true;
+      setDrawerBookmark(bookmark);
+    }, 480);
+  }
+
+  function clearLongPress() {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }
+
+  function openBookmark(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function handleRowOpen(bookmark: Bookmark) {
+    if (longPressTriggeredRef.current) {
+      longPressTriggeredRef.current = false;
+      return;
+    }
+    openBookmark(bookmark.url);
+  }
+
+  const isTagMutationPending =
+    createTagMutation.isPending ||
+    updateTagMutation.isPending ||
+    deleteTagMutation.isPending;
+  const isBookmarkMutationPending =
+    createBookmarkMutation.isPending ||
+    updateBookmarkMutation.isPending ||
+    deleteBookmarkMutation.isPending;
+  const showTagLoadState = tagsQuery.isPending && !tags.length;
+  const showBookmarkLoadState = bookmarksQuery.isPending && !bookmarks.length;
+  const showTagErrorState = tagsQuery.isError && !tags.length;
+
   return (
-    <div className="min-h-dvh bg-[#141414] text-neutral-100">
-      <main className="mx-auto w-full max-w-190 px-4 pt-10 pb-16 sm:px-6">
-        <header className="mb-6 flex items-center justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="size-7 rounded-full border border-neutral-700 bg-neutral-200" />
-            <span className="text-neutral-500">/</span>
+    <div className="min-h-dvh bg-[#090909] text-neutral-100">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_28%),linear-gradient(180deg,_#090909_0%,_#0c0c0d_100%)]" />
+
+      <main className="relative mx-auto w-full max-w-3xl px-3 pt-4 pb-32 sm:px-5 sm:pt-8 sm:pb-36">
+        <div className="mx-auto w-full max-w-2xl">
+          <header className="mb-4 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-neutral-200">
-                {activeTag?.name ?? "All Bookmarks"}
+              <p className="truncate text-sm font-medium text-neutral-100">
+                {activeTag ? getTagLabel(activeTag) : "All bookmarks"}
+              </p>
+              <p className="text-xs text-neutral-500">
+                {visibleBookmarks.length} links
               </p>
             </div>
-          </div>
 
-          <div className="relative" ref={userMenuRef}>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-full bg-[#6b4b3f] text-sm text-white"
-              onClick={() => setUserMenuOpen((current) => !current)}
-            >
-              {userInitial}
-            </button>
-
-            <AnimatePresence>
-              {userMenuOpen ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  className="absolute top-11 right-0 z-50 w-56 rounded-xl border border-neutral-800 bg-[#1a1a1a] p-2 shadow-2xl"
+            <div className="flex items-center gap-2">
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-semibold text-white"
+                  onClick={() => setUserMenuOpen((current) => !current)}
                 >
-                  <div className="rounded-lg px-3 py-2">
-                    <p className="truncate text-sm text-neutral-100">
-                      {userName}
-                    </p>
-                    <p className="truncate text-xs text-neutral-500">
-                      {userEmail}
-                    </p>
+                  {userInitial}
+                </button>
+
+                <AnimatePresence>
+                  {userMenuOpen ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="absolute top-11 right-0 z-50 w-60 rounded-2xl border border-white/10 bg-[#151515] p-2 shadow-2xl"
+                    >
+                      <div className="rounded-xl px-3 py-2.5">
+                        <p className="truncate text-sm text-white">
+                          {userName}
+                        </p>
+                        <p className="truncate text-xs text-neutral-500">
+                          {userEmail}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-neutral-300 transition hover:bg-white/[0.06] hover:text-white"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                        <LogOut size={16} />
+                      </button>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+            </div>
+          </header>
+
+          <div className="mb-4 space-y-3">
+            <div className="-mx-1 overflow-x-auto px-1">
+              <div className="flex w-max items-center gap-2">
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-sm transition",
+                    resolvedActiveTagId === null
+                      ? "bg-white text-black"
+                      : "bg-white/[0.06] text-neutral-300 hover:bg-white/[0.1]",
+                  )}
+                  onClick={() => setActiveTagId(null)}
+                >
+                  All
+                </button>
+
+                {showTagLoadState ? (
+                  <QueryStatus compact>
+                    <span className="inline-flex items-center gap-2">
+                      <LoaderCircle size={12} className="animate-spin" />
+                      Loading tags...
+                    </span>
+                  </QueryStatus>
+                ) : null}
+
+                {visibleTagChips.map((tag) => {
+                  const isActive = resolvedActiveTagId === tag.id;
+
+                  if (!isActive) {
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        className="rounded-full bg-white/[0.06] px-3 py-1.5 text-sm text-neutral-300 transition hover:bg-white/[0.1]"
+                        onClick={() => {
+                          setActiveTagId(tag.id);
+                          setComposerTagId(tag.id);
+                        }}
+                      >
+                        {getTagLabel(tag)}
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={tag.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-sm text-black"
+                    >
+                      <button
+                        type="button"
+                        className="rounded-full px-1 py-0.5 transition hover:bg-black/6"
+                        onClick={() => {
+                          setActiveTagId(tag.id);
+                          setComposerTagId(tag.id);
+                        }}
+                      >
+                        {getTagLabel(tag)}
+                      </button>
+                      <span className="text-[10px] text-black/55">
+                        {bookmarkCountByTag.get(tag.id) ?? 0}
+                      </span>
+                      <span className="mx-0.5 h-3.5 w-px bg-black/15" />
+                      <button
+                        type="button"
+                        className="rounded-full p-1 text-black/60 transition hover:bg-black/8 hover:text-black"
+                        onClick={() =>
+                          setTagEditor({
+                            mode: "edit",
+                            tagId: tag.id,
+                            name: tag.name ?? "",
+                          })
+                        }
+                      >
+                        <Pencil size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full p-1 text-black/60 transition hover:bg-black/8 hover:text-black disabled:opacity-40"
+                        disabled={deleteTagMutation.isPending}
+                        onClick={() =>
+                          setConfirmation({
+                            kind: "tag",
+                            id: tag.id,
+                            title: `Delete ${tag.name ?? "tag"}?`,
+                            description:
+                              "This also deletes all bookmarks currently inside the tag.",
+                            confirmLabel: "Delete tag",
+                          })
+                        }
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  className="flex size-8 items-center justify-center rounded-full bg-white/[0.06] text-neutral-300 transition hover:bg-white/[0.1] hover:text-white"
+                  onClick={() => setTagEditor({ mode: "create", name: "" })}
+                >
+                  <Plus size={14} />
+                </button>
+
+                {hiddenTags.length ? (
+                  <div className="relative" ref={tagOverflowRef}>
+                    <button
+                      type="button"
+                      className="flex size-8 items-center justify-center rounded-full bg-white/[0.06] text-neutral-300 transition hover:bg-white/[0.1] hover:text-white"
+                      onClick={() => setTagOverflowOpen((current) => !current)}
+                    >
+                      <EllipsisVertical size={14} />
+                    </button>
+
+                    <AnimatePresence>
+                      {tagOverflowOpen ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="absolute top-10 right-0 z-40 w-64 rounded-2xl border border-white/10 bg-[#151515] p-2 shadow-2xl"
+                        >
+                          <div className="max-h-72 space-y-1 overflow-y-auto">
+                            {hiddenTags.map((tag) => (
+                              <div
+                                key={tag.id}
+                                className="flex items-center gap-2 rounded-xl px-2 py-1"
+                              >
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition",
+                                    resolvedActiveTagId === tag.id
+                                      ? "bg-white text-black"
+                                      : "text-neutral-200 hover:bg-white/[0.06]",
+                                  )}
+                                  onClick={() => {
+                                    setActiveTagId(tag.id);
+                                    setComposerTagId(tag.id);
+                                    setTagOverflowOpen(false);
+                                  }}
+                                >
+                                  <span className="truncate">
+                                    {getTagLabel(tag)}
+                                  </span>
+                                  <span className="ml-3 shrink-0 text-xs opacity-65">
+                                    {bookmarkCountByTag.get(tag.id) ?? 0}
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex size-8 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                                  disabled={deleteTagMutation.isPending}
+                                  onClick={() => {
+                                    setConfirmation({
+                                      kind: "tag",
+                                      id: tag.id,
+                                      title: `Delete ${tag.name ?? "tag"}?`,
+                                      description:
+                                        "This also deletes all bookmarks currently inside the tag.",
+                                      confirmLabel: "Delete tag",
+                                    });
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
                   </div>
-                  <button
+                ) : null}
+              </div>
+            </div>
+
+            {tagsQuery.isError ? (
+              <QueryStatus tone="error">
+                <div className="flex items-center justify-between gap-3">
+                  <span>
+                    {tags.length
+                      ? "Could not refresh tags."
+                      : "Could not load tags."}
+                  </span>
+                  <Button
                     type="button"
-                    className="mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-900 hover:text-white"
-                    onClick={handleLogout}
+                    variant="ghost"
+                    className="h-8 px-2 text-red-100 hover:bg-red-500/10 hover:text-white"
+                    onClick={() => void tagsQuery.refetch()}
                   >
-                    Logout
-                    <SignOut size={14} />
-                  </button>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
-        </header>
+                    Retry
+                  </Button>
+                </div>
+              </QueryStatus>
+            ) : null}
 
-        <section className="mb-6 grid gap-3 sm:grid-cols-[200px_1fr_auto]">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-800 bg-[#1a1a1a] text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
-              onClick={() => setTagEditor({ mode: "create", name: "" })}
-            >
-              <Plus size={18} />
-            </button>
-            <div className="relative flex-1">
-              <Select
-                value={resolvedActiveTagId ?? "all"}
-                onValueChange={(value) => {
-                  const tagId = value === "all" ? null : value;
-                  setActiveTagId(tagId);
-                  setComposerTagId(tagId);
-                }}
-              >
-                <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
-                  <SelectValue placeholder="All Bookmarks" />
-                </SelectTrigger>
-                <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
-                  <SelectItem value="all">All Bookmarks</SelectItem>
-                  {tags.map((tag) => (
-                    <SelectItem key={tag.id} value={tag.id}>
-                      {tag.name ?? "Untitled"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!showTagLoadState && !showTagErrorState && !tags.length ? (
+              <QueryStatus>
+                <div className="flex items-center justify-between gap-3">
+                  <span>No tags yet. Create one with the `+` button.</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 px-2 text-neutral-200 hover:bg-white/[0.06] hover:text-white"
+                    onClick={() => setTagEditor({ mode: "create", name: "" })}
+                  >
+                    New tag
+                  </Button>
+                </div>
+              </QueryStatus>
+            ) : null}
+
+            {tagsQuery.isFetching && !showTagLoadState ? (
+              <QueryStatus compact>
+                <span className="inline-flex items-center gap-2">
+                  <RefreshCw size={12} className="animate-spin" />
+                  Syncing tags...
+                </span>
+              </QueryStatus>
+            ) : null}
           </div>
 
-          <TextInput
-            value={urlInput}
-            onChange={(event) => {
-              setUrlInput(event.target.value);
-              if (notice) {
-                setNotice(null);
-              }
-            }}
-            onKeyDown={handleComposerKeyDown}
-            placeholder="Paste your URL here..."
-            disabled={createBookmarkMutation.isPending}
-          />
-
-          <Button
-            className="h-11 rounded-lg bg-neutral-100 px-4 text-black hover:bg-white"
-            disabled={createBookmarkMutation.isPending || !urlInput.trim()}
-            onClick={() => void handleSave()}
-          >
-            Save
-          </Button>
-        </section>
-
-        <AnimatePresence>
-          {notice ? (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className={cn(
-                "mb-4 rounded-lg border px-3 py-2 text-sm",
-                notice.type === "error"
-                  ? "border-red-500/20 bg-red-500/10 text-red-200"
-                  : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
-              )}
-            >
-              {notice.message}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-
-        <section className="rounded-xl border border-neutral-900 bg-transparent">
-          <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-4 border-b border-neutral-900 px-3 py-3 text-[11px] font-medium tracking-[0.16em] text-neutral-500 uppercase sm:grid-cols-[minmax(0,1fr)_auto_110px]">
-            <span>Title</span>
-            <span className="hidden text-right sm:block">Actions</span>
-            <span className="text-right">Created</span>
-          </div>
-
-          {bookmarksQuery.isPending && !bookmarks.length ? (
-            <div className="px-3 py-4 text-sm text-neutral-500">Loading...</div>
+          {bookmarksQuery.isError ? (
+            <QueryStatus tone="error">
+              <div className="flex items-center justify-between gap-3">
+                <span>
+                  {bookmarks.length
+                    ? "Could not refresh bookmarks."
+                    : "Could not load bookmarks."}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-8 px-2 text-red-100 hover:bg-red-500/10 hover:text-white"
+                  onClick={() => void bookmarksQuery.refetch()}
+                >
+                  Retry
+                </Button>
+              </div>
+            </QueryStatus>
+          ) : showBookmarkLoadState ? (
+            <QueryStatus>
+              <span className="inline-flex items-center gap-2">
+                <LoaderCircle size={14} className="animate-spin" />
+                Loading bookmarks...
+              </span>
+            </QueryStatus>
           ) : !visibleBookmarks.length ? (
-            <div className="px-3 py-8 text-sm text-neutral-500">
-              {tags.length
-                ? "No bookmarks in this tag."
-                : "Create a tag or save a link to start."}
-            </div>
+            <QueryStatus>
+              {resolvedActiveTagId
+                ? "No bookmarks in this tag yet."
+                : "No bookmarks here yet."}
+            </QueryStatus>
           ) : (
-            <ul>
+            <ul className="divide-y divide-white/8">
               {visibleBookmarks.map((bookmark) => {
-                const title =
-                  bookmark.title?.trim() || getHostname(bookmark.url);
                 const hostname = bookmark.hostname || getHostname(bookmark.url);
+                const title = getBookmarkTitle(bookmark);
 
                 return (
-                  <motion.li
-                    key={bookmark.id}
-                    layout
-                    className="grid grid-cols-[minmax(0,1fr)_88px] gap-4 border-b border-neutral-900 px-3 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_110px]"
-                  >
-                    <div className="min-w-0">
+                  <motion.li key={bookmark.id} layout className="group py-1">
+                    <div
+                      className="cursor-pointer rounded-2xl px-2 py-3 transition duration-200 hover:bg-white/[0.04]"
+                      onPointerDown={() => queueLongPress(bookmark)}
+                      onPointerUp={clearLongPress}
+                      onPointerCancel={clearLongPress}
+                      onPointerLeave={clearLongPress}
+                      onClick={() => handleRowOpen(bookmark)}
+                    >
                       <div className="flex items-center gap-3">
-                        <div className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-neutral-700 text-[9px] font-medium text-neutral-200 uppercase">
-                          {hostname.slice(0, 1)}
+                        <div className="flex shrink-0 items-center justify-center">
+                          <Image
+                            src={getFaviconUrl(hostname)}
+                            alt=""
+                            width={20}
+                            height={20}
+                            unoptimized
+                            className="size-5 rounded"
+                          />
                         </div>
-                        <div className="min-w-0">
+
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-neutral-100">
                             {title}
                           </p>
-                          <p className="mt-0.5 truncate text-xs text-neutral-400">
+                          <p className="mt-1 truncate text-xs text-neutral-500">
                             {bookmark.url}
                           </p>
-                          {title !== hostname && (
-                            <p className="mt-0.5 truncate text-[11px] text-neutral-600">
-                              {hostname}
-                            </p>
-                          )}
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-0.5 self-center sm:gap-1">
+                          <button
+                            type="button"
+                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/[0.06] hover:text-white sm:size-9"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void copyText(bookmark.url, bookmark.id);
+                            }}
+                          >
+                            {copiedBookmarkId === bookmark.id ? (
+                              <Check size={16} />
+                            ) : (
+                              <Copy size={16} />
+                            )}
+                          </button>
+                          <a
+                            href={bookmark.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/[0.06] hover:text-white sm:size-9"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                          <button
+                            type="button"
+                            className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openBookmarkEditor(bookmark);
+                            }}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-red-500/10 hover:text-red-300 sm:flex"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setConfirmation({
+                                kind: "bookmark",
+                                id: bookmark.id,
+                                title: "Delete bookmark?",
+                                description:
+                                  "This removes the saved link permanently.",
+                                confirmLabel: "Delete bookmark",
+                              });
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
-                      <div className="mt-2 flex items-center gap-1 sm:hidden">
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
-                          onClick={() =>
-                            void copyText(bookmark.url, bookmark.id)
-                          }
-                        >
-                          {copiedBookmarkId === bookmark.id ? (
-                            <Check size={14} />
-                          ) : (
-                            <Copy size={14} />
-                          )}
-                        </button>
-                        <a
-                          href={bookmark.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
-                        >
-                          <ArrowSquareOut size={14} />
-                        </a>
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
-                          onClick={() =>
-                            setBookmarkEditor({
-                              bookmarkId: bookmark.id,
-                              url: bookmark.url,
-                              title: bookmark.title ?? "",
-                              description: bookmark.description ?? "",
-                              tagId: bookmark.tagId,
-                            })
-                          }
-                        >
-                          <PencilSimple size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-900 hover:text-red-300"
-                          onClick={() =>
-                            setConfirmation({
-                              kind: "bookmark",
-                              id: bookmark.id,
-                              title: "Delete bookmark?",
-                              description:
-                                "This removes the saved link permanently.",
-                              confirmLabel: "Delete bookmark",
-                            })
-                          }
-                        >
-                          <Trash size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="hidden items-center justify-end gap-1 sm:flex">
-                      <button
-                        type="button"
-                        className="rounded-md p-2 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
-                        onClick={() => void copyText(bookmark.url, bookmark.id)}
-                      >
-                        {copiedBookmarkId === bookmark.id ? (
-                          <Check size={14} />
-                        ) : (
-                          <Copy size={14} />
-                        )}
-                      </button>
-                      <a
-                        href={bookmark.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-md p-2 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
-                      >
-                        <ArrowSquareOut size={14} />
-                      </a>
-                      <button
-                        type="button"
-                        className="rounded-md p-2 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200"
-                        onClick={() =>
-                          setBookmarkEditor({
-                            bookmarkId: bookmark.id,
-                            url: bookmark.url,
-                            title: bookmark.title ?? "",
-                            description: bookmark.description ?? "",
-                            tagId: bookmark.tagId,
-                          })
-                        }
-                      >
-                        <PencilSimple size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-md p-2 text-neutral-500 hover:bg-neutral-900 hover:text-red-300"
-                        onClick={() =>
-                          setConfirmation({
-                            kind: "bookmark",
-                            id: bookmark.id,
-                            title: "Delete bookmark?",
-                            description:
-                              "This removes the saved link permanently.",
-                            confirmLabel: "Delete bookmark",
-                          })
-                        }
-                      >
-                        <Trash size={14} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 text-right">
-                      <span className="text-sm text-neutral-400">
-                        {formatDate(bookmark.createdAt)}
-                      </span>
                     </div>
                   </motion.li>
                 );
               })}
             </ul>
           )}
-        </section>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <SurfaceButton
-            size="sm"
-            onClick={() =>
-              activeTag &&
-              setTagEditor({
-                mode: "edit",
-                tagId: activeTag.id,
-                name: activeTag.name ?? "",
-              })
-            }
-            disabled={!activeTag}
-          >
-            Edit tag
-          </SurfaceButton>
-          <SurfaceButton
-            size="sm"
-            onClick={() =>
-              activeTag &&
-              setConfirmation({
-                kind: "tag",
-                id: activeTag.id,
-                title: `Delete ${activeTag.name ?? "tag"}?`,
-                description:
-                  "This also deletes all bookmarks currently inside the tag.",
-                confirmLabel: "Delete tag",
-              })
-            }
-            disabled={!activeTag}
-          >
-            Delete tag
-          </SurfaceButton>
+          {bookmarksQuery.isFetching && !showBookmarkLoadState ? (
+            <div className="mt-3">
+              <QueryStatus compact>
+                <span className="inline-flex items-center gap-2">
+                  <RefreshCw size={12} className="animate-spin" />
+                  Syncing bookmarks...
+                </span>
+              </QueryStatus>
+            </div>
+          ) : null}
         </div>
       </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0b0b0c]/95 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-3xl">
+          <AnimatePresence>
+            {notice ? (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className={cn(
+                  "mb-3 rounded-2xl border px-3 py-2 text-sm",
+                  notice.type === "error"
+                    ? "border-red-500/20 bg-red-500/10 text-red-200"
+                    : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
+                )}
+              >
+                {notice.message}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <div className="flex items-end gap-2">
+            <Select
+              value={resolvedComposerTagId ?? "none"}
+              onValueChange={(value) =>
+                setComposerTagId(value === "none" ? null : value)
+              }
+            >
+              <SelectTrigger className="h-11 w-[140px] shrink-0 rounded-2xl border-white/10 bg-white/[0.06] text-neutral-200 focus:ring-0 focus:ring-offset-0">
+                <SelectValue placeholder="Tag" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
+                {tags.length ? (
+                  tags.map((tag) => (
+                    <SelectItem key={tag.id} value={tag.id}>
+                      {getTagLabel(tag)}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none">Inbox</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+
+            <TextInput
+              value={urlInput}
+              onChange={(event) => {
+                setUrlInput(event.target.value);
+                if (notice) {
+                  setNotice(null);
+                }
+              }}
+              onKeyDown={handleComposerKeyDown}
+              placeholder="Paste a link"
+              disabled={createBookmarkMutation.isPending || showTagErrorState}
+              className="h-11 flex-1 border-white/10 bg-transparent px-4 text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+            />
+
+            <Button
+              className="h-11 shrink-0 rounded-2xl bg-white px-4 text-black hover:bg-neutral-200"
+              disabled={
+                createBookmarkMutation.isPending ||
+                !urlInput.trim() ||
+                showTagErrorState
+              }
+              onClick={() => void handleSave()}
+            >
+              {createBookmarkMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </div>
+
+          {(isTagMutationPending || isBookmarkMutationPending) &&
+          !(createBookmarkMutation.isPending && urlInput.trim()) ? (
+            <div className="mt-3">
+              <QueryStatus compact>
+                <span className="inline-flex items-center gap-2">
+                  <LoaderCircle size={12} className="animate-spin" />
+                  Updating your stash...
+                </span>
+              </QueryStatus>
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       <Modal
         open={tagEditor !== null}
         onClose={() => setTagEditor(null)}
-        title={tagEditor?.mode === "create" ? "New tag" : "Edit tag"}
+        title={tagEditor?.mode === "create" ? "Create tag" : "Edit tag"}
       >
         <form
           className="space-y-4"
@@ -965,14 +1234,21 @@ export function BookmarkClient({
           </div>
 
           <div className="flex justify-end gap-2">
-            <SurfaceButton type="button" onClick={() => setTagEditor(null)}>
+            <SurfaceButton
+              type="button"
+              onClick={() => setTagEditor(null)}
+              disabled={isTagMutationPending}
+            >
               Cancel
             </SurfaceButton>
             <Button
               type="submit"
-              className="h-9 rounded-lg bg-neutral-100 px-4 text-black hover:bg-white"
+              className="h-10 rounded-2xl bg-neutral-950 px-4 text-white hover:bg-neutral-800"
+              disabled={isTagMutationPending}
             >
-              Save
+              {createTagMutation.isPending || updateTagMutation.isPending
+                ? "Saving..."
+                : "Save"}
             </Button>
           </div>
         </form>
@@ -1025,13 +1301,13 @@ export function BookmarkClient({
                   )
                 }
               >
-                <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-12 w-full rounded-2xl border-black/10 bg-white/80 text-neutral-900 shadow-none focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Select a Tag" />
                 </SelectTrigger>
-                <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
+                <SelectContent className="rounded-2xl border-black/10 bg-[#fbf8f2] text-neutral-900">
                   {tags.map((tag) => (
                     <SelectItem key={tag.id} value={tag.id}>
-                      {tag.name ?? "Untitled"}
+                      {getTagLabel(tag)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1057,14 +1333,16 @@ export function BookmarkClient({
             <SurfaceButton
               type="button"
               onClick={() => setBookmarkEditor(null)}
+              disabled={updateBookmarkMutation.isPending}
             >
               Cancel
             </SurfaceButton>
             <Button
               type="submit"
-              className="h-9 rounded-lg bg-neutral-100 px-4 text-black hover:bg-white"
+              className="h-10 rounded-2xl bg-neutral-950 px-4 text-white hover:bg-neutral-800"
+              disabled={updateBookmarkMutation.isPending}
             >
-              Save
+              {updateBookmarkMutation.isPending ? "Saving..." : "Save changes"}
             </Button>
           </div>
         </form>
@@ -1077,13 +1355,22 @@ export function BookmarkClient({
         description={confirmation?.description}
       >
         <div className="flex justify-end gap-2">
-          <SurfaceButton type="button" onClick={() => setConfirmation(null)}>
+          <SurfaceButton
+            type="button"
+            onClick={() => setConfirmation(null)}
+            disabled={
+              deleteBookmarkMutation.isPending || deleteTagMutation.isPending
+            }
+          >
             Cancel
           </SurfaceButton>
           <Button
             type="button"
             variant="destructive"
-            className="h-9 rounded-lg"
+            className="h-10 rounded-2xl"
+            disabled={
+              deleteBookmarkMutation.isPending || deleteTagMutation.isPending
+            }
             onClick={() => {
               if (!confirmation) {
                 return;
@@ -1096,10 +1383,84 @@ export function BookmarkClient({
               setConfirmation(null);
             }}
           >
-            {confirmation?.confirmLabel ?? "Delete"}
+            {deleteBookmarkMutation.isPending || deleteTagMutation.isPending
+              ? "Deleting..."
+              : (confirmation?.confirmLabel ?? "Delete")}
           </Button>
         </div>
       </Modal>
+
+      <Drawer
+        open={drawerBookmark !== null}
+        onClose={() => setDrawerBookmark(null)}
+        title={drawerBookmark ? getBookmarkTitle(drawerBookmark) : "Bookmark"}
+        description={
+          drawerBookmark
+            ? drawerBookmark.hostname || getHostname(drawerBookmark.url)
+            : undefined
+        }
+      >
+        {drawerBookmark ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-left text-sm text-neutral-900"
+              onClick={() =>
+                void copyText(drawerBookmark.url, drawerBookmark.id)
+              }
+            >
+              <span className="flex items-center gap-3">
+                <Copy size={18} className="text-neutral-700" />
+                Copy link
+              </span>
+              {copiedBookmarkId === drawerBookmark.id ? (
+                <Check size={16} className="text-emerald-600" />
+              ) : null}
+            </button>
+            <a
+              href={drawerBookmark.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-sm text-neutral-900"
+            >
+              <span className="flex items-center gap-3">
+                <ExternalLink size={18} className="text-neutral-700" />
+                Open link
+              </span>
+              <Link2 size={16} className="text-neutral-500" />
+            </a>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-left text-sm text-neutral-900"
+              onClick={() => openBookmarkEditor(drawerBookmark)}
+            >
+              <span className="flex items-center gap-3">
+                <Pencil size={18} className="text-neutral-700" />
+                Edit bookmark
+              </span>
+              <TagIcon size={16} className="text-neutral-500" />
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between rounded-2xl bg-red-50 px-4 py-4 text-left text-sm text-red-700"
+              onClick={() =>
+                setConfirmation({
+                  kind: "bookmark",
+                  id: drawerBookmark.id,
+                  title: "Delete bookmark?",
+                  description: "This removes the saved link permanently.",
+                  confirmLabel: "Delete bookmark",
+                })
+              }
+            >
+              <span className="flex items-center gap-3">
+                <Trash2 size={18} className="text-red-600" />
+                Delete bookmark
+              </span>
+            </button>
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   );
 }
