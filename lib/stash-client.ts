@@ -154,7 +154,7 @@ export function validateTagName(value: string): TagValidationResult {
 
 export function getDefaultTagId(tags: Tag[]) {
   return (
-    tags.find((tag) => tag.name?.toLowerCase() === "inbox")?.id ??
+    tags.find((tag) => tag.name?.trim().toLowerCase() === "inbox")?.id ??
     tags[0]?.id ??
     null
   );

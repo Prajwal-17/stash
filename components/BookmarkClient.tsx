@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -8,6 +9,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Bookmark,
   createBookmark,
@@ -31,7 +40,6 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
-  ChevronDown,
   Copy,
   EllipsisVertical,
   ExternalLink,
@@ -51,11 +59,9 @@ import { useRouter } from "next/navigation";
 import {
   ComponentProps,
   FormEvent,
-  InputHTMLAttributes,
   KeyboardEvent as ReactKeyboardEvent,
   ReactNode,
   RefObject,
-  TextareaHTMLAttributes,
   useEffect,
   useMemo,
   useRef,
@@ -95,6 +101,15 @@ interface ConfirmationState {
 function getHostname(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function getUrlPath(url: string) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return url;
   }
@@ -172,30 +187,6 @@ function FieldLabel({ children }: { children: ReactNode }) {
   );
 }
 
-function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={cn(
-        "h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-white/20",
-        props.className,
-      )}
-    />
-  );
-}
-
-function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      {...props}
-      className={cn(
-        "min-h-28 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-white/20",
-        props.className,
-      )}
-    />
-  );
-}
-
 function Modal({
   title,
   description,
@@ -264,50 +255,32 @@ function Drawer({
   children: ReactNode;
 }) {
   return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-end bg-black/55 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-        >
-          <motion.div
-            className="w-full rounded-t-[28px] border-t border-white/10 bg-[#111112] px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            drag="y"
-            dragDirectionLock
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.18 }}
-            dragMomentum={false}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 120 || info.velocity.y > 700) {
-                onClose();
-              }
-            }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              aria-label="Close drawer"
-              className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
-              onClick={onClose}
-            />
-            <div className="mb-4">
-              <h3 className="text-base font-semibold text-white">{title}</h3>
-              {description ? (
-                <p className="mt-1 text-sm text-neutral-500">{description}</p>
-              ) : null}
-            </div>
-            {children}
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+    <Sheet open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <SheetContent
+        side="bottom"
+        className="w-full rounded-t-[28px] border-t border-white/10 bg-[#111112] px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
+        {...(description ? {} : { "aria-describedby": undefined })}
+      >
+        <SheetClose asChild>
+          <button
+            type="button"
+            aria-label="Close drawer"
+            className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
+          />
+        </SheetClose>
+        <div className="mb-4">
+          <SheetTitle className="text-base font-semibold text-white">
+            {title}
+          </SheetTitle>
+          {description ? (
+            <SheetDescription className="mt-1 text-sm text-neutral-500">
+              {description}
+            </SheetDescription>
+          ) : null}
+        </div>
+        {children}
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -371,6 +344,7 @@ export function BookmarkClient({
   );
   const [drawerBookmark, setDrawerBookmark] = useState<Bookmark | null>(null);
   const [tagOverflowOpen, setTagOverflowOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useDismissableLayer(userMenuOpen, () => setUserMenuOpen(false), userMenuRef);
   useDismissableLayer(
@@ -575,7 +549,7 @@ export function BookmarkClient({
 
   async function ensureInboxTag() {
     const existingInbox = tags.find(
-      (tag) => tag.name?.toLowerCase() === "inbox",
+      (tag) => tag.name?.trim().toLowerCase() === "inbox",
     );
     if (existingInbox) {
       return existingInbox.id;
@@ -600,8 +574,20 @@ export function BookmarkClient({
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.replace("/auth/login");
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+    setUserMenuOpen(false);
+
+    try {
+      await supabase.auth.signOut();
+      router.replace("/auth/login");
+    } catch {
+      setNotice({ type: "error", message: "Logout failed. Please try again." });
+      setIsLoggingOut(false);
+    }
   }
 
   async function copyText(value: string, bookmarkId: string) {
@@ -748,8 +734,10 @@ export function BookmarkClient({
               <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
-                  className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-semibold text-white"
+                  className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => setUserMenuOpen((current) => !current)}
+                  disabled={isLoggingOut}
+                  aria-disabled={isLoggingOut}
                 >
                   {userInitial}
                 </button>
@@ -772,11 +760,21 @@ export function BookmarkClient({
                       </div>
                       <button
                         type="button"
-                        className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-neutral-300 transition hover:bg-white/[0.06] hover:text-white"
+                        className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-neutral-300 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={handleLogout}
+                        disabled={isLoggingOut}
                       >
-                        Logout
-                        <LogOut size={16} />
+                        {isLoggingOut ? (
+                          <>
+                            Logging out...
+                            <LoaderCircle size={16} className="animate-spin" />
+                          </>
+                        ) : (
+                          <>
+                            Logout
+                            <LogOut size={16} />
+                          </>
+                        )}
                       </button>
                     </motion.div>
                   ) : null}
@@ -1171,39 +1169,38 @@ export function BookmarkClient({
           </AnimatePresence>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <Select
-              value={resolvedComposerTagId ?? "none"}
-              onValueChange={(value) =>
-                setComposerTagId(value === "none" ? null : value)
-              }
-            >
-              <SelectTrigger
-                className="h-11 w-full rounded-2xl border-white/10 bg-white/[0.06] text-left text-neutral-200 focus:ring-0 focus:ring-offset-0 sm:w-[190px] sm:shrink-0"
-                icon={false}
+            <div className="w-full sm:w-[190px] sm:shrink-0">
+              <p className="mb-1 text-[10px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
+                Save to
+              </p>
+              <Select
+                {...(resolvedComposerTagId
+                  ? { value: resolvedComposerTagId }
+                  : {})}
+                disabled={!tags.length}
+                onValueChange={(value) => setComposerTagId(value)}
               >
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
-                    Save to
-                  </p>
+                <SelectTrigger className="h-11 w-full rounded-2xl border-white/10 bg-white/[0.06] text-left text-neutral-200 focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Inbox" />
-                </div>
-                <ChevronDown className="ml-3 size-4 shrink-0 opacity-70" />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
-                {tags.length ? (
-                  tags.map((tag) => (
-                    <SelectItem key={tag.id} value={tag.id}>
-                      {getTagLabel(tag)}
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
+                  {tags.length ? (
+                    tags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {getTagLabel(tag)}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="__no_tags__" disabled>
+                      Inbox
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none">Inbox</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <div className="flex items-end gap-2">
-              <TextInput
+            <div className="flex flex-1 items-end gap-2">
+              <Input
                 value={urlInput}
                 onChange={(event) => {
                   setUrlInput(event.target.value);
@@ -1256,7 +1253,7 @@ export function BookmarkClient({
         >
           <div className="space-y-2">
             <FieldLabel>Name</FieldLabel>
-            <TextInput
+            <Input
               autoFocus
               value={tagEditor?.name ?? ""}
               onChange={(event) =>
@@ -1265,6 +1262,7 @@ export function BookmarkClient({
                 )
               }
               placeholder="Reading"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
             />
           </div>
 
@@ -1300,7 +1298,7 @@ export function BookmarkClient({
         >
           <div className="space-y-2">
             <FieldLabel>URL</FieldLabel>
-            <TextInput
+            <Input
               autoFocus
               value={bookmarkEditor?.url ?? ""}
               onChange={(event) =>
@@ -1308,13 +1306,14 @@ export function BookmarkClient({
                   current ? { ...current, url: event.target.value } : current,
                 )
               }
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <FieldLabel>Title</FieldLabel>
-              <TextInput
+              <Input
                 value={bookmarkEditor?.title ?? ""}
                 onChange={(event) =>
                   setBookmarkEditor((current) =>
@@ -1323,6 +1322,7 @@ export function BookmarkClient({
                       : current,
                   )
                 }
+                className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
               />
             </div>
 
@@ -1336,10 +1336,10 @@ export function BookmarkClient({
                   )
                 }
               >
-                <SelectTrigger className="h-12 w-full rounded-2xl border-black/10 bg-white/80 text-neutral-900 shadow-none focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-12 w-full rounded-2xl border-white/10 bg-white/[0.06] text-neutral-200 shadow-none focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Select a Tag" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-black/10 bg-[#fbf8f2] text-neutral-900">
+                <SelectContent className="z-[80] rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
                   {tags.map((tag) => (
                     <SelectItem key={tag.id} value={tag.id}>
                       {getTagLabel(tag)}
@@ -1361,6 +1361,7 @@ export function BookmarkClient({
                     : current,
                 )
               }
+              className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
             />
           </div>
 
@@ -1428,21 +1429,21 @@ export function BookmarkClient({
       <Drawer
         open={drawerBookmark !== null}
         onClose={() => setDrawerBookmark(null)}
-        title={drawerBookmark ? getBookmarkTitle(drawerBookmark) : "Bookmark"}
+        title={drawerBookmark ? getHostname(drawerBookmark.url) : "Bookmark"}
         description={
           drawerBookmark
-            ? drawerBookmark.hostname || getHostname(drawerBookmark.url)
+            ? drawerBookmark.title?.trim() &&
+              drawerBookmark.title.trim() !== getHostname(drawerBookmark.url)
+              ? drawerBookmark.title.trim()
+              : undefined
             : undefined
         }
       >
         {drawerBookmark ? (
           <div className="space-y-2">
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
-                Full link
-              </p>
-              <p className="mt-2 break-all text-sm text-neutral-200">
-                {drawerBookmark.url}
+              <p className="text-sm break-all text-neutral-200">
+                {getUrlPath(drawerBookmark.url)}
               </p>
             </div>
             <button

@@ -20,11 +20,7 @@ import {
   Tag,
 } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, InputHTMLAttributes, ReactNode, useState } from "react";
@@ -96,7 +92,9 @@ export function ShareHandler({
 
   const [url, setUrl] = useState(defaultUrl);
   const [title, setTitle] = useState(sharedTitle);
-  const [tagId, setTagId] = useState<string | null>(getDefaultTagId(initialTags));
+  const [tagId, setTagId] = useState<string | null>(
+    getDefaultTagId(initialTags),
+  );
   const [notice, setNotice] = useState<{
     type: "error" | "success";
     message: string;
@@ -118,7 +116,9 @@ export function ShareHandler({
     mutationFn: (payload: { url: string; tagId: string; title?: string }) =>
       createBookmark(payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: stashQueryKeys.bookmarks });
+      void queryClient.invalidateQueries({
+        queryKey: stashQueryKeys.bookmarks,
+      });
       router.push("/");
     },
     onError: (error: MutationError) => {
@@ -137,7 +137,9 @@ export function ShareHandler({
   });
 
   async function ensureInboxTag() {
-    const existingInbox = tags.find((tag) => tag.name?.toLowerCase() === "inbox");
+    const existingInbox = tags.find(
+      (tag) => tag.name?.trim().toLowerCase() === "inbox",
+    );
     if (existingInbox) {
       return existingInbox.id;
     }
