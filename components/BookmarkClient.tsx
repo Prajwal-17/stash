@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
+  ChevronDown,
   Copy,
   EllipsisVertical,
   ExternalLink,
@@ -212,7 +213,7 @@ function Modal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -278,9 +279,24 @@ function Drawer({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ duration: 0.18, ease: "easeOut" }}
+            drag="y"
+            dragDirectionLock
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.18 }}
+            dragMomentum={false}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120 || info.velocity.y > 700) {
+                onClose();
+              }
+            }}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-neutral-700" />
+            <button
+              type="button"
+              aria-label="Close drawer"
+              className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
+              onClick={onClose}
+            />
             <div className="mb-4">
               <h3 className="text-base font-semibold text-white">{title}</h3>
               {description ? (
@@ -650,6 +666,8 @@ export function BookmarkClient({
   }
 
   function openBookmarkEditor(bookmark: Bookmark) {
+    setDrawerBookmark(null);
+    setTagOverflowOpen(false);
     setBookmarkEditor({
       bookmarkId: bookmark.id,
       url: bookmark.url,
@@ -690,6 +708,12 @@ export function BookmarkClient({
       return;
     }
     openBookmark(bookmark.url);
+  }
+
+  function openDeleteConfirmation(confirmationState: ConfirmationState) {
+    setDrawerBookmark(null);
+    setTagOverflowOpen(false);
+    setConfirmation(confirmationState);
   }
 
   const isTagMutationPending =
@@ -842,7 +866,7 @@ export function BookmarkClient({
                         className="rounded-full p-1 text-black/60 transition hover:bg-black/8 hover:text-black disabled:opacity-40"
                         disabled={deleteTagMutation.isPending}
                         onClick={() =>
-                          setConfirmation({
+                          openDeleteConfirmation({
                             kind: "tag",
                             id: tag.id,
                             title: `Delete ${tag.name ?? "tag"}?`,
@@ -916,7 +940,7 @@ export function BookmarkClient({
                                   className="flex size-8 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
                                   disabled={deleteTagMutation.isPending}
                                   onClick={() => {
-                                    setConfirmation({
+                                    openDeleteConfirmation({
                                       kind: "tag",
                                       id: tag.id,
                                       title: `Delete ${tag.name ?? "tag"}?`,
@@ -1092,7 +1116,7 @@ export function BookmarkClient({
                             className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-red-500/10 hover:text-red-300 sm:flex"
                             onClick={(event) => {
                               event.stopPropagation();
-                              setConfirmation({
+                              openDeleteConfirmation({
                                 kind: "bookmark",
                                 id: bookmark.id,
                                 title: "Delete bookmark?",
@@ -1146,15 +1170,24 @@ export function BookmarkClient({
             ) : null}
           </AnimatePresence>
 
-          <div className="flex items-end gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <Select
               value={resolvedComposerTagId ?? "none"}
               onValueChange={(value) =>
                 setComposerTagId(value === "none" ? null : value)
               }
             >
-              <SelectTrigger className="h-11 w-[140px] shrink-0 rounded-2xl border-white/10 bg-white/[0.06] text-neutral-200 focus:ring-0 focus:ring-offset-0">
-                <SelectValue placeholder="Tag" />
+              <SelectTrigger
+                className="h-11 w-full rounded-2xl border-white/10 bg-white/[0.06] text-left text-neutral-200 focus:ring-0 focus:ring-offset-0 sm:w-[190px] sm:shrink-0"
+                icon={false}
+              >
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
+                    Save to
+                  </p>
+                  <SelectValue placeholder="Inbox" />
+                </div>
+                <ChevronDown className="ml-3 size-4 shrink-0 opacity-70" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
                 {tags.length ? (
@@ -1169,31 +1202,33 @@ export function BookmarkClient({
               </SelectContent>
             </Select>
 
-            <TextInput
-              value={urlInput}
-              onChange={(event) => {
-                setUrlInput(event.target.value);
-                if (notice) {
-                  setNotice(null);
-                }
-              }}
-              onKeyDown={handleComposerKeyDown}
-              placeholder="Paste a link"
-              disabled={createBookmarkMutation.isPending || showTagErrorState}
-              className="h-11 flex-1 border-white/10 bg-transparent px-4 text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
-            />
+            <div className="flex items-end gap-2">
+              <TextInput
+                value={urlInput}
+                onChange={(event) => {
+                  setUrlInput(event.target.value);
+                  if (notice) {
+                    setNotice(null);
+                  }
+                }}
+                onKeyDown={handleComposerKeyDown}
+                placeholder="Paste a link"
+                disabled={createBookmarkMutation.isPending || showTagErrorState}
+                className="h-11 flex-1 border-white/10 bg-transparent px-4 text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+              />
 
-            <Button
-              className="h-11 shrink-0 rounded-2xl bg-white px-4 text-black hover:bg-neutral-200"
-              disabled={
-                createBookmarkMutation.isPending ||
-                !urlInput.trim() ||
-                showTagErrorState
-              }
-              onClick={() => void handleSave()}
-            >
-              {createBookmarkMutation.isPending ? "Saving..." : "Save"}
-            </Button>
+              <Button
+                className="h-11 shrink-0 rounded-2xl bg-white px-4 text-black hover:bg-neutral-200"
+                disabled={
+                  createBookmarkMutation.isPending ||
+                  !urlInput.trim() ||
+                  showTagErrorState
+                }
+                onClick={() => void handleSave()}
+              >
+                {createBookmarkMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
           </div>
 
           {(isTagMutationPending || isBookmarkMutationPending) &&
@@ -1402,6 +1437,14 @@ export function BookmarkClient({
       >
         {drawerBookmark ? (
           <div className="space-y-2">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
+                Full link
+              </p>
+              <p className="mt-2 break-all text-sm text-neutral-200">
+                {drawerBookmark.url}
+              </p>
+            </div>
             <button
               type="button"
               className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-left text-sm text-neutral-900"
@@ -1444,7 +1487,7 @@ export function BookmarkClient({
               type="button"
               className="flex w-full items-center justify-between rounded-2xl bg-red-50 px-4 py-4 text-left text-sm text-red-700"
               onClick={() =>
-                setConfirmation({
+                openDeleteConfirmation({
                   kind: "bookmark",
                   id: drawerBookmark.id,
                   title: "Delete bookmark?",
