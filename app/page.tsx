@@ -1,29 +1,24 @@
 import { BookmarkClient } from "@/components/BookmarkClient";
+import { db } from "@/db/db";
 import { bookmarks, tags } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
-import { db } from "@/utils/db";
+import { auth } from "@/lib/auth";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
   // auth check (server-side)
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (error || !data.user) {
+  if (!session) {
     redirect("/auth/login");
   }
 
-  const user = data.user;
+  const user = session.user;
   const userInitial = (user.email ?? "U").charAt(0).toUpperCase();
-  const userName =
-    typeof user.user_metadata?.full_name === "string" &&
-    user.user_metadata.full_name.trim()
-      ? user.user_metadata.full_name
-      : typeof user.user_metadata?.name === "string" &&
-          user.user_metadata.name.trim()
-        ? user.user_metadata.name
-        : (user.email ?? "Stash User");
+  const userName = user.name || user.email || "Stash User";
 
   const [bookmarkRows, tagRows] = await Promise.all([
     db
@@ -43,14 +38,14 @@ export default async function Home() {
     .reverse()
     .map((bookmark) => ({
       ...bookmark,
-      createdAt: bookmark.createdAt.toISOString(),
-      updatedAt: bookmark.updatedAt.toISOString(),
+      createdAt: new Date(bookmark.createdAt).toISOString(),
+      updatedAt: new Date(bookmark.updatedAt).toISOString(),
     }));
 
   const initialTags = tagRows.map((tag) => ({
     ...tag,
-    createdAt: tag.createdAt.toISOString(),
-    updatedAt: tag.updatedAt.toISOString(),
+    createdAt: new Date(tag.createdAt).toISOString(),
+    updatedAt: new Date(tag.updatedAt).toISOString(),
   }));
 
   return (

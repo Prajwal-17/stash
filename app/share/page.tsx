@@ -1,8 +1,9 @@
 import { ShareHandler } from "@/components/ShareHandler";
+import { db } from "@/db/db";
 import { tags } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
-import { db } from "@/utils/db";
+import { auth } from "@/lib/auth";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function SharePage({
@@ -10,14 +11,15 @@ export default async function SharePage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (error || !data.user) {
+  if (!session) {
     redirect("/auth/login");
   }
 
-  const user = data.user;
+  const user = session.user;
 
   const tagRows = await db
     .select()
@@ -27,8 +29,8 @@ export default async function SharePage({
 
   const initialTags = tagRows.map((tag) => ({
     ...tag,
-    createdAt: tag.createdAt.toISOString(),
-    updatedAt: tag.updatedAt.toISOString(),
+    createdAt: new Date(tag.createdAt).toISOString(),
+    updatedAt: new Date(tag.updatedAt).toISOString(),
   }));
 
   const params = await searchParams;

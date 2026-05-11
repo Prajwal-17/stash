@@ -1,12 +1,11 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 import { Chrome } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ComponentPropsWithoutRef, useState } from "react";
-
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 
 export function LoginForm({
   className,
@@ -17,19 +16,19 @@ export function LoginForm({
 
   const handleGoogleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await authClient.signIn.social({
         provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/v1/callback?next=/`,
-        },
+        callbackURL: "/",
       });
 
-      if (error) throw error;
+      if (error) {
+        setError(error.message || "An error occurred");
+        setIsLoading(false);
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
       setIsLoading(false);

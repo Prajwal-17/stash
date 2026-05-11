@@ -17,6 +17,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { authClient } from "@/lib/auth-client";
 import {
   Bookmark,
   createBookmark,
@@ -35,7 +36,6 @@ import {
   updateTag,
   validateTagName,
 } from "@/lib/stash-client";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -317,7 +317,6 @@ export function BookmarkClient({
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const tagOverflowRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
@@ -582,7 +581,7 @@ export function BookmarkClient({
     setUserMenuOpen(false);
 
     try {
-      await supabase.auth.signOut();
+      await authClient.signOut();
       router.replace("/auth/login");
     } catch {
       setNotice({ type: "error", message: "Logout failed. Please try again." });

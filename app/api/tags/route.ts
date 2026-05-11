@@ -1,20 +1,21 @@
+import { db } from "@/db/db";
 import { bookmarks, tags } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
-import { db } from "@/utils/db";
+import { auth } from "@/lib/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = data.user.id;
+    const user = session.user;
+    const userId = user.id;
 
     const allTags = await db.select().from(tags).where(eq(tags.userId, userId));
 
@@ -30,14 +31,16 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = data.user.id;
+    const user = session.user;
+    const userId = user.id;
     const body = await req.json();
 
     const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -83,14 +86,16 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = data.user.id;
+    const user = session.user;
+    const userId = user.id;
     const body = await req.json();
 
     const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -103,7 +108,7 @@ export async function PATCH(req: NextRequest) {
       .update(tags)
       .set({
         name,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(and(eq(tags.id, body.tagId), eq(tags.userId, userId)))
       .returning();
@@ -124,14 +129,16 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = data.user.id;
+    const user = session.user;
+    const userId = user.id;
     const body = await req.json();
     const { tagId } = body;
 

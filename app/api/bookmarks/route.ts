@@ -1,23 +1,26 @@
+import { db } from "@/db/db";
 import { bookmarks } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
-import { db } from "@/utils/db";
+import { auth } from "@/lib/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/bookmarks — fetch all bookmarks for the authenticated user
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
+
+    const user = session.user;
 
     const result = await db
       .select()
       .from(bookmarks)
-      .where(eq(bookmarks.userId, data.user.id))
+      .where(eq(bookmarks.userId, user.id))
       .orderBy(bookmarks.createdAt);
 
     return NextResponse.json(
@@ -34,12 +37,15 @@ export async function GET() {
 // Body: { tagId, url, title?, description? }
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
+
+    const user = session.user;
 
     const body = await req.json();
     const { tagId, url, title, description } = body;
@@ -56,7 +62,7 @@ export async function POST(req: NextRequest) {
     const [bookmark] = await db
       .insert(bookmarks)
       .values({
-        userId: data.user.id,
+        userId: user.id,
         tagId,
         url,
         title: title || null,
@@ -79,12 +85,15 @@ export async function POST(req: NextRequest) {
 // Body: { bookmarkId, tagId, url, title?, description? }
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
+
+    const user = session.user;
 
     const body = await req.json();
     const { bookmarkId, tagId, url, title, description } = body;
@@ -106,11 +115,9 @@ export async function PATCH(req: NextRequest) {
         title: title || null,
         hostname: parsedUrl.hostname,
         description: description || null,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
-      .where(
-        and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, data.user.id)),
-      )
+      .where(and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, user.id)))
       .returning();
 
     if (!updated) {
@@ -132,12 +139,15 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
 
-    if (error || !data.user) {
+    if (!session) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
+
+    const user = session.user;
 
     const body = await req.json();
     const { bookmarkId } = body;
@@ -151,9 +161,7 @@ export async function DELETE(req: NextRequest) {
 
     const [deletedBookmark] = await db
       .delete(bookmarks)
-      .where(
-        and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, data.user.id)),
-      )
+      .where(and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, user.id)))
       .returning();
 
     if (!deletedBookmark) {
