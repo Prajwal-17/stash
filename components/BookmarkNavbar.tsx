@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Popover,
   PopoverContent,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Tag, getTagLabel } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuChevronDown,
   LuLoaderCircle,
@@ -63,6 +64,23 @@ export function BookmarkNavbar({
 }: BookmarkNavbarProps) {
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLElement &&
+        ["INPUT", "TEXTAREA"].includes(e.target.tagName)
+      ) {
+        return;
+      }
+      if (e.key === "p" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
   const activeLabel = activeTag ? getTagLabel(activeTag) : "Inbox";
 
   return (
@@ -84,6 +102,9 @@ export function BookmarkNavbar({
                 )}
                 size={16}
               />
+              <Kbd className="ml-1 hidden sm:inline-flex">
+                <span className="text-[10px]">⌘</span>P
+              </Kbd>
             </button>
           </PopoverTrigger>
           <PopoverContent

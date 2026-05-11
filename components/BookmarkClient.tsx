@@ -12,6 +12,7 @@ import {
   EditBookmarkState,
   TagEditorState,
 } from "@/components/bookmark-client/types";
+import { BookmarkComposer } from "@/components/bookmark-client/BookmarkComposer";
 import {
   Drawer,
   FieldLabel,
@@ -41,8 +42,7 @@ import {
   normalizeUrl,
   validateTagName,
 } from "@/lib/stash-client";
-import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -75,6 +75,7 @@ export function BookmarkClient({
   const router = useRouter();
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [activeTagId, setActiveTagId] = useState<string | null>(
     getDefaultTagId(initialTags),
@@ -175,6 +176,17 @@ export function BookmarkClient({
     },
     setNotice: (nextNotice) => setNotice(nextNotice),
   });
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   async function ensureInboxTag() {
     const existingInbox = tags.find(
@@ -341,7 +353,7 @@ export function BookmarkClient({
   const showTagErrorState = tagsQuery.isError && !tags.length;
 
   return (
-    <div className="bg-background text-foreground min-h-dvh">
+    <div className="bg-background text-foreground flex h-dvh flex-col overflow-hidden">
       <Toaster
         position="top-center"
         toastOptions={{
@@ -353,25 +365,27 @@ export function BookmarkClient({
         }}
       />
 
-      <main className="relative mx-auto w-full max-w-3xl px-3 pt-4 pb-32 sm:px-5 sm:pt-8 sm:pb-36">
-        <div className="mx-auto w-full max-w-2xl">
-          <header className="mb-4">
-            <BookmarkNavbar
-              tags={tags}
-              activeTag={activeTag}
-              setActiveTagId={setActiveTagId}
-              setComposerTagId={setComposerTagId}
-              bookmarkCountByTag={bookmarkCountByTag}
-              visibleBookmarksCount={visibleBookmarks.length}
-              userInitial={userInitial}
-              userName={userName}
-              userEmail={userEmail}
-              handleLogout={handleLogout}
-              isLoggingOut={isLoggingOut}
-              setTagEditor={setTagEditor}
-            />
-          </header>
+      <div className="mx-auto w-full max-w-2xl px-3 pt-4 sm:px-5 sm:pt-8">
+        <header className="mb-4">
+          <BookmarkNavbar
+            tags={tags}
+            activeTag={activeTag}
+            setActiveTagId={setActiveTagId}
+            setComposerTagId={setComposerTagId}
+            bookmarkCountByTag={bookmarkCountByTag}
+            visibleBookmarksCount={visibleBookmarks.length}
+            userInitial={userInitial}
+            userName={userName}
+            userEmail={userEmail}
+            handleLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
+            setTagEditor={setTagEditor}
+          />
+        </header>
+      </div>
 
+      <main className="flex-1 overflow-y-auto px-3 sm:px-5">
+        <div className="mx-auto w-full max-w-2xl">
           <div className="mb-4 space-y-3">
             {tagsQuery.isError ? (
               <QueryStatus tone="error">
@@ -560,98 +574,19 @@ export function BookmarkClient({
         </div>
       </main>
 
-      <div className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-3xl">
-          <AnimatePresence>
-            {notice ? (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className={cn(
-                  "mb-3 rounded-2xl border px-3 py-2 text-sm",
-                  notice.type === "error"
-                    ? "border-red-500/20 bg-red-500/10 text-red-200"
-                    : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
-                )}
-              >
-                {notice.message}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="w-full sm:w-47.5 sm:shrink-0">
-              <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-[0.18em] uppercase">
-                Save to
-              </p>
-              <Select
-                {...(resolvedComposerTagId
-                  ? { value: resolvedComposerTagId }
-                  : {})}
-                disabled={!tags.length}
-                onValueChange={(value) => setComposerTagId(value)}
-              >
-                <SelectTrigger className="border-border bg-accent text-foreground h-11 w-full rounded-2xl text-left focus:ring-0 focus:ring-offset-0">
-                  <SelectValue placeholder="Inbox" />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-popover text-foreground rounded-2xl">
-                  {tags.length ? (
-                    tags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id}>
-                        {getTagLabel(tag)}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="__no_tags__" disabled>
-                      Inbox
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-1 items-end gap-2">
-              <Input
-                value={urlInput}
-                onChange={(event) => {
-                  setUrlInput(event.target.value);
-                  if (notice) {
-                    setNotice(null);
-                  }
-                }}
-                onKeyDown={handleComposerKeyDown}
-                placeholder="Paste a link"
-                disabled={createBookmarkMutation.isPending || showTagErrorState}
-                className="border-border text-foreground placeholder:text-muted-foreground focus:border-ring h-11 flex-1 bg-transparent px-4"
-              />
-
-              <Button
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 shrink-0 rounded-2xl px-4"
-                disabled={
-                  createBookmarkMutation.isPending ||
-                  !urlInput.trim() ||
-                  showTagErrorState
-                }
-                onClick={() => void handleSave()}
-              >
-                {createBookmarkMutation.isPending ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          </div>
-
-          {(isTagMutationPending || isBookmarkMutationPending) &&
-          !(createBookmarkMutation.isPending && urlInput.trim()) ? (
-            <div className="mt-3">
-              <QueryStatus compact>
-                <span className="inline-flex items-center gap-2">
-                  <LuLoaderCircle size={12} className="animate-spin" />
-                  Updating your stash...
-                </span>
-              </QueryStatus>
-            </div>
-          ) : null}
-        </div>
+      <div className="mx-auto w-full max-w-2xl px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:px-5">
+        <BookmarkComposer
+          urlInput={urlInput}
+          setUrlInput={setUrlInput}
+          handleComposerKeyDown={handleComposerKeyDown}
+          handleSave={handleSave}
+          isPending={createBookmarkMutation.isPending}
+          isSyncing={isTagMutationPending || isBookmarkMutationPending}
+          showTagErrorState={showTagErrorState}
+          inputRef={inputRef}
+          notice={notice}
+          setNotice={setNotice}
+        />
       </div>
 
       <TagEditorDialog
