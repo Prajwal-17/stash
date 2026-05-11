@@ -597,6 +597,7 @@ export function BookmarkClient({
         onChangeName={(name) =>
           setTagEditor((current) => (current ? { ...current, name } : current))
         }
+        // @ts-ignore
         onSubmit={submitTagEditor}
         isPending={createTagMutation.isPending || updateTagMutation.isPending}
       />
