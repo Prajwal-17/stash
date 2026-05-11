@@ -21,13 +21,13 @@ import {
 } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 import { FormEvent, InputHTMLAttributes, ReactNode, useState } from "react";
+import { LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <label className="block text-[11px] font-medium tracking-[0.18em] text-neutral-500 uppercase">
+    <label className="text-muted-foreground block text-[11px] font-medium tracking-[0.18em] uppercase">
       {children}
     </label>
   );
@@ -38,7 +38,7 @@ function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "h-11 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-neutral-700",
+        "border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-border h-11 w-full rounded-lg border px-3 text-sm outline-none",
         props.className,
       )}
     />
@@ -58,7 +58,7 @@ function InlineStatus({
         "rounded-lg px-3 py-2 text-sm",
         tone === "error"
           ? "bg-red-500/10 text-red-200"
-          : "bg-white/[0.04] text-neutral-400",
+          : "text-muted-foreground bg-white/[0.04]",
       )}
     >
       {children}
@@ -175,13 +175,15 @@ export function ShareHandler({
   const showTagsError = tagsQuery.isError && !tags.length;
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[#141414] p-4 text-neutral-100">
+    <div className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl"
+        className="border-border bg-card w-full max-w-sm rounded-xl border p-6 shadow-2xl"
       >
-        <h1 className="mb-2 text-lg font-medium text-white">Save Bookmark</h1>
-        <p className="mb-6 text-sm text-neutral-400">
+        <h1 className="text-foreground mb-2 text-lg font-medium">
+          Save Bookmark
+        </h1>
+        <p className="text-muted-foreground mb-6 text-sm">
           Review and save the shared link.
         </p>
 
@@ -237,7 +239,7 @@ export function ShareHandler({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-8 px-2 text-red-100 hover:bg-red-500/10 hover:text-white"
+                    className="hover:text-foreground h-8 px-2 text-red-100 hover:bg-red-500/10"
                     onClick={() => void tagsQuery.refetch()}
                   >
                     Retry
@@ -253,10 +255,10 @@ export function ShareHandler({
                       setTagId(value === "none" ? null : value)
                     }
                   >
-                    <SelectTrigger className="h-11 w-full border-neutral-800 bg-neutral-950 text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                    <SelectTrigger className="border-border bg-background text-foreground h-11 w-full focus:ring-0 focus:ring-offset-0">
                       <SelectValue placeholder="Select a Tag" />
                     </SelectTrigger>
-                    <SelectContent className="border-neutral-800 bg-[#1a1a1a] text-neutral-200">
+                    <SelectContent className="border-border bg-popover text-foreground">
                       {tags.length ? (
                         tags.map((tag) => (
                           <SelectItem key={tag.id} value={tag.id}>
@@ -289,14 +291,14 @@ export function ShareHandler({
           <Button
             type="button"
             variant="outline"
-            className="flex-1 rounded-lg border-neutral-800 bg-neutral-950 text-neutral-300 hover:bg-neutral-900 hover:text-white"
+            className="border-border bg-background text-muted-foreground hover:bg-card hover:text-foreground flex-1 rounded-lg"
             onClick={() => router.push("/")}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="flex-1 rounded-lg bg-neutral-100 text-black hover:bg-white"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-lg"
             disabled={isSaving || !url.trim() || showTagsError}
           >
             {isSaving ? "Saving..." : "Save bookmark"}

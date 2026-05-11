@@ -38,19 +38,19 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <div className="relative overflow-hidden rounded-2xl border border-neutral-800/90 bg-linear-to-b from-neutral-950 to-neutral-900 p-6 shadow-2xl shadow-black/30 sm:p-8">
-        <div className="pointer-events-none absolute -top-16 -right-20 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
+      <div className="border-border bg-card text-card-foreground relative overflow-hidden rounded-2xl border p-6 shadow-2xl shadow-black/30 sm:p-8">
+        <div className="bg-muted pointer-events-none absolute -top-16 -right-20 h-48 w-48 rounded-full blur-2xl" />
         <div className="relative">
-          <p className="text-sm font-semibold tracking-wide text-neutral-300">
+          <p className="text-muted-foreground text-sm font-semibold tracking-wide">
             STASH
           </p>
-          <h1 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
+          <h1 className="text-foreground mt-3 text-2xl font-semibold sm:text-3xl">
             Welcome back
           </h1>
-          <p className="mt-2 text-sm text-neutral-400">
+          <p className="text-muted-foreground mt-2 text-sm">
             Sign in with Google to access your bookmarks securely.
           </p>
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="text-muted-foreground mt-1 text-xs">
             Stash is a lightweight personal bookmark manager for saving and
             organizing links.
           </p>
@@ -72,7 +72,7 @@ export function LoginForm({
 
           <Button
             type="submit"
-            className="group h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-sm font-semibold text-neutral-900 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-neutral-50 hover:shadow-md"
+            className="group bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-xl px-4 text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -90,7 +90,7 @@ export function LoginForm({
           </Button>
         </form>
 
-        <div className="mt-5 flex items-center justify-center gap-2 text-xs text-neutral-400">
+        <div className="text-muted-foreground mt-5 flex items-center justify-center gap-2 text-xs">
           <LuShieldCheck size={14} />
           <span>Google OAuth secured login</span>
         </div>

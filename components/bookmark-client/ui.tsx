@@ -22,7 +22,7 @@ export function SurfaceButton({
     <Button
       variant="outline"
       className={cn(
-        "h-10 rounded-2xl border border-white/10 bg-white/4 text-neutral-200 shadow-none backdrop-blur hover:bg-white/8 hover:text-white",
+        "border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 rounded-2xl border shadow-none backdrop-blur",
         className,
       )}
       {...props}
@@ -34,7 +34,7 @@ export function SurfaceButton({
 
 export function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <label className="block text-[11px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
+    <label className="text-muted-foreground block text-[11px] font-semibold tracking-[0.18em] uppercase">
       {children}
     </label>
   );
@@ -64,7 +64,7 @@ export function Modal({
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[#111112] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)]"
+            className="border-border bg-card w-full max-w-lg rounded-[28px] border p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)]"
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -73,14 +73,18 @@ export function Modal({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-white">{title}</h2>
+                <h2 className="text-foreground text-lg font-semibold">
+                  {title}
+                </h2>
                 {description ? (
-                  <p className="mt-1 text-sm text-neutral-500">{description}</p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {description}
+                  </p>
                 ) : null}
               </div>
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/4 p-2 text-neutral-500 transition hover:text-white"
+                className="border-border bg-muted text-muted-foreground hover:text-foreground rounded-full border p-2 transition"
                 onClick={onClose}
               >
                 <LuX size={16} />
@@ -111,22 +115,21 @@ export function Drawer({
     <Sheet open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <SheetContent
         side="bottom"
-        className="w-full rounded-t-[28px] border-t border-white/10 bg-[#111112] px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
+        className="border-border bg-card w-full rounded-t-[28px] border-t px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
         {...(description ? {} : { "aria-describedby": undefined })}
       >
         <SheetClose asChild>
           <button
             type="button"
-            aria-label="Close drawer"
             className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
           />
         </SheetClose>
         <div className="mb-4">
-          <SheetTitle className="text-base font-semibold text-white">
+          <SheetTitle className="text-foreground text-base font-semibold">
             {title}
           </SheetTitle>
           {description ? (
-            <SheetDescription className="mt-1 text-sm text-neutral-500">
+            <SheetDescription className="text-muted-foreground mt-1 text-sm">
               {description}
             </SheetDescription>
           ) : null}
@@ -153,7 +156,7 @@ export function QueryStatus({
         compact ? "text-xs" : "text-sm",
         tone === "error"
           ? "bg-red-500/10 text-red-200"
-          : "bg-white/4 text-neutral-400",
+          : "bg-muted text-muted-foreground",
       )}
     >
       {children}

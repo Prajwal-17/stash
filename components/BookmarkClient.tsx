@@ -12,9 +12,6 @@ import {
   EditBookmarkState,
   TagEditorState,
 } from "@/components/bookmark-client/types";
-import { useBookmarkMutations } from "@/components/bookmark-client/hooks/use-bookmark-mutations";
-import { useBookmarkQueries } from "@/components/bookmark-client/hooks/use-bookmark-queries";
-import { useDismissableLayer } from "@/components/bookmark-client/hooks/use-dismissable-layer";
 import {
   Drawer,
   FieldLabel,
@@ -22,6 +19,8 @@ import {
   QueryStatus,
   SurfaceButton,
 } from "@/components/bookmark-client/ui";
+import { BookmarkNavbar } from "@/components/BookmarkNavbar";
+import { TagEditorDialog } from "@/components/TagEditorDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useBookmarkMutations } from "@/hooks/use-bookmark-mutations";
+import { useBookmarkQueries } from "@/hooks/use-bookmark-queries";
 import { authClient } from "@/lib/auth-client";
 import {
   Bookmark,
@@ -56,17 +57,13 @@ import { Toaster } from "react-hot-toast";
 import {
   LuCheck,
   LuCopy,
-  LuEllipsisVertical,
   LuExternalLink,
   LuLink2,
   LuLoaderCircle,
-  LuLogOut,
   LuPencil,
-  LuPlus,
   LuRefreshCw,
   LuTag,
   LuTrash2,
-  LuX,
 } from "react-icons/lu";
 export function BookmarkClient({
   initialBookmarks,
@@ -76,8 +73,6 @@ export function BookmarkClient({
   userName,
 }: BookmarkClientProps) {
   const router = useRouter();
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const tagOverflowRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
 
@@ -92,7 +87,6 @@ export function BookmarkClient({
     type: "error" | "success";
     message: string;
   } | null>(null);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [copiedBookmarkId, setCopiedBookmarkId] = useState<string | null>(null);
   const [bookmarkEditor, setBookmarkEditor] =
     useState<EditBookmarkState | null>(null);
@@ -101,15 +95,7 @@ export function BookmarkClient({
     null,
   );
   const [drawerBookmark, setDrawerBookmark] = useState<Bookmark | null>(null);
-  const [tagOverflowOpen, setTagOverflowOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  useDismissableLayer(userMenuOpen, () => setUserMenuOpen(false), userMenuRef);
-  useDismissableLayer(
-    tagOverflowOpen,
-    () => setTagOverflowOpen(false),
-    tagOverflowRef,
-  );
 
   useEffect(() => {
     return () => {
@@ -138,27 +124,6 @@ export function BookmarkClient({
     () => tags.find((tag) => tag.id === resolvedActiveTagId) ?? null,
     [resolvedActiveTagId, tags],
   );
-
-  const orderedTags = useMemo(() => {
-    if (!resolvedActiveTagId) {
-      return tags;
-    }
-
-    const activeIndex = tags.findIndex((tag) => tag.id === resolvedActiveTagId);
-    if (activeIndex <= 3) {
-      return tags;
-    }
-
-    const active = tags[activeIndex];
-    return [
-      active,
-      ...tags.slice(0, activeIndex),
-      ...tags.slice(activeIndex + 1),
-    ];
-  }, [resolvedActiveTagId, tags]);
-
-  const visibleTagChips = useMemo(() => orderedTags.slice(0, 4), [orderedTags]);
-  const hiddenTags = useMemo(() => orderedTags.slice(4), [orderedTags]);
 
   const bookmarkCountByTag = useMemo(() => {
     const counts = new Map<string, number>();
@@ -193,12 +158,10 @@ export function BookmarkClient({
     onTagCreated: (tag) => {
       setActiveTagId(tag.id);
       setComposerTagId(tag.id);
-      setTagOverflowOpen(false);
     },
     onTagDeleted: (tagId) => {
       setActiveTagId((current) => (current === tagId ? null : current));
       setComposerTagId((current) => (current === tagId ? null : current));
-      setTagOverflowOpen(false);
     },
     onBookmarkCreated: () => {
       setUrlInput("");
@@ -245,7 +208,6 @@ export function BookmarkClient({
     }
 
     setIsLoggingOut(true);
-    setUserMenuOpen(false);
 
     try {
       await authClient.signOut();
@@ -319,7 +281,6 @@ export function BookmarkClient({
 
   function openBookmarkEditor(bookmark: Bookmark) {
     setDrawerBookmark(null);
-    setTagOverflowOpen(false);
     setBookmarkEditor({
       bookmarkId: bookmark.id,
       url: bookmark.url,
@@ -364,7 +325,6 @@ export function BookmarkClient({
 
   function openDeleteConfirmation(confirmationState: ConfirmationState) {
     setDrawerBookmark(null);
-    setTagOverflowOpen(false);
     setConfirmation(confirmationState);
   }
 
@@ -381,7 +341,7 @@ export function BookmarkClient({
   const showTagErrorState = tagsQuery.isError && !tags.length;
 
   return (
-    <div className="min-h-dvh bg-[#090909] text-neutral-100">
+    <div className="bg-background text-foreground min-h-dvh">
       <Toaster
         position="top-center"
         toastOptions={{
@@ -392,254 +352,27 @@ export function BookmarkClient({
           },
         }}
       />
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%),linear-gradient(180deg,#090909_0%,#0c0c0d_100%)]" />
 
       <main className="relative mx-auto w-full max-w-3xl px-3 pt-4 pb-32 sm:px-5 sm:pt-8 sm:pb-36">
         <div className="mx-auto w-full max-w-2xl">
-          <header className="mb-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-neutral-100">
-                {activeTag ? getTagLabel(activeTag) : "All bookmarks"}
-              </p>
-              <p className="text-xs text-neutral-500">
-                {visibleBookmarks.length} links
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={() => setUserMenuOpen((current) => !current)}
-                  disabled={isLoggingOut}
-                  aria-disabled={isLoggingOut}
-                >
-                  {userInitial}
-                </button>
-
-                <AnimatePresence>
-                  {userMenuOpen ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="absolute top-11 right-0 z-50 w-60 rounded-2xl border border-white/10 bg-[#151515] p-2 shadow-2xl"
-                    >
-                      <div className="rounded-xl px-3 py-2.5">
-                        <p className="truncate text-sm text-white">
-                          {userName}
-                        </p>
-                        <p className="truncate text-xs text-neutral-500">
-                          {userEmail}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-neutral-300 transition hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
-                      >
-                        {isLoggingOut ? (
-                          <>
-                            Logging out...
-                            <LuLoaderCircle
-                              size={16}
-                              className="animate-spin"
-                            />
-                          </>
-                        ) : (
-                          <>
-                            Logout
-                            <LuLogOut size={16} />
-                          </>
-                        )}
-                      </button>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-              </div>
-            </div>
+          <header className="mb-4">
+            <BookmarkNavbar
+              tags={tags}
+              activeTag={activeTag}
+              setActiveTagId={setActiveTagId}
+              setComposerTagId={setComposerTagId}
+              bookmarkCountByTag={bookmarkCountByTag}
+              visibleBookmarksCount={visibleBookmarks.length}
+              userInitial={userInitial}
+              userName={userName}
+              userEmail={userEmail}
+              handleLogout={handleLogout}
+              isLoggingOut={isLoggingOut}
+              setTagEditor={setTagEditor}
+            />
           </header>
 
           <div className="mb-4 space-y-3">
-            <div className="-mx-1 overflow-x-auto px-1">
-              <div className="flex w-max items-center gap-2">
-                <button
-                  type="button"
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-sm transition",
-                    resolvedActiveTagId === null
-                      ? "bg-white text-black"
-                      : "bg-white/6 text-neutral-300 hover:bg-white/10",
-                  )}
-                  onClick={() => setActiveTagId(null)}
-                >
-                  All
-                </button>
-
-                {showTagLoadState ? (
-                  <QueryStatus compact>
-                    <span className="inline-flex items-center gap-2">
-                      <LuLoaderCircle size={12} className="animate-spin" />
-                      Loading tags...
-                    </span>
-                  </QueryStatus>
-                ) : null}
-
-                {visibleTagChips.map((tag) => {
-                  const isActive = resolvedActiveTagId === tag.id;
-
-                  if (!isActive) {
-                    return (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        className="rounded-full bg-white/6 px-3 py-1.5 text-sm text-neutral-300 transition hover:bg-white/10"
-                        onClick={() => {
-                          setActiveTagId(tag.id);
-                          setComposerTagId(tag.id);
-                        }}
-                      >
-                        {getTagLabel(tag)}
-                      </button>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={tag.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-sm text-black"
-                    >
-                      <button
-                        type="button"
-                        className="rounded-full px-1 py-0.5 transition hover:bg-black/6"
-                        onClick={() => {
-                          setActiveTagId(tag.id);
-                          setComposerTagId(tag.id);
-                        }}
-                      >
-                        {getTagLabel(tag)}
-                      </button>
-                      <span className="text-[10px] text-black/55">
-                        {bookmarkCountByTag.get(tag.id) ?? 0}
-                      </span>
-                      <span className="mx-0.5 h-3.5 w-px bg-black/15" />
-                      <button
-                        type="button"
-                        className="rounded-full p-1 text-black/60 transition hover:bg-black/8 hover:text-black"
-                        onClick={() =>
-                          setTagEditor({
-                            mode: "edit",
-                            tagId: tag.id,
-                            name: tag.name ?? "",
-                          })
-                        }
-                      >
-                        <LuPencil size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-full p-1 text-black/60 transition hover:bg-black/8 hover:text-black disabled:opacity-40"
-                        disabled={deleteTagMutation.isPending}
-                        onClick={() =>
-                          openDeleteConfirmation({
-                            kind: "tag",
-                            id: tag.id,
-                            title: `Delete ${tag.name ?? "tag"}?`,
-                            description:
-                              "This also deletes all bookmarks currently inside the tag.",
-                            confirmLabel: "Delete tag",
-                          })
-                        }
-                      >
-                        <LuX size={12} />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                <button
-                  type="button"
-                  className="flex size-8 items-center justify-center rounded-full bg-white/6 text-neutral-300 transition hover:bg-white/10 hover:text-white"
-                  onClick={() => setTagEditor({ mode: "create", name: "" })}
-                >
-                  <LuPlus size={14} />
-                </button>
-
-                {hiddenTags.length ? (
-                  <div className="relative" ref={tagOverflowRef}>
-                    <button
-                      type="button"
-                      className="flex size-8 items-center justify-center rounded-full bg-white/6 text-neutral-300 transition hover:bg-white/10 hover:text-white"
-                      onClick={() => setTagOverflowOpen((current) => !current)}
-                    >
-                      <LuEllipsisVertical size={14} />
-                    </button>
-
-                    <AnimatePresence>
-                      {tagOverflowOpen ? (
-                        <motion.div
-                          initial={{ opacity: 0, y: -6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -6 }}
-                          className="absolute top-10 right-0 z-40 w-64 rounded-2xl border border-white/10 bg-[#151515] p-2 shadow-2xl"
-                        >
-                          <div className="max-h-72 space-y-1 overflow-y-auto">
-                            {hiddenTags.map((tag) => (
-                              <div
-                                key={tag.id}
-                                className="flex items-center gap-2 rounded-xl px-2 py-1"
-                              >
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    "flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition",
-                                    resolvedActiveTagId === tag.id
-                                      ? "bg-white text-black"
-                                      : "text-neutral-200 hover:bg-white/6",
-                                  )}
-                                  onClick={() => {
-                                    setActiveTagId(tag.id);
-                                    setComposerTagId(tag.id);
-                                    setTagOverflowOpen(false);
-                                  }}
-                                >
-                                  <span className="truncate">
-                                    {getTagLabel(tag)}
-                                  </span>
-                                  <span className="ml-3 shrink-0 text-xs opacity-65">
-                                    {bookmarkCountByTag.get(tag.id) ?? 0}
-                                  </span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="flex size-8 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
-                                  disabled={deleteTagMutation.isPending}
-                                  onClick={() => {
-                                    openDeleteConfirmation({
-                                      kind: "tag",
-                                      id: tag.id,
-                                      title: `Delete ${tag.name ?? "tag"}?`,
-                                      description:
-                                        "This also deletes all bookmarks currently inside the tag.",
-                                      confirmLabel: "Delete tag",
-                                    });
-                                  }}
-                                >
-                                  <LuTrash2 size={14} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
             {tagsQuery.isError ? (
               <QueryStatus tone="error">
                 <div className="flex items-center justify-between gap-3">
@@ -651,7 +384,7 @@ export function BookmarkClient({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-8 px-2 text-red-100 hover:bg-red-500/10 hover:text-white"
+                    className="hover:text-foreground h-8 px-2 text-red-100 hover:bg-red-500/10"
                     onClick={() => void tagsQuery.refetch()}
                   >
                     Retry
@@ -667,7 +400,7 @@ export function BookmarkClient({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-8 px-2 text-neutral-200 hover:bg-white/6 hover:text-white"
+                    className="text-foreground hover:bg-accent hover:text-foreground h-8 px-2"
                     onClick={() => setTagEditor({ mode: "create", name: "" })}
                   >
                     New tag
@@ -697,7 +430,7 @@ export function BookmarkClient({
                 <Button
                   type="button"
                   variant="ghost"
-                  className="h-8 px-2 text-red-100 hover:bg-red-500/10 hover:text-white"
+                  className="hover:text-foreground h-8 px-2 text-red-100 hover:bg-red-500/10"
                   onClick={() => void bookmarksQuery.refetch()}
                 >
                   Retry
@@ -726,7 +459,7 @@ export function BookmarkClient({
                 return (
                   <motion.li key={bookmark.id} layout className="group py-1">
                     <div
-                      className="cursor-pointer rounded-2xl px-2 py-3 transition duration-200 hover:bg-white/4"
+                      className="hover:bg-muted cursor-pointer rounded-2xl px-2 py-3 transition duration-200"
                       onPointerDown={() => queueLongPress(bookmark)}
                       onPointerUp={clearLongPress}
                       onPointerCancel={clearLongPress}
@@ -746,10 +479,10 @@ export function BookmarkClient({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-neutral-100">
+                          <p className="text-foreground truncate text-sm font-medium">
                             {title}
                           </p>
-                          <p className="mt-1 truncate text-xs text-neutral-500">
+                          <p className="text-muted-foreground mt-1 truncate text-xs">
                             {bookmark.url}
                           </p>
                         </div>
@@ -757,7 +490,7 @@ export function BookmarkClient({
                         <div className="flex shrink-0 items-center gap-0.5 self-center sm:gap-1">
                           <button
                             type="button"
-                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/6 hover:text-white sm:size-9"
+                            className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-xl transition sm:size-9"
                             onClick={(event) => {
                               event.stopPropagation();
                               void copyText(bookmark.url, bookmark.id);
@@ -773,14 +506,14 @@ export function BookmarkClient({
                             href={bookmark.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/6 hover:text-white sm:size-9"
+                            className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-xl transition sm:size-9"
                             onClick={(event) => event.stopPropagation()}
                           >
                             <LuExternalLink size={16} />
                           </a>
                           <button
                             type="button"
-                            className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/6 hover:text-white sm:flex"
+                            className="text-muted-foreground hover:bg-accent hover:text-foreground hidden size-9 items-center justify-center rounded-xl transition sm:flex"
                             onClick={(event) => {
                               event.stopPropagation();
                               openBookmarkEditor(bookmark);
@@ -790,7 +523,7 @@ export function BookmarkClient({
                           </button>
                           <button
                             type="button"
-                            className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-red-500/10 hover:text-red-300 sm:flex"
+                            className="text-muted-foreground hidden size-9 items-center justify-center rounded-xl transition hover:bg-red-500/10 hover:text-red-300 sm:flex"
                             onClick={(event) => {
                               event.stopPropagation();
                               openDeleteConfirmation({
@@ -827,7 +560,7 @@ export function BookmarkClient({
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0b0b0c]/95 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-xl">
+      <div className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-xl">
         <div className="mx-auto w-full max-w-3xl">
           <AnimatePresence>
             {notice ? (
@@ -849,7 +582,7 @@ export function BookmarkClient({
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="w-full sm:w-47.5 sm:shrink-0">
-              <p className="mb-1 text-[10px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
+              <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-[0.18em] uppercase">
                 Save to
               </p>
               <Select
@@ -859,10 +592,10 @@ export function BookmarkClient({
                 disabled={!tags.length}
                 onValueChange={(value) => setComposerTagId(value)}
               >
-                <SelectTrigger className="h-11 w-full rounded-2xl border-white/10 bg-white/6 text-left text-neutral-200 focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="border-border bg-accent text-foreground h-11 w-full rounded-2xl text-left focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Inbox" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
+                <SelectContent className="border-border bg-popover text-foreground rounded-2xl">
                   {tags.length ? (
                     tags.map((tag) => (
                       <SelectItem key={tag.id} value={tag.id}>
@@ -890,11 +623,11 @@ export function BookmarkClient({
                 onKeyDown={handleComposerKeyDown}
                 placeholder="Paste a link"
                 disabled={createBookmarkMutation.isPending || showTagErrorState}
-                className="h-11 flex-1 border-white/10 bg-transparent px-4 text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+                className="border-border text-foreground placeholder:text-muted-foreground focus:border-ring h-11 flex-1 bg-transparent px-4"
               />
 
               <Button
-                className="h-11 shrink-0 rounded-2xl bg-white px-4 text-black hover:bg-neutral-200"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 shrink-0 rounded-2xl px-4"
                 disabled={
                   createBookmarkMutation.isPending ||
                   !urlInput.trim() ||
@@ -921,50 +654,17 @@ export function BookmarkClient({
         </div>
       </div>
 
-      <Modal
-        open={tagEditor !== null}
-        onClose={() => setTagEditor(null)}
-        title={tagEditor?.mode === "create" ? "Create tag" : "Edit tag"}
-      >
-        <form
-          className="space-y-4"
-          onSubmit={(event) => void submitTagEditor(event)}
-        >
-          <div className="space-y-2">
-            <FieldLabel>Name</FieldLabel>
-            <Input
-              autoFocus
-              value={tagEditor?.name ?? ""}
-              onChange={(event) =>
-                setTagEditor((current) =>
-                  current ? { ...current, name: event.target.value } : current,
-                )
-              }
-              placeholder="Reading"
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <SurfaceButton
-              type="button"
-              onClick={() => setTagEditor(null)}
-              disabled={isTagMutationPending}
-            >
-              Cancel
-            </SurfaceButton>
-            <Button
-              type="submit"
-              className="h-10 rounded-2xl bg-neutral-950 px-4 text-white hover:bg-neutral-800"
-              disabled={isTagMutationPending}
-            >
-              {createTagMutation.isPending || updateTagMutation.isPending
-                ? "Saving..."
-                : "Save"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      <TagEditorDialog
+        editorState={tagEditor}
+        onOpenChange={(open) => {
+          if (!open) setTagEditor(null);
+        }}
+        onChangeName={(name) =>
+          setTagEditor((current) => (current ? { ...current, name } : current))
+        }
+        onSubmit={submitTagEditor}
+        isPending={createTagMutation.isPending || updateTagMutation.isPending}
+      />
 
       <Modal
         open={bookmarkEditor !== null}
@@ -985,7 +685,7 @@ export function BookmarkClient({
                   current ? { ...current, url: event.target.value } : current,
                 )
               }
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+              className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-2xl border px-4 text-sm"
             />
           </div>
 
@@ -1001,7 +701,7 @@ export function BookmarkClient({
                       : current,
                   )
                 }
-                className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-2xl border px-4 text-sm"
               />
             </div>
 
@@ -1015,10 +715,10 @@ export function BookmarkClient({
                   )
                 }
               >
-                <SelectTrigger className="h-12 w-full rounded-2xl border-white/10 bg-white/6 text-neutral-200 shadow-none focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="border-border bg-accent text-foreground h-12 w-full rounded-2xl shadow-none focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Select a Tag" />
                 </SelectTrigger>
-                <SelectContent className="z-80 rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
+                <SelectContent className="border-border bg-popover text-foreground z-80 rounded-2xl">
                   {tags.map((tag) => (
                     <SelectItem key={tag.id} value={tag.id}>
                       {getTagLabel(tag)}
@@ -1040,7 +740,7 @@ export function BookmarkClient({
                     : current,
                 )
               }
-              className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+              className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring min-h-28 w-full rounded-2xl border px-4 py-3 text-sm"
             />
           </div>
 
@@ -1054,7 +754,7 @@ export function BookmarkClient({
             </SurfaceButton>
             <Button
               type="submit"
-              className="h-10 rounded-2xl bg-neutral-950 px-4 text-white hover:bg-neutral-800"
+              className="bg-background text-foreground hover:bg-accent h-10 rounded-2xl px-4"
               disabled={updateBookmarkMutation.isPending}
             >
               {updateBookmarkMutation.isPending ? "Saving..." : "Save changes"}
@@ -1120,14 +820,14 @@ export function BookmarkClient({
       >
         {drawerBookmark ? (
           <div className="space-y-2">
-            <div className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3">
-              <p className="text-sm break-all text-neutral-200">
+            <div className="border-border bg-muted rounded-2xl border px-4 py-3">
+              <p className="text-foreground text-sm break-all">
                 {getUrlPath(drawerBookmark.url)}
               </p>
             </div>
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-left text-sm text-neutral-900"
+              className="bg-accent0 flex w-full items-center justify-between rounded-2xl px-4 py-4 text-left text-sm text-neutral-900"
               onClick={() =>
                 void copyText(drawerBookmark.url, drawerBookmark.id)
               }
@@ -1144,24 +844,24 @@ export function BookmarkClient({
               href={drawerBookmark.url}
               target="_blank"
               rel="noreferrer"
-              className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-sm text-neutral-900"
+              className="bg-accent0 flex w-full items-center justify-between rounded-2xl px-4 py-4 text-sm text-neutral-900"
             >
               <span className="flex items-center gap-3">
                 <LuExternalLink size={18} className="text-neutral-700" />
                 Open link
               </span>
-              <LuLink2 size={16} className="text-neutral-500" />
+              <LuLink2 size={16} className="text-muted-foreground" />
             </a>
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-left text-sm text-neutral-900"
+              className="bg-accent0 flex w-full items-center justify-between rounded-2xl px-4 py-4 text-left text-sm text-neutral-900"
               onClick={() => openBookmarkEditor(drawerBookmark)}
             >
               <span className="flex items-center gap-3">
                 <LuPencil size={18} className="text-neutral-700" />
                 Edit bookmark
               </span>
-              <LuTag size={16} className="text-neutral-500" />
+              <LuTag size={16} className="text-muted-foreground" />
             </button>
             <button
               type="button"
