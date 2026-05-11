@@ -1,5 +1,27 @@
 "use client";
 
+import {
+  getBookmarkTitle,
+  getFaviconUrl,
+  getHostname,
+  getUrlPath,
+} from "@/components/bookmark-client/helpers";
+import {
+  BookmarkClientProps,
+  ConfirmationState,
+  EditBookmarkState,
+  TagEditorState,
+} from "@/components/bookmark-client/types";
+import { useBookmarkMutations } from "@/components/bookmark-client/hooks/use-bookmark-mutations";
+import { useBookmarkQueries } from "@/components/bookmark-client/hooks/use-bookmark-queries";
+import { useDismissableLayer } from "@/components/bookmark-client/hooks/use-dismissable-layer";
+import {
+  Drawer,
+  FieldLabel,
+  Modal,
+  QueryStatus,
+  SurfaceButton,
+} from "@/components/bookmark-client/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,314 +31,51 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 import {
   Bookmark,
-  createBookmark,
-  createTag,
-  deleteBookmark,
-  deleteTag,
-  fetchBookmarks,
-  fetchTags,
   getDefaultTagId,
   getTagLabel,
-  MutationError,
   normalizeUrl,
-  stashQueryKeys,
-  Tag,
-  updateBookmark,
-  updateTag,
   validateTagName,
 } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Check,
-  Copy,
-  EllipsisVertical,
-  ExternalLink,
-  Link2,
-  LoaderCircle,
-  LogOut,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Tag as TagIcon,
-  Trash2,
-  X,
-} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ComponentProps,
   FormEvent,
   KeyboardEvent as ReactKeyboardEvent,
-  ReactNode,
-  RefObject,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-
-interface Props {
-  initialBookmarks: Bookmark[];
-  initialTags: Tag[];
-  userEmail: string;
-  userInitial: string;
-  userName: string;
-}
-
-interface EditBookmarkState {
-  bookmarkId: string;
-  url: string;
-  title: string;
-  description: string;
-  tagId: string;
-}
-
-interface TagEditorState {
-  mode: "create" | "edit";
-  tagId?: string;
-  name: string;
-}
-
-interface ConfirmationState {
-  kind: "bookmark" | "tag";
-  id: string;
-  title: string;
-  description: string;
-  confirmLabel: string;
-}
-
-function getHostname(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
-
-function getUrlPath(url: string) {
-  try {
-    const parsed = new URL(url);
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return url;
-  }
-}
-
-function getBookmarkTitle(bookmark: Bookmark) {
-  return bookmark.title?.trim() || getHostname(bookmark.url);
-}
-
-function getFaviconUrl(hostname: string) {
-  return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(hostname)}`;
-}
-
-function useDismissableLayer(
-  open: boolean,
-  onDismiss: () => void,
-  containerRef: RefObject<HTMLElement | null>,
-) {
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-      if (containerRef.current?.contains(target)) {
-        return;
-      }
-      onDismiss();
-    };
-
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onDismiss();
-      }
-    };
-
-    window.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      window.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [containerRef, onDismiss, open]);
-}
-
-function SurfaceButton({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      variant="outline"
-      className={cn(
-        "h-10 rounded-2xl border border-white/10 bg-white/[0.04] text-neutral-200 shadow-none backdrop-blur hover:bg-white/[0.08] hover:text-white",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </Button>
-  );
-}
-
-function FieldLabel({ children }: { children: ReactNode }) {
-  return (
-    <label className="block text-[11px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
-      {children}
-    </label>
-  );
-}
-
-function Modal({
-  title,
-  description,
-  open,
-  onClose,
-  children,
-}: {
-  title: string;
-  description?: string;
-  open: boolean;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-        >
-          <motion.div
-            className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[#111112] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)]"
-            initial={{ opacity: 0, y: 12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-white">{title}</h2>
-                {description ? (
-                  <p className="mt-1 text-sm text-neutral-500">{description}</p>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                className="rounded-full border border-white/10 bg-white/[0.04] p-2 text-neutral-500 transition hover:text-white"
-                onClick={onClose}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="mt-5">{children}</div>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
-  );
-}
-
-function Drawer({
-  open,
-  onClose,
-  title,
-  description,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <Sheet open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <SheetContent
-        side="bottom"
-        className="w-full rounded-t-[28px] border-t border-white/10 bg-[#111112] px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
-        {...(description ? {} : { "aria-describedby": undefined })}
-      >
-        <SheetClose asChild>
-          <button
-            type="button"
-            aria-label="Close drawer"
-            className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
-          />
-        </SheetClose>
-        <div className="mb-4">
-          <SheetTitle className="text-base font-semibold text-white">
-            {title}
-          </SheetTitle>
-          {description ? (
-            <SheetDescription className="mt-1 text-sm text-neutral-500">
-              {description}
-            </SheetDescription>
-          ) : null}
-        </div>
-        {children}
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function QueryStatus({
-  children,
-  tone = "muted",
-  compact = false,
-}: {
-  children: ReactNode;
-  tone?: "muted" | "error";
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-2xl px-3 py-2 text-sm",
-        compact ? "text-xs" : "text-sm",
-        tone === "error"
-          ? "bg-red-500/10 text-red-200"
-          : "bg-white/[0.04] text-neutral-400",
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
+import { Toaster } from "react-hot-toast";
+import {
+  LuCheck,
+  LuCopy,
+  LuEllipsisVertical,
+  LuExternalLink,
+  LuLink2,
+  LuLoaderCircle,
+  LuLogOut,
+  LuPencil,
+  LuPlus,
+  LuRefreshCw,
+  LuTag,
+  LuTrash2,
+  LuX,
+} from "react-icons/lu";
 export function BookmarkClient({
   initialBookmarks,
   initialTags,
   userEmail,
   userInitial,
   userName,
-}: Props) {
+}: BookmarkClientProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const tagOverflowRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
@@ -360,20 +119,10 @@ export function BookmarkClient({
     };
   }, []);
 
-  const tagsQuery = useQuery({
-    queryKey: stashQueryKeys.tags,
-    queryFn: fetchTags,
-    initialData: initialTags,
+  const { tagsQuery, bookmarksQuery, tags, bookmarks } = useBookmarkQueries({
+    initialBookmarks,
+    initialTags,
   });
-
-  const bookmarksQuery = useQuery({
-    queryKey: stashQueryKeys.bookmarks,
-    queryFn: fetchBookmarks,
-    initialData: initialBookmarks,
-  });
-
-  const tags = tagsQuery.data ?? initialTags;
-  const bookmarks = bookmarksQuery.data ?? initialBookmarks;
 
   const resolvedActiveTagId =
     activeTagId && tags.some((tag) => tag.id === activeTagId)
@@ -433,117 +182,35 @@ export function BookmarkClient({
       );
   }, [bookmarks, resolvedActiveTagId]);
 
-  const createTagMutation = useMutation({
-    mutationFn: (name: string) => createTag(name),
-    onSuccess: (tag) => {
-      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) => [
-        ...current,
-        tag,
-      ]);
+  const {
+    createTagMutation,
+    updateTagMutation,
+    deleteTagMutation,
+    createBookmarkMutation,
+    updateBookmarkMutation,
+    deleteBookmarkMutation,
+  } = useBookmarkMutations({
+    onTagCreated: (tag) => {
       setActiveTagId(tag.id);
       setComposerTagId(tag.id);
       setTagOverflowOpen(false);
-      setNotice({ type: "success", message: "Tag created." });
     },
-    onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
-    },
-  });
-
-  const updateTagMutation = useMutation({
-    mutationFn: ({ tagId, name }: { tagId: string; name: string }) =>
-      updateTag({ tagId, name }),
-    onSuccess: (updatedTag) => {
-      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
-        current.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag)),
-      );
-      setNotice({ type: "success", message: "Tag updated." });
-    },
-    onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
-    },
-  });
-
-  const deleteTagMutation = useMutation({
-    mutationFn: (tagId: string) => deleteTag(tagId),
-    onSuccess: (_, tagId) => {
-      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
-        current.filter((tag) => tag.id !== tagId),
-      );
-      queryClient.setQueryData<Bookmark[]>(
-        stashQueryKeys.bookmarks,
-        (current = []) =>
-          current.filter((bookmark) => bookmark.tagId !== tagId),
-      );
+    onTagDeleted: (tagId) => {
       setActiveTagId((current) => (current === tagId ? null : current));
       setComposerTagId((current) => (current === tagId ? null : current));
       setTagOverflowOpen(false);
-      setNotice({ type: "success", message: "Tag deleted." });
     },
-    onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
-    },
-  });
-
-  const createBookmarkMutation = useMutation({
-    mutationFn: (payload: {
-      url: string;
-      tagId: string;
-      title?: string;
-      description?: string;
-    }) => createBookmark(payload),
-    onSuccess: (bookmark) => {
-      queryClient.setQueryData<Bookmark[]>(
-        stashQueryKeys.bookmarks,
-        (current = []) => [bookmark, ...current],
-      );
+    onBookmarkCreated: () => {
       setUrlInput("");
-      setNotice({ type: "success", message: "Bookmark saved." });
     },
-    onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
-    },
-  });
-
-  const updateBookmarkMutation = useMutation({
-    mutationFn: (payload: {
-      bookmarkId: string;
-      tagId: string;
-      url: string;
-      title?: string;
-      description?: string;
-    }) => updateBookmark(payload),
-    onSuccess: (updatedBookmark) => {
-      queryClient.setQueryData<Bookmark[]>(
-        stashQueryKeys.bookmarks,
-        (current = []) =>
-          current.map((bookmark) =>
-            bookmark.id === updatedBookmark.id ? updatedBookmark : bookmark,
-          ),
-      );
+    onBookmarkUpdated: () => {
       setBookmarkEditor(null);
       setDrawerBookmark(null);
-      setNotice({ type: "success", message: "Bookmark updated." });
     },
-    onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
-    },
-  });
-
-  const deleteBookmarkMutation = useMutation({
-    mutationFn: (bookmarkId: string) => deleteBookmark(bookmarkId),
-    onSuccess: (_, bookmarkId) => {
-      queryClient.setQueryData<Bookmark[]>(
-        stashQueryKeys.bookmarks,
-        (current = []) =>
-          current.filter((bookmark) => bookmark.id !== bookmarkId),
-      );
+    onBookmarkDeleted: () => {
       setDrawerBookmark(null);
-      setNotice({ type: "success", message: "Bookmark deleted." });
     },
-    onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
-    },
+    setNotice: (nextNotice) => setNotice(nextNotice),
   });
 
   async function ensureInboxTag() {
@@ -715,7 +382,17 @@ export function BookmarkClient({
 
   return (
     <div className="min-h-dvh bg-[#090909] text-neutral-100">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_28%),linear-gradient(180deg,_#090909_0%,_#0c0c0d_100%)]" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#151515",
+            color: "#f5f5f5",
+            border: "1px solid rgba(255,255,255,0.12)",
+          },
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%),linear-gradient(180deg,#090909_0%,#0c0c0d_100%)]" />
 
       <main className="relative mx-auto w-full max-w-3xl px-3 pt-4 pb-32 sm:px-5 sm:pt-8 sm:pb-36">
         <div className="mx-auto w-full max-w-2xl">
@@ -733,7 +410,7 @@ export function BookmarkClient({
               <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
-                  className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => setUserMenuOpen((current) => !current)}
                   disabled={isLoggingOut}
                   aria-disabled={isLoggingOut}
@@ -759,19 +436,22 @@ export function BookmarkClient({
                       </div>
                       <button
                         type="button"
-                        className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-neutral-300 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-neutral-300 transition hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={handleLogout}
                         disabled={isLoggingOut}
                       >
                         {isLoggingOut ? (
                           <>
                             Logging out...
-                            <LoaderCircle size={16} className="animate-spin" />
+                            <LuLoaderCircle
+                              size={16}
+                              className="animate-spin"
+                            />
                           </>
                         ) : (
                           <>
                             Logout
-                            <LogOut size={16} />
+                            <LuLogOut size={16} />
                           </>
                         )}
                       </button>
@@ -791,7 +471,7 @@ export function BookmarkClient({
                     "rounded-full px-3 py-1.5 text-sm transition",
                     resolvedActiveTagId === null
                       ? "bg-white text-black"
-                      : "bg-white/[0.06] text-neutral-300 hover:bg-white/[0.1]",
+                      : "bg-white/6 text-neutral-300 hover:bg-white/10",
                   )}
                   onClick={() => setActiveTagId(null)}
                 >
@@ -801,7 +481,7 @@ export function BookmarkClient({
                 {showTagLoadState ? (
                   <QueryStatus compact>
                     <span className="inline-flex items-center gap-2">
-                      <LoaderCircle size={12} className="animate-spin" />
+                      <LuLoaderCircle size={12} className="animate-spin" />
                       Loading tags...
                     </span>
                   </QueryStatus>
@@ -815,7 +495,7 @@ export function BookmarkClient({
                       <button
                         key={tag.id}
                         type="button"
-                        className="rounded-full bg-white/[0.06] px-3 py-1.5 text-sm text-neutral-300 transition hover:bg-white/[0.1]"
+                        className="rounded-full bg-white/6 px-3 py-1.5 text-sm text-neutral-300 transition hover:bg-white/10"
                         onClick={() => {
                           setActiveTagId(tag.id);
                           setComposerTagId(tag.id);
@@ -856,7 +536,7 @@ export function BookmarkClient({
                           })
                         }
                       >
-                        <Pencil size={12} />
+                        <LuPencil size={12} />
                       </button>
                       <button
                         type="button"
@@ -873,7 +553,7 @@ export function BookmarkClient({
                           })
                         }
                       >
-                        <X size={12} />
+                        <LuX size={12} />
                       </button>
                     </div>
                   );
@@ -881,20 +561,20 @@ export function BookmarkClient({
 
                 <button
                   type="button"
-                  className="flex size-8 items-center justify-center rounded-full bg-white/[0.06] text-neutral-300 transition hover:bg-white/[0.1] hover:text-white"
+                  className="flex size-8 items-center justify-center rounded-full bg-white/6 text-neutral-300 transition hover:bg-white/10 hover:text-white"
                   onClick={() => setTagEditor({ mode: "create", name: "" })}
                 >
-                  <Plus size={14} />
+                  <LuPlus size={14} />
                 </button>
 
                 {hiddenTags.length ? (
                   <div className="relative" ref={tagOverflowRef}>
                     <button
                       type="button"
-                      className="flex size-8 items-center justify-center rounded-full bg-white/[0.06] text-neutral-300 transition hover:bg-white/[0.1] hover:text-white"
+                      className="flex size-8 items-center justify-center rounded-full bg-white/6 text-neutral-300 transition hover:bg-white/10 hover:text-white"
                       onClick={() => setTagOverflowOpen((current) => !current)}
                     >
-                      <EllipsisVertical size={14} />
+                      <LuEllipsisVertical size={14} />
                     </button>
 
                     <AnimatePresence>
@@ -917,7 +597,7 @@ export function BookmarkClient({
                                     "flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition",
                                     resolvedActiveTagId === tag.id
                                       ? "bg-white text-black"
-                                      : "text-neutral-200 hover:bg-white/[0.06]",
+                                      : "text-neutral-200 hover:bg-white/6",
                                   )}
                                   onClick={() => {
                                     setActiveTagId(tag.id);
@@ -947,7 +627,7 @@ export function BookmarkClient({
                                     });
                                   }}
                                 >
-                                  <Trash2 size={14} />
+                                  <LuTrash2 size={14} />
                                 </button>
                               </div>
                             ))}
@@ -987,7 +667,7 @@ export function BookmarkClient({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-8 px-2 text-neutral-200 hover:bg-white/[0.06] hover:text-white"
+                    className="h-8 px-2 text-neutral-200 hover:bg-white/6 hover:text-white"
                     onClick={() => setTagEditor({ mode: "create", name: "" })}
                   >
                     New tag
@@ -999,7 +679,7 @@ export function BookmarkClient({
             {tagsQuery.isFetching && !showTagLoadState ? (
               <QueryStatus compact>
                 <span className="inline-flex items-center gap-2">
-                  <RefreshCw size={12} className="animate-spin" />
+                  <LuRefreshCw size={12} className="animate-spin" />
                   Syncing tags...
                 </span>
               </QueryStatus>
@@ -1027,7 +707,7 @@ export function BookmarkClient({
           ) : showBookmarkLoadState ? (
             <QueryStatus>
               <span className="inline-flex items-center gap-2">
-                <LoaderCircle size={14} className="animate-spin" />
+                <LuLoaderCircle size={14} className="animate-spin" />
                 Loading bookmarks...
               </span>
             </QueryStatus>
@@ -1046,7 +726,7 @@ export function BookmarkClient({
                 return (
                   <motion.li key={bookmark.id} layout className="group py-1">
                     <div
-                      className="cursor-pointer rounded-2xl px-2 py-3 transition duration-200 hover:bg-white/[0.04]"
+                      className="cursor-pointer rounded-2xl px-2 py-3 transition duration-200 hover:bg-white/4"
                       onPointerDown={() => queueLongPress(bookmark)}
                       onPointerUp={clearLongPress}
                       onPointerCancel={clearLongPress}
@@ -1077,36 +757,36 @@ export function BookmarkClient({
                         <div className="flex shrink-0 items-center gap-0.5 self-center sm:gap-1">
                           <button
                             type="button"
-                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/[0.06] hover:text-white sm:size-9"
+                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/6 hover:text-white sm:size-9"
                             onClick={(event) => {
                               event.stopPropagation();
                               void copyText(bookmark.url, bookmark.id);
                             }}
                           >
                             {copiedBookmarkId === bookmark.id ? (
-                              <Check size={16} />
+                              <LuCheck size={16} />
                             ) : (
-                              <Copy size={16} />
+                              <LuCopy size={16} />
                             )}
                           </button>
                           <a
                             href={bookmark.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/[0.06] hover:text-white sm:size-9"
+                            className="flex size-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/6 hover:text-white sm:size-9"
                             onClick={(event) => event.stopPropagation()}
                           >
-                            <ExternalLink size={16} />
+                            <LuExternalLink size={16} />
                           </a>
                           <button
                             type="button"
-                            className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                            className="hidden size-9 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-white/6 hover:text-white sm:flex"
                             onClick={(event) => {
                               event.stopPropagation();
                               openBookmarkEditor(bookmark);
                             }}
                           >
-                            <Pencil size={16} />
+                            <LuPencil size={16} />
                           </button>
                           <button
                             type="button"
@@ -1123,7 +803,7 @@ export function BookmarkClient({
                               });
                             }}
                           >
-                            <Trash2 size={16} />
+                            <LuTrash2 size={16} />
                           </button>
                         </div>
                       </div>
@@ -1138,7 +818,7 @@ export function BookmarkClient({
             <div className="mt-3">
               <QueryStatus compact>
                 <span className="inline-flex items-center gap-2">
-                  <RefreshCw size={12} className="animate-spin" />
+                  <LuRefreshCw size={12} className="animate-spin" />
                   Syncing bookmarks...
                 </span>
               </QueryStatus>
@@ -1168,7 +848,7 @@ export function BookmarkClient({
           </AnimatePresence>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="w-full sm:w-[190px] sm:shrink-0">
+            <div className="w-full sm:w-47.5 sm:shrink-0">
               <p className="mb-1 text-[10px] font-semibold tracking-[0.18em] text-neutral-500 uppercase">
                 Save to
               </p>
@@ -1179,7 +859,7 @@ export function BookmarkClient({
                 disabled={!tags.length}
                 onValueChange={(value) => setComposerTagId(value)}
               >
-                <SelectTrigger className="h-11 w-full rounded-2xl border-white/10 bg-white/[0.06] text-left text-neutral-200 focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-11 w-full rounded-2xl border-white/10 bg-white/6 text-left text-neutral-200 focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Inbox" />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
@@ -1232,7 +912,7 @@ export function BookmarkClient({
             <div className="mt-3">
               <QueryStatus compact>
                 <span className="inline-flex items-center gap-2">
-                  <LoaderCircle size={12} className="animate-spin" />
+                  <LuLoaderCircle size={12} className="animate-spin" />
                   Updating your stash...
                 </span>
               </QueryStatus>
@@ -1261,7 +941,7 @@ export function BookmarkClient({
                 )
               }
               placeholder="Reading"
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
             />
           </div>
 
@@ -1305,7 +985,7 @@ export function BookmarkClient({
                   current ? { ...current, url: event.target.value } : current,
                 )
               }
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
             />
           </div>
 
@@ -1321,7 +1001,7 @@ export function BookmarkClient({
                       : current,
                   )
                 }
-                className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+                className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
               />
             </div>
 
@@ -1335,10 +1015,10 @@ export function BookmarkClient({
                   )
                 }
               >
-                <SelectTrigger className="h-12 w-full rounded-2xl border-white/10 bg-white/[0.06] text-neutral-200 shadow-none focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-12 w-full rounded-2xl border-white/10 bg-white/6 text-neutral-200 shadow-none focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Select a Tag" />
                 </SelectTrigger>
-                <SelectContent className="z-[80] rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
+                <SelectContent className="z-80 rounded-2xl border-white/10 bg-[#151515] text-neutral-100">
                   {tags.map((tag) => (
                     <SelectItem key={tag.id} value={tag.id}>
                       {getTagLabel(tag)}
@@ -1360,7 +1040,7 @@ export function BookmarkClient({
                     : current,
                 )
               }
-              className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
+              className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/20"
             />
           </div>
 
@@ -1440,7 +1120,7 @@ export function BookmarkClient({
       >
         {drawerBookmark ? (
           <div className="space-y-2">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <div className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3">
               <p className="text-sm break-all text-neutral-200">
                 {getUrlPath(drawerBookmark.url)}
               </p>
@@ -1453,11 +1133,11 @@ export function BookmarkClient({
               }
             >
               <span className="flex items-center gap-3">
-                <Copy size={18} className="text-neutral-700" />
+                <LuCopy size={18} className="text-neutral-700" />
                 Copy link
               </span>
               {copiedBookmarkId === drawerBookmark.id ? (
-                <Check size={16} className="text-emerald-600" />
+                <LuCheck size={16} className="text-emerald-600" />
               ) : null}
             </button>
             <a
@@ -1467,10 +1147,10 @@ export function BookmarkClient({
               className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-4 py-4 text-sm text-neutral-900"
             >
               <span className="flex items-center gap-3">
-                <ExternalLink size={18} className="text-neutral-700" />
+                <LuExternalLink size={18} className="text-neutral-700" />
                 Open link
               </span>
-              <Link2 size={16} className="text-neutral-500" />
+              <LuLink2 size={16} className="text-neutral-500" />
             </a>
             <button
               type="button"
@@ -1478,10 +1158,10 @@ export function BookmarkClient({
               onClick={() => openBookmarkEditor(drawerBookmark)}
             >
               <span className="flex items-center gap-3">
-                <Pencil size={18} className="text-neutral-700" />
+                <LuPencil size={18} className="text-neutral-700" />
                 Edit bookmark
               </span>
-              <TagIcon size={16} className="text-neutral-500" />
+              <LuTag size={16} className="text-neutral-500" />
             </button>
             <button
               type="button"
@@ -1497,7 +1177,7 @@ export function BookmarkClient({
               }
             >
               <span className="flex items-center gap-3">
-                <Trash2 size={18} className="text-red-600" />
+                <LuTrash2 size={18} className="text-red-600" />
                 Delete bookmark
               </span>
             </button>

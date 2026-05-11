@@ -21,7 +21,7 @@ import {
 } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LoaderCircle, RefreshCw } from "lucide-react";
+import { LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 import { FormEvent, InputHTMLAttributes, ReactNode, useState } from "react";
 
@@ -226,7 +226,7 @@ export function ShareHandler({
             {showTagsLoading ? (
               <InlineStatus>
                 <span className="inline-flex items-center gap-2">
-                  <LoaderCircle size={14} className="animate-spin" />
+                  <LuLoaderCircle size={14} className="animate-spin" />
                   Loading tags...
                 </span>
               </InlineStatus>
@@ -275,7 +275,7 @@ export function ShareHandler({
                 {tagsQuery.isFetching ? (
                   <InlineStatus>
                     <span className="inline-flex items-center gap-2">
-                      <RefreshCw size={14} className="animate-spin" />
+                      <LuRefreshCw size={14} className="animate-spin" />
                       Syncing tags...
                     </span>
                   </InlineStatus>
