@@ -1,6 +1,10 @@
 "use client";
 
-import { getHostname, getUrlPath } from "@/components/stashClient/helpers";
+import {
+  formatRelativeDate,
+  getHostname,
+  getStashTitle,
+} from "@/components/stashClient/helpers";
 import {
   Sheet,
   SheetClose,
@@ -9,16 +13,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useStashActions } from "@/hooks/useStashActions";
+import { useStashQueries } from "@/hooks/useStashQueries";
+import { getTagLabel } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
-import {
-  LuCheck,
-  LuCopy,
-  LuExternalLink,
-  LuLink2,
-  LuPencil,
-  LuTag,
-  LuTrash2,
-} from "react-icons/lu";
+import { LuCheck, LuCopy, LuPencil, LuTrash2 } from "react-icons/lu";
 
 export function StashActionDrawer() {
   const drawerStash = useStashStore((s) => s.drawerStash);
@@ -27,17 +25,12 @@ export function StashActionDrawer() {
 
   const { copyText, openStashEditor, openDeleteConfirmation } =
     useStashActions();
+  const { tags } = useStashQueries();
 
   const isOpen = drawerStash !== null;
-
-  const title = drawerStash ? getHostname(drawerStash.url) : "Stash";
-
-  const description = drawerStash
-    ? drawerStash.title?.trim() &&
-      drawerStash.title.trim() !== getHostname(drawerStash.url)
-      ? drawerStash.title.trim()
-      : undefined
-    : undefined;
+  const title = drawerStash ? getStashTitle(drawerStash) : "Stash";
+  const hostname = drawerStash ? getHostname(drawerStash.url) : "";
+  const tag = drawerStash ? tags.find((t) => t.id === drawerStash.tagId) : null;
 
   return (
     <Sheet
@@ -48,8 +41,8 @@ export function StashActionDrawer() {
     >
       <SheetContent
         side="bottom"
-        className="border-border bg-card w-full rounded-t-[28px] border-t px-5 pt-3 pb-7 shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
-        {...(description ? {} : { "aria-describedby": undefined })}
+        className="border-border bg-card w-full rounded-t-[28px] border-t px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+16px)] shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
+        aria-describedby="drawer-stash-desc"
       >
         <SheetClose asChild>
           <button
@@ -57,79 +50,115 @@ export function StashActionDrawer() {
             className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
           />
         </SheetClose>
-        <div className="mb-4">
-          <SheetTitle className="text-foreground text-base font-semibold">
+
+        {/* Header */}
+        <div className="mb-5">
+          <SheetTitle className="text-foreground text-base leading-tight font-semibold">
             {title}
           </SheetTitle>
-          {description ? (
-            <SheetDescription className="text-muted-foreground mt-1 text-sm">
-              {description}
-            </SheetDescription>
-          ) : null}
+          <SheetDescription
+            id="drawer-stash-desc"
+            className="text-muted-foreground mt-1 text-xs"
+          >
+            {hostname}
+          </SheetDescription>
         </div>
 
         {drawerStash ? (
-          <div className="space-y-2">
-            <div className="border-border bg-muted rounded-lg border px-4 py-3">
-              <p className="text-foreground text-sm break-all">
-                {getUrlPath(drawerStash.url)}
+          <div className="space-y-4">
+            {/* Full URL */}
+            <div className="space-y-1.5">
+              <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                URL
+              </p>
+              <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
+                {drawerStash.url}
               </p>
             </div>
-            <button
-              type="button"
-              className="bg-accent flex w-full items-center justify-between rounded-lg px-4 py-4 text-left text-sm"
-              onClick={() => void copyText(drawerStash.url, drawerStash.id)}
-            >
-              <span className="flex items-center gap-3">
-                <LuCopy size={18} className="text-muted-foreground" />
-                Copy link
-              </span>
-              {copiedStashId === drawerStash.id ? (
-                <LuCheck size={16} className="text-emerald-600" />
+
+            {/* Metadata row */}
+            <div className="border-border/50 grid grid-cols-2 gap-3 border-t pt-3">
+              {tag ? (
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                    Tag
+                  </p>
+                  <p className="text-foreground/80 text-xs">
+                    {getTagLabel(tag)}
+                  </p>
+                </div>
               ) : null}
-            </button>
-            <a
-              href={drawerStash.url}
-              target="_blank"
-              rel="noreferrer"
-              className="bg-accent flex w-full items-center justify-between rounded-lg px-4 py-4 text-sm"
-            >
-              <span className="flex items-center gap-3">
-                <LuExternalLink size={18} className="text-muted-foreground" />
-                Open link
-              </span>
-              <LuLink2 size={16} className="text-muted-foreground" />
-            </a>
-            <button
-              type="button"
-              className="bg-accent flex w-full items-center justify-between rounded-lg px-4 py-4 text-left text-sm"
-              onClick={() => openStashEditor(drawerStash)}
-            >
-              <span className="flex items-center gap-3">
-                <LuPencil size={18} className="text-muted-foreground" />
-                Edit stash
-              </span>
-              <LuTag size={16} className="text-muted-foreground" />
-            </button>
-            <button
-              type="button"
-              className="flex w-full items-center justify-between rounded-lg bg-red-500/10 px-4 py-4 text-left text-sm text-red-300"
-              onClick={() =>
-                openDeleteConfirmation({
-                  kind: "stash",
-                  id: drawerStash.id,
-                  title: "Remove stash?",
-                  description:
-                    "This removes the link from your stash permanently.",
-                  confirmLabel: "Remove stash",
-                })
-              }
-            >
-              <span className="flex items-center gap-3">
-                <LuTrash2 size={18} className="text-red-400" />
-                Remove stash
-              </span>
-            </button>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                  Added
+                </p>
+                <p className="text-foreground/80 text-xs">
+                  {formatRelativeDate(drawerStash.createdAt)}
+                </p>
+              </div>
+              {drawerStash.updatedAt !== drawerStash.createdAt ? (
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                    Updated
+                  </p>
+                  <p className="text-foreground/80 text-xs">
+                    {formatRelativeDate(drawerStash.updatedAt)}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {drawerStash.description?.trim() ? (
+              <div className="border-border/50 space-y-1 border-t pt-3">
+                <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                  Description
+                </p>
+                <p className="text-foreground/70 text-xs leading-relaxed">
+                  {drawerStash.description.trim()}
+                </p>
+              </div>
+            ) : null}
+
+            {/* Actions */}
+            <div className="border-border/50 flex items-center gap-2 border-t pt-4">
+              <button
+                type="button"
+                className="bg-muted text-foreground flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+                onClick={() => void copyText(drawerStash.url, drawerStash.id)}
+              >
+                {copiedStashId === drawerStash.id ? (
+                  <LuCheck size={14} className="text-emerald-400" />
+                ) : (
+                  <LuCopy size={14} />
+                )}
+                {copiedStashId === drawerStash.id ? "Copied" : "Copy"}
+              </button>
+              <button
+                type="button"
+                className="bg-muted text-foreground flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+                onClick={() => openStashEditor(drawerStash)}
+              >
+                <LuPencil size={14} />
+                Edit
+              </button>
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs font-medium text-red-300"
+                onClick={() =>
+                  openDeleteConfirmation({
+                    kind: "stash",
+                    id: drawerStash.id,
+                    title: "Remove stash?",
+                    description:
+                      "This removes the link from your stash permanently.",
+                    confirmLabel: "Remove stash",
+                  })
+                }
+              >
+                <LuTrash2 size={14} />
+                Delete
+              </button>
+            </div>
           </div>
         ) : null}
       </SheetContent>

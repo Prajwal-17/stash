@@ -33,6 +33,14 @@ interface StashStore {
   drawerStash: Stash | null;
   setDrawerStash: (stash: Stash | null) => void;
 
+  // preview (desktop info panel)
+  previewStash: Stash | null;
+  setPreviewStash: (stash: Stash | null) => void;
+
+  // keyboard navigation
+  focusedStashIndex: number;
+  setFocusedStashIndex: (index: number) => void;
+
   copiedStashId: string | null;
   setCopiedStashId: (id: string | null) => void;
 
@@ -71,6 +79,12 @@ export const useStashStore = create<StashStore>((set) => ({
 
   drawerStash: null,
   setDrawerStash: (stash) => set({ drawerStash: stash }),
+
+  previewStash: null,
+  setPreviewStash: (stash) => set({ previewStash: stash }),
+
+  focusedStashIndex: -1,
+  setFocusedStashIndex: (index) => set({ focusedStashIndex: index }),
 
   copiedStashId: null,
   setCopiedStashId: (id) => set({ copiedStashId: id }),

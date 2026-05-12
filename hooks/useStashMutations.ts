@@ -129,10 +129,10 @@ export function useStashMutations() {
           current.filter((stash) => stash.id !== stashId),
       );
       setDrawerStash(null);
-      setNotice({ type: "success", message: "Stash removed." });
+      toast.success("Stash removed.");
     },
     onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
+      toast.error(error.message);
     },
   });
 
