@@ -1,4 +1,4 @@
-import { Bookmark } from "@/lib/stash-client";
+import { Stash } from "@/lib/stash-client";
 
 export function getHostname(url: string) {
   try {
@@ -17,8 +17,8 @@ export function getUrlPath(url: string) {
   }
 }
 
-export function getBookmarkTitle(bookmark: Bookmark) {
-  return bookmark.title?.trim() || getHostname(bookmark.url);
+export function getStashTitle(stash: Stash) {
+  return stash.title?.trim() || getHostname(stash.url);
 }
 
 export function getFaviconUrl(hostname: string) {

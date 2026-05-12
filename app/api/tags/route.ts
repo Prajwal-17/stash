@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import { bookmarks, tags } from "@/db/schema";
+import { stashes, tags } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -156,8 +156,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     await db
-      .delete(bookmarks)
-      .where(and(eq(bookmarks.tagId, tagId), eq(bookmarks.userId, userId)));
+      .delete(stashes)
+      .where(and(eq(stashes.tagId, tagId), eq(stashes.userId, userId)));
 
     const [deletedTag] = await db
       .delete(tags)
@@ -165,7 +165,7 @@ export async function DELETE(req: NextRequest) {
       .returning();
 
     return NextResponse.json(
-      { msg: "Deleted tag and its bookmarks", data: deletedTag },
+      { msg: "Deleted tag and its stashes", data: deletedTag },
       { status: 200 },
     );
   } catch (error) {

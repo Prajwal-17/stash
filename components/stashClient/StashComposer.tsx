@@ -1,38 +1,54 @@
 "use client";
 
-import { QueryStatus } from "@/components/bookmark-client/ui";
+import { QueryStatus } from "@/components/stashClient/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { useStashActions } from "@/hooks/useStashActions";
+import { useStashQueries } from "@/hooks/useStashQueries";
 import { cn } from "@/lib/utils";
+import { useStashStore } from "@/store/stashStore";
 import { AnimatePresence, motion } from "motion/react";
+import { KeyboardEvent as ReactKeyboardEvent, useEffect, useRef } from "react";
 import { LuLoaderCircle } from "react-icons/lu";
 
-interface BookmarkComposerProps {
-  urlInput: string;
-  setUrlInput: (val: string) => void;
-  handleComposerKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  handleSave: () => void;
-  isPending: boolean;
-  isSyncing: boolean;
-  showTagErrorState: boolean;
-  inputRef: React.RefObject<HTMLInputElement>;
-  notice: { type: "error" | "success"; message: string } | null;
-  setNotice: (notice: null) => void;
-}
+export function StashComposer() {
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export function BookmarkComposer({
-  urlInput,
-  setUrlInput,
-  handleComposerKeyDown,
-  handleSave,
-  isPending,
-  isSyncing,
-  showTagErrorState,
-  inputRef,
-  notice,
-  setNotice,
-}: BookmarkComposerProps) {
+  const urlInput = useStashStore((s) => s.urlInput);
+  const setUrlInput = useStashStore((s) => s.setUrlInput);
+  const notice = useStashStore((s) => s.notice);
+  const setNotice = useStashStore((s) => s.setNotice);
+
+  const { tagsQuery, tags } = useStashQueries();
+  const {
+    handleSave,
+    isCreateStashPending,
+    isTagMutationPending,
+    isStashMutationPending,
+  } = useStashActions();
+
+  const showTagErrorState = tagsQuery.isError && !tags.length;
+  const isSyncing = isTagMutationPending || isStashMutationPending;
+
+  // ⌘+K shortcut to focus input
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
+  function handleComposerKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      void handleSave();
+    }
+  }
+
   return (
     <div className="w-full">
       <AnimatePresence>
@@ -65,8 +81,8 @@ export function BookmarkComposer({
               }
             }}
             onKeyDown={handleComposerKeyDown}
-            placeholder="Paste a link..."
-            disabled={isPending || showTagErrorState}
+            placeholder="Paste link to stash..."
+            disabled={isCreateStashPending || showTagErrorState}
             className="border-border text-foreground placeholder:text-muted-foreground focus:border-ring h-12 flex-1 rounded-lg bg-transparent px-4 pr-32"
           />
           <div className="pointer-events-none absolute right-3 hidden items-center gap-1.5 sm:flex">
@@ -86,14 +102,16 @@ export function BookmarkComposer({
 
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0 rounded-lg px-5 font-semibold"
-          disabled={isPending || !urlInput.trim() || showTagErrorState}
+          disabled={
+            isCreateStashPending || !urlInput.trim() || showTagErrorState
+          }
           onClick={() => void handleSave()}
         >
-          {isPending ? "Adding..." : "+ Add"}
+          {isCreateStashPending ? "Stashing..." : "+ Stash"}
         </Button>
       </div>
 
-      {isSyncing && !isPending ? (
+      {isSyncing && !isCreateStashPending ? (
         <div className="mt-3">
           <QueryStatus compact>
             <span className="inline-flex items-center gap-2">

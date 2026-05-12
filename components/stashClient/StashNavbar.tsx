@@ -1,6 +1,5 @@
 "use client";
 
-import { TagEditorState } from "@/components/bookmark-client/types";
 import {
   Command,
   CommandEmpty,
@@ -23,9 +22,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Tag, getTagLabel } from "@/lib/stash-client";
+import { useStashActions } from "@/hooks/useStashActions";
+import { useStashQueries } from "@/hooks/useStashQueries";
+import { getDefaultTagId, getTagLabel } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useStashStore } from "@/store/stashStore";
+import { useEffect, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuLoaderCircle,
@@ -33,36 +35,43 @@ import {
   LuPlus,
 } from "react-icons/lu";
 
-export interface BookmarkNavbarProps {
-  tags: Tag[];
-  activeTag: Tag | null;
-  setActiveTagId: (id: string | null) => void;
-  setComposerTagId: (id: string | null) => void;
-  bookmarkCountByTag: Map<string, number>;
-  visibleBookmarksCount: number;
-  userInitial: string;
-  userName: string;
-  userEmail: string;
-  handleLogout: () => Promise<void>;
-  isLoggingOut: boolean;
-  setTagEditor: (editor: TagEditorState | null) => void;
-}
-
-export function BookmarkNavbar({
-  tags,
-  activeTag,
-  setActiveTagId,
-  setComposerTagId,
-  bookmarkCountByTag,
-  visibleBookmarksCount,
-  userInitial,
-  userName,
-  userEmail,
-  handleLogout,
-  isLoggingOut,
-  setTagEditor,
-}: BookmarkNavbarProps) {
+export function StashNavbar() {
   const [open, setOpen] = useState(false);
+
+  const activeTagId = useStashStore((s) => s.activeTagId);
+  const setActiveTagId = useStashStore((s) => s.setActiveTagId);
+  const setComposerTagId = useStashStore((s) => s.setComposerTagId);
+  const isLoggingOut = useStashStore((s) => s.isLoggingOut);
+  const setTagEditor = useStashStore((s) => s.setTagEditor);
+  const userInitial = useStashStore((s) => s.userInitial);
+  const userName = useStashStore((s) => s.userName);
+  const userEmail = useStashStore((s) => s.userEmail);
+
+  const { tags, stashes } = useStashQueries();
+  const { handleLogout } = useStashActions();
+
+  const resolvedActiveTagId =
+    activeTagId && tags.some((tag) => tag.id === activeTagId)
+      ? activeTagId
+      : getDefaultTagId(tags);
+
+  const activeTag = useMemo(
+    () => tags.find((tag) => tag.id === resolvedActiveTagId) ?? null,
+    [resolvedActiveTagId, tags],
+  );
+
+  const stashCountByTag = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const stash of stashes) {
+      counts.set(stash.tagId, (counts.get(stash.tagId) ?? 0) + 1);
+    }
+    return counts;
+  }, [stashes]);
+
+  const visibleStashesCount = useMemo(() => {
+    if (!resolvedActiveTagId) return stashes.length;
+    return stashes.filter((b) => b.tagId === resolvedActiveTagId).length;
+  }, [stashes, resolvedActiveTagId]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -108,17 +117,17 @@ export function BookmarkNavbar({
             </button>
           </PopoverTrigger>
           <PopoverContent
-            className="w-[calc(100vw-2rem)] rounded-md p-0 sm:w-[300px]"
+            className="w-[calc(100vw-2rem)] rounded-md p-0 sm:w-75"
             align="start"
           >
             <Command>
               <CommandInput placeholder="Search tags..." />
-              <CommandList className="max-h-[220px] overflow-y-auto">
+              <CommandList className="max-h-55 overflow-y-auto">
                 <CommandEmpty>No tags found.</CommandEmpty>
                 <CommandGroup>
                   {tags.map((tag) => {
                     const label = getTagLabel(tag);
-                    const count = bookmarkCountByTag.get(tag.id) ?? 0;
+                    const count = stashCountByTag.get(tag.id) ?? 0;
                     return (
                       <CommandItem
                         key={tag.id}
@@ -154,8 +163,7 @@ export function BookmarkNavbar({
           </PopoverContent>
         </Popover>
         <p className="text-muted-foreground text-xs">
-          {visibleBookmarksCount}{" "}
-          {visibleBookmarksCount === 1 ? "link" : "links"}
+          {visibleStashesCount} {visibleStashesCount === 1 ? "link" : "links"}
         </p>
       </div>
 

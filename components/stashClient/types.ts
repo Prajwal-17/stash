@@ -1,15 +1,15 @@
-import { Bookmark, Tag } from "@/lib/stash-client";
+import { Stash, Tag } from "@/lib/stash-client";
 
-export interface BookmarkClientProps {
-  initialBookmarks: Bookmark[];
+export interface StashClientProps {
+  initialStashes: Stash[];
   initialTags: Tag[];
   userEmail: string;
   userInitial: string;
   userName: string;
 }
 
-export interface EditBookmarkState {
-  bookmarkId: string;
+export interface EditStashState {
+  stashId: string;
   url: string;
   title: string;
   description: string;
@@ -23,7 +23,7 @@ export interface TagEditorState {
 }
 
 export interface ConfirmationState {
-  kind: "bookmark" | "tag";
+  kind: "stash" | "tag";
   id: string;
   title: string;
   description: string;

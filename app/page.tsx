@@ -1,6 +1,6 @@
-import { BookmarkClient } from "@/components/BookmarkClient";
+import { StashShell } from "@/components/StashShell";
 import { db } from "@/db/db";
-import { bookmarks, tags } from "@/db/schema";
+import { stashes, tags } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -20,12 +20,12 @@ export default async function Home() {
   const userInitial = (user.email ?? "U").charAt(0).toUpperCase();
   const userName = user.name || user.email || "Stash User";
 
-  const [bookmarkRows, tagRows] = await Promise.all([
+  const [stashRows, tagRows] = await Promise.all([
     db
       .select()
-      .from(bookmarks)
-      .where(eq(bookmarks.userId, user.id))
-      .orderBy(bookmarks.createdAt),
+      .from(stashes)
+      .where(eq(stashes.userId, user.id))
+      .orderBy(stashes.createdAt),
     db
       .select()
       .from(tags)
@@ -33,13 +33,13 @@ export default async function Home() {
       .orderBy(tags.createdAt),
   ]);
 
-  const initialBookmarks = bookmarkRows
+  const initialStashes = stashRows
     .slice()
     .reverse()
-    .map((bookmark) => ({
-      ...bookmark,
-      createdAt: new Date(bookmark.createdAt).toISOString(),
-      updatedAt: new Date(bookmark.updatedAt).toISOString(),
+    .map((stash) => ({
+      ...stash,
+      createdAt: new Date(stash.createdAt).toISOString(),
+      updatedAt: new Date(stash.updatedAt).toISOString(),
     }));
 
   const initialTags = tagRows.map((tag) => ({
@@ -49,8 +49,8 @@ export default async function Home() {
   }));
 
   return (
-    <BookmarkClient
-      initialBookmarks={initialBookmarks}
+    <StashShell
+      initialStashes={initialStashes}
       initialTags={initialTags}
       userEmail={user.email ?? "stash@local"}
       userInitial={userInitial}

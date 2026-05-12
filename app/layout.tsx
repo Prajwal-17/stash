@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Stash",
-  description: "A Clean Bookmark manager",
+  description: "A Clean Stash manager",
 };
 
 export default function RootLayout({

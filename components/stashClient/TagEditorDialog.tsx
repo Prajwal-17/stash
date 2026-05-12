@@ -1,6 +1,6 @@
 "use client";
 
-import { TagEditorState } from "@/components/bookmark-client/types";
+import { TagEditorState } from "@/components/stashClient/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,7 +16,7 @@ export interface TagEditorDialogProps {
   editorState: TagEditorState | null;
   onOpenChange: (open: boolean) => void;
   onChangeName: (name: string) => void;
-  onSubmit: (e: FormEvent) => void;
+  onSubmit: (e: FormEvent) => void | Promise<void>;
   isPending: boolean;
 }
 
@@ -45,7 +45,7 @@ export function TagEditorDialog({
                   Name
                 </label>
                 {editorState?.name && editorState.name.length >= 80 && (
-                  <span className="text-xs text-destructive animate-in fade-in zoom-in slide-in-from-top-1">
+                  <span className="text-destructive animate-in fade-in zoom-in slide-in-from-top-1 text-xs">
                     Length limit reached
                   </span>
                 )}

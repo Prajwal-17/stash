@@ -1,34 +1,27 @@
 import {
-  Bookmark,
-  createBookmark,
+  Stash,
+  createStash,
   createTag,
-  deleteBookmark,
+  deleteStash,
   deleteTag,
   MutationError,
   stashQueryKeys,
   Tag,
-  updateBookmark,
+  updateStash,
   updateTag,
 } from "@/lib/stash-client";
+import { useStashStore } from "@/store/stashStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 
-export function useBookmarkMutations({
-  onTagCreated,
-  onTagDeleted,
-  onBookmarkCreated,
-  onBookmarkUpdated,
-  onBookmarkDeleted,
-  setNotice,
-}: {
-  onTagCreated: (tag: Tag) => void;
-  onTagDeleted: (tagId: string) => void;
-  onBookmarkCreated: () => void;
-  onBookmarkUpdated: () => void;
-  onBookmarkDeleted: () => void;
-  setNotice: (notice: { type: "error" | "success"; message: string }) => void;
-}) {
+export function useStashMutations() {
   const queryClient = useQueryClient();
+  const setActiveTagId = useStashStore((s) => s.setActiveTagId);
+  const setComposerTagId = useStashStore((s) => s.setComposerTagId);
+  const setUrlInput = useStashStore((s) => s.setUrlInput);
+  const setStashEditor = useStashStore((s) => s.setStashEditor);
+  const setDrawerStash = useStashStore((s) => s.setDrawerStash);
+  const setNotice = useStashStore((s) => s.setNotice);
 
   const createTagMutation = useMutation({
     mutationFn: (name: string) => createTag(name),
@@ -37,7 +30,8 @@ export function useBookmarkMutations({
         ...current,
         tag,
       ]);
-      onTagCreated(tag);
+      setActiveTagId(tag.id);
+      setComposerTagId(tag.id);
       setNotice({ type: "success", message: "Tag created." });
     },
     onError: (error: MutationError) => {
@@ -65,10 +59,15 @@ export function useBookmarkMutations({
       queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
         current.filter((tag) => tag.id !== tagId),
       );
-      queryClient.setQueryData<Bookmark[]>(stashQueryKeys.bookmarks, (current = []) =>
-        current.filter((bookmark) => bookmark.tagId !== tagId),
+      queryClient.setQueryData<Stash[]>(
+        stashQueryKeys.stashes,
+        (current = []) =>
+          current.filter((stash) => stash.tagId !== tagId),
       );
-      onTagDeleted(tagId);
+      // Reset active/composer tag if the deleted tag was selected
+      const store = useStashStore.getState();
+      if (store.activeTagId === tagId) setActiveTagId(null);
+      if (store.composerTagId === tagId) setComposerTagId(null);
       setNotice({ type: "success", message: "Tag deleted." });
     },
     onError: (error: MutationError) => {
@@ -76,56 +75,61 @@ export function useBookmarkMutations({
     },
   });
 
-  const createBookmarkMutation = useMutation({
+  const createStashMutation = useMutation({
     mutationFn: (payload: {
       url: string;
       tagId: string;
       title?: string;
       description?: string;
-    }) => createBookmark(payload),
-    onSuccess: (bookmark) => {
-      queryClient.setQueryData<Bookmark[]>(stashQueryKeys.bookmarks, (current = []) => [
-        bookmark,
-        ...current,
-      ]);
-      onBookmarkCreated();
-      toast.success("Bookmark saved.");
+    }) => createStash(payload),
+    onSuccess: (stash) => {
+      queryClient.setQueryData<Stash[]>(
+        stashQueryKeys.stashes,
+        (current = []) => [stash, ...current],
+      );
+      setUrlInput("");
+      toast.success("Stashed!");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
     },
   });
 
-  const updateBookmarkMutation = useMutation({
+  const updateStashMutation = useMutation({
     mutationFn: (payload: {
-      bookmarkId: string;
+      stashId: string;
       tagId: string;
       url: string;
       title?: string;
       description?: string;
-    }) => updateBookmark(payload),
-    onSuccess: (updatedBookmark) => {
-      queryClient.setQueryData<Bookmark[]>(stashQueryKeys.bookmarks, (current = []) =>
-        current.map((bookmark) =>
-          bookmark.id === updatedBookmark.id ? updatedBookmark : bookmark,
-        ),
+    }) => updateStash(payload),
+    onSuccess: (updatedStash) => {
+      queryClient.setQueryData<Stash[]>(
+        stashQueryKeys.stashes,
+        (current = []) =>
+          current.map((stash) =>
+            stash.id === updatedStash.id ? updatedStash : stash,
+          ),
       );
-      onBookmarkUpdated();
-      toast.success("Bookmark updated.");
+      setStashEditor(null);
+      setDrawerStash(null);
+      toast.success("Stash updated.");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
     },
   });
 
-  const deleteBookmarkMutation = useMutation({
-    mutationFn: (bookmarkId: string) => deleteBookmark(bookmarkId),
-    onSuccess: (_, bookmarkId) => {
-      queryClient.setQueryData<Bookmark[]>(stashQueryKeys.bookmarks, (current = []) =>
-        current.filter((bookmark) => bookmark.id !== bookmarkId),
+  const deleteStashMutation = useMutation({
+    mutationFn: (stashId: string) => deleteStash(stashId),
+    onSuccess: (_, stashId) => {
+      queryClient.setQueryData<Stash[]>(
+        stashQueryKeys.stashes,
+        (current = []) =>
+          current.filter((stash) => stash.id !== stashId),
       );
-      onBookmarkDeleted();
-      setNotice({ type: "success", message: "Bookmark deleted." });
+      setDrawerStash(null);
+      setNotice({ type: "success", message: "Stash removed." });
     },
     onError: (error: MutationError) => {
       setNotice({ type: "error", message: error.message });
@@ -136,8 +140,8 @@ export function useBookmarkMutations({
     createTagMutation,
     updateTagMutation,
     deleteTagMutation,
-    createBookmarkMutation,
-    updateBookmarkMutation,
-    deleteBookmarkMutation,
+    createStashMutation,
+    updateStashMutation,
+    deleteStashMutation,
   };
 }

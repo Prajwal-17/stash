@@ -48,10 +48,10 @@ export function LoginForm({
             Welcome back
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
-            Sign in with Google to access your bookmarks securely.
+            Sign in with Google to access your stash securely.
           </p>
           <p className="text-muted-foreground mt-1 text-xs">
-            Stash is a lightweight personal bookmark manager for saving and
+            Stash is a lightweight personal link manager for saving and
             organizing links.
           </p>
         </div>

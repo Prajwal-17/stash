@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  createBookmark,
+  createStash,
   createTag,
   fetchTags,
   getDefaultTagId,
@@ -58,7 +58,7 @@ function InlineStatus({
         "rounded-lg px-3 py-2 text-sm",
         tone === "error"
           ? "bg-red-500/10 text-red-200"
-          : "text-muted-foreground bg-white/[0.04]",
+          : "text-muted-foreground bg-white/4",
       )}
     >
       {children}
@@ -112,12 +112,12 @@ export function ShareHandler({
       ? tagId
       : getDefaultTagId(tags);
 
-  const createBookmarkMutation = useMutation({
+  const createStashMutation = useMutation({
     mutationFn: (payload: { url: string; tagId: string; title?: string }) =>
-      createBookmark(payload),
+      createStash(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: stashQueryKeys.bookmarks,
+        queryKey: stashQueryKeys.stashes,
       });
       router.push("/");
     },
@@ -159,7 +159,7 @@ export function ShareHandler({
 
     try {
       const actualTagId = resolvedTagId ?? (await ensureInboxTag());
-      await createBookmarkMutation.mutateAsync({
+      await createStashMutation.mutateAsync({
         url: validation.value,
         title: title.trim() || undefined,
         tagId: actualTagId,
@@ -169,8 +169,7 @@ export function ShareHandler({
     }
   }
 
-  const isSaving =
-    createBookmarkMutation.isPending || createTagMutation.isPending;
+  const isSaving = createStashMutation.isPending || createTagMutation.isPending;
   const showTagsLoading = tagsQuery.isPending && !tags.length;
   const showTagsError = tagsQuery.isError && !tags.length;
 
@@ -180,11 +179,9 @@ export function ShareHandler({
         onSubmit={handleSubmit}
         className="border-border bg-card w-full max-w-sm rounded-xl border p-6 shadow-2xl"
       >
-        <h1 className="text-foreground mb-2 text-lg font-medium">
-          Save Bookmark
-        </h1>
+        <h1 className="text-foreground mb-2 text-lg font-medium">Stash Link</h1>
         <p className="text-muted-foreground mb-6 text-sm">
-          Review and save the shared link.
+          Review and stash the shared link.
         </p>
 
         {notice ? (
@@ -301,7 +298,7 @@ export function ShareHandler({
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-lg"
             disabled={isSaving || !url.trim() || showTagsError}
           >
-            {isSaving ? "Saving..." : "Save bookmark"}
+            {isSaving ? "Stashing..." : "Stash link"}
           </Button>
         </div>
       </form>

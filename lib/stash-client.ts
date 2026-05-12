@@ -1,6 +1,6 @@
 "use client";
 
-export interface Bookmark {
+export interface Stash {
   id: string;
   tagId: string;
   url: string;
@@ -37,7 +37,7 @@ export type TagValidationResult =
   | { valid: false; message: string };
 
 export const stashQueryKeys = {
-  bookmarks: ["bookmarks"] as const,
+  stashes: ["stashes"] as const,
   tags: ["tags"] as const,
 };
 
@@ -58,43 +58,43 @@ export async function requestJson<T>(input: string, init?: RequestInit) {
   return payload.data;
 }
 
-export function fetchBookmarks() {
-  return requestJson<Bookmark[]>("/api/bookmarks");
+export function fetchStashes() {
+  return requestJson<Stash[]>("/api/stashes");
 }
 
 export function fetchTags() {
   return requestJson<Tag[]>("/api/tags");
 }
 
-export function createBookmark(payload: {
+export function createStash(payload: {
   url: string;
   tagId: string;
   title?: string;
   description?: string;
 }) {
-  return requestJson<Bookmark>("/api/bookmarks", {
+  return requestJson<Stash>("/api/stashes", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export function updateBookmark(payload: {
-  bookmarkId: string;
+export function updateStash(payload: {
+  stashId: string;
   tagId: string;
   url: string;
   title?: string;
   description?: string;
 }) {
-  return requestJson<Bookmark>("/api/bookmarks", {
+  return requestJson<Stash>("/api/stashes", {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
 }
 
-export function deleteBookmark(bookmarkId: string) {
-  return requestJson<Bookmark>("/api/bookmarks", {
+export function deleteStash(stashId: string) {
+  return requestJson<Stash>("/api/stashes", {
     method: "DELETE",
-    body: JSON.stringify({ bookmarkId }),
+    body: JSON.stringify({ stashId }),
   });
 }
 

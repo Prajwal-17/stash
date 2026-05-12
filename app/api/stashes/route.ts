@@ -1,10 +1,10 @@
 import { db } from "@/db/db";
-import { bookmarks } from "@/db/schema";
+import { stashes } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/bookmarks — fetch all bookmarks for the authenticated user
+// GET /api/stashes — fetch all stashes for the authenticated user
 export async function GET(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -19,12 +19,12 @@ export async function GET(req: NextRequest) {
 
     const result = await db
       .select()
-      .from(bookmarks)
-      .where(eq(bookmarks.userId, user.id))
-      .orderBy(bookmarks.createdAt);
+      .from(stashes)
+      .where(eq(stashes.userId, user.id))
+      .orderBy(stashes.createdAt);
 
     return NextResponse.json(
-      { msg: "Successfully fetched bookmarks", data: result },
+      { msg: "Successfully fetched stashes", data: result },
       { status: 200 },
     );
   } catch (error) {
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/bookmarks — create a new bookmark
+// POST /api/stashes — create a new stash
 // Body: { tagId, url, title?, description? }
 export async function POST(req: NextRequest) {
   try {
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
 
     const parsedUrl = new URL(url);
 
-    const [bookmark] = await db
-      .insert(bookmarks)
+    const [stash] = await db
+      .insert(stashes)
       .values({
         userId: user.id,
         tagId,
@@ -71,18 +71,15 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json(
-      { msg: "Bookmark created", data: bookmark },
-      { status: 201 },
-    );
+    return NextResponse.json({ msg: "Stashed", data: stash }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
   }
 }
 
-// PATCH /api/bookmarks — update an existing bookmark
-// Body: { bookmarkId, tagId, url, title?, description? }
+// PATCH /api/stashes — update an existing stash
+// Body: { stashId, tagId, url, title?, description? }
 export async function PATCH(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -96,11 +93,11 @@ export async function PATCH(req: NextRequest) {
     const user = session.user;
 
     const body = await req.json();
-    const { bookmarkId, tagId, url, title, description } = body;
+    const { stashId, tagId, url, title, description } = body;
 
-    if (!bookmarkId || !tagId || !url) {
+    if (!stashId || !tagId || !url) {
       return NextResponse.json(
-        { msg: "bookmarkId, tagId, and url are required" },
+        { msg: "stashId, tagId, and url are required" },
         { status: 400 },
       );
     }
@@ -108,7 +105,7 @@ export async function PATCH(req: NextRequest) {
     const parsedUrl = new URL(url);
 
     const [updated] = await db
-      .update(bookmarks)
+      .update(stashes)
       .set({
         tagId,
         url,
@@ -117,18 +114,18 @@ export async function PATCH(req: NextRequest) {
         description: description || null,
         updatedAt: new Date().toISOString(),
       })
-      .where(and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, user.id)))
+      .where(and(eq(stashes.id, stashId), eq(stashes.userId, user.id)))
       .returning();
 
     if (!updated) {
       return NextResponse.json(
-        { msg: "Bookmark not found or not owned by user" },
+        { msg: "Stash not found or not owned by user" },
         { status: 404 },
       );
     }
 
     return NextResponse.json(
-      { msg: "Bookmark updated", data: updated },
+      { msg: "Stash updated", data: updated },
       { status: 200 },
     );
   } catch (error) {
@@ -150,29 +147,26 @@ export async function DELETE(req: NextRequest) {
     const user = session.user;
 
     const body = await req.json();
-    const { bookmarkId } = body;
+    const { stashId } = body;
 
-    if (!bookmarkId) {
-      return NextResponse.json(
-        { msg: "bookmarkId is required" },
-        { status: 400 },
-      );
+    if (!stashId) {
+      return NextResponse.json({ msg: "stashId is required" }, { status: 400 });
     }
 
-    const [deletedBookmark] = await db
-      .delete(bookmarks)
-      .where(and(eq(bookmarks.id, bookmarkId), eq(bookmarks.userId, user.id)))
+    const [deletedStash] = await db
+      .delete(stashes)
+      .where(and(eq(stashes.id, stashId), eq(stashes.userId, user.id)))
       .returning();
 
-    if (!deletedBookmark) {
+    if (!deletedStash) {
       return NextResponse.json(
-        { msg: "Bookmark not found or not owned by user" },
+        { msg: "Stash not found or not owned by user" },
         { status: 404 },
       );
     }
 
     return NextResponse.json(
-      { msg: "Bookmark deleted", data: deletedBookmark },
+      { msg: "Stash removed", data: deletedStash },
       { status: 200 },
     );
   } catch (error) {

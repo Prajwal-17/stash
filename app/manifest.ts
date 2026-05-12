@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Stash",
     short_name: "Stash",
-    description: "A simple bookmarking tool",
+    description: "A simple stash tool",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

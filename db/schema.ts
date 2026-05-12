@@ -93,7 +93,7 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const bookmarks = sqliteTable("bookmarks", {
+export const stashes = sqliteTable("stashes", {
   id: text("id")
     .primaryKey()
     .notNull()
@@ -129,15 +129,15 @@ export const tags = sqliteTable("tags", {
     .notNull(),
 });
 
-export const bookmarkToTags = sqliteTable(
-  "bookmark_to_tags",
+export const stashToTags = sqliteTable(
+  "stash_to_tags",
   {
     id: text("id")
       .primaryKey()
       .notNull()
       .$defaultFn(() => uuidv4()),
-    bookmarkId: text("bookmark_id")
-      .references(() => bookmarks.id)
+    stashId: text("stash_id")
+      .references(() => stashes.id)
       .notNull(),
     tagId: text("tag_id")
       .references(() => tags.id)
@@ -147,8 +147,8 @@ export const bookmarkToTags = sqliteTable(
       .notNull(),
   },
   (t) => [
-    uniqueIndex("bookmark_tag_unique").on(t.bookmarkId, t.tagId),
-    index("bookmark_id_idx").on(t.bookmarkId),
+    uniqueIndex("stash_tag_unique").on(t.stashId, t.tagId),
+    index("stash_id_idx").on(t.stashId),
     index("tag_id_idx").on(t.tagId),
   ],
 );
