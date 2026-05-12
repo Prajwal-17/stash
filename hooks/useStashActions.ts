@@ -12,7 +12,8 @@ import {
 } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
 import { useRouter } from "next/navigation";
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
+import { toast } from "react-hot-toast";
 
 export function useStashActions() {
   const router = useRouter();
@@ -43,16 +44,38 @@ export function useStashActions() {
     return created.id;
   }
 
+  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
+
   async function handleSave() {
     const validation = normalizeUrl(store.urlInput);
     if (!validation.valid) {
-      store.setNotice({ type: "error", message: validation.message });
+      toast.error(validation.message);
       return;
     }
+
+    setIsFetchingMetadata(true);
+    let title = undefined;
+    let description = undefined;
+    
+    try {
+      const res = await fetch(`/api/metadata?url=${encodeURIComponent(validation.value)}`);
+      if (res.ok) {
+        const metadata = await res.json();
+        title = metadata.title || undefined;
+        description = metadata.description || undefined;
+      }
+    } catch (e) {
+      // Ignore error and proceed without metadata
+    } finally {
+      setIsFetchingMetadata(false);
+    }
+
     const targetTagId = resolvedComposerTagId ?? (await ensureInboxTag());
     await createStashMutation.mutateAsync({
       tagId: targetTagId,
       url: validation.value,
+      title,
+      description,
     });
   }
 
@@ -161,6 +184,7 @@ export function useStashActions() {
     submitStashEditor,
     submitTagEditor,
     handleDeleteConfirmation,
+    isFetchingMetadata,
     // Expose mutation states for loading indicators
     isCreateStashPending: createStashMutation.isPending,
     isUpdateStashPending: updateStashMutation.isPending,

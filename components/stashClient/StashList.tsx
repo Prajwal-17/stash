@@ -272,12 +272,18 @@ export function StashList() {
           </QueryStatus>
         ) : (
           <>
-            {/* Column header + shortcuts bar */}
-            <div className="border-border/40 mb-1 hidden items-center justify-between border-b px-2 pb-2 sm:flex">
-              <span className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+            {/* Column header + shortcuts bar (desktop) / Assist text (mobile) */}
+            <div className="border-border/40 mb-1 flex items-center justify-center border-b px-2 pb-2 sm:justify-between">
+              <span className="text-muted-foreground hidden text-[10px] font-semibold tracking-[0.15em] uppercase sm:block">
                 Title
               </span>
-              <div className="flex items-center gap-1.5">
+
+              {/* Mobile assist */}
+              <span className="text-muted-foreground/60 text-[10px] sm:hidden">
+                Hold on a link to view details
+              </span>
+
+              <div className="hidden items-center gap-1.5 sm:flex">
                 <Kbd>↑</Kbd>
                 <Kbd>↓</Kbd>
                 <span className="text-muted-foreground/50 text-[10px]">
@@ -312,7 +318,7 @@ export function StashList() {
                   >
                     <div
                       className={cn(
-                        "cursor-pointer rounded-lg px-2 py-2.5 transition duration-150",
+                        "cursor-pointer rounded-lg px-2 py-1.5 transition duration-150",
                         isFocused
                           ? "bg-accent ring-ring/30 ring-1"
                           : "hover:bg-muted",
@@ -331,23 +337,23 @@ export function StashList() {
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex shrink-0 items-center justify-center">
+                        <div className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-md border shadow-sm">
                           <Image
                             src={getFaviconUrl(hostname)}
                             alt=""
-                            width={20}
-                            height={20}
+                            width={16}
+                            height={16}
                             unoptimized
-                            className="size-5 rounded"
+                            className="size-4 rounded-[3px]"
                           />
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="text-foreground truncate text-sm font-medium">
+                          <p className="text-foreground line-clamp-1 text-sm leading-tight font-medium">
                             {title}
                           </p>
-                          <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                            {hostname}
+                          <p className="text-muted-foreground truncate text-[11px]">
+                            {stash.url}
                           </p>
                         </div>
 

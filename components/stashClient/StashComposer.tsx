@@ -23,6 +23,7 @@ export function StashComposer() {
   const { tagsQuery, tags } = useStashQueries();
   const {
     handleSave,
+    isFetchingMetadata,
     isCreateStashPending,
     isTagMutationPending,
     isStashMutationPending,
@@ -82,7 +83,7 @@ export function StashComposer() {
             }}
             onKeyDown={handleComposerKeyDown}
             placeholder="Paste link to stash..."
-            disabled={isCreateStashPending || showTagErrorState}
+            disabled={isCreateStashPending || isFetchingMetadata || showTagErrorState}
             className="border-border text-foreground placeholder:text-muted-foreground focus:border-ring h-12 flex-1 rounded-lg bg-transparent px-4 pr-32"
           />
           <div className="pointer-events-none absolute right-3 hidden items-center gap-1.5 sm:flex">
@@ -103,11 +104,11 @@ export function StashComposer() {
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0 rounded-lg px-5 font-semibold"
           disabled={
-            isCreateStashPending || !urlInput.trim() || showTagErrorState
+            isCreateStashPending || isFetchingMetadata || !urlInput.trim() || showTagErrorState
           }
           onClick={() => void handleSave()}
         >
-          {isCreateStashPending ? "Stashing..." : "+ Stash"}
+          {isFetchingMetadata ? "Fetching..." : isCreateStashPending ? "Stashing..." : "+ Stash"}
         </Button>
       </div>
 
