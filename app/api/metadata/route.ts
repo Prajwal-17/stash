@@ -1,5 +1,6 @@
 import { getLinkPreview } from "link-preview-js";
 import { NextResponse } from "next/server";
+import dns from "node:dns/promises";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -19,6 +20,11 @@ export async function GET(request: Request) {
         "user-agent": "googlebot",
       },
       followRedirects: "follow",
+      resolveDNSHost: async (url: string) => {
+        const hostname = new URL(url).hostname;
+        const res = await dns.lookup(hostname);
+        return res.address;
+      },
     });
     return NextResponse.json(preview);
   } catch (error) {
