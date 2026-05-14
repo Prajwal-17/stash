@@ -1,13 +1,21 @@
 "use client";
 
+import { FieldLabel, QueryStatus } from "@/components/stashClient/ui";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   createStash,
   createTag,
@@ -19,57 +27,20 @@ import {
   stashQueryKeys,
   Tag,
 } from "@/lib/stash-client";
-import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { FormEvent, InputHTMLAttributes, ReactNode, useState } from "react";
-import { LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
-
-function FieldLabel({ children }: { children: ReactNode }) {
-  return (
-    <label className="text-muted-foreground block text-[11px] font-medium tracking-[0.18em] uppercase">
-      {children}
-    </label>
-  );
-}
-
-function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={cn(
-        "border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-border h-11 w-full rounded-lg border px-3 text-sm outline-none",
-        props.className,
-      )}
-    />
-  );
-}
-
-function InlineStatus({
-  children,
-  tone = "muted",
-}: {
-  children: ReactNode;
-  tone?: "muted" | "error";
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-lg px-3 py-2 text-sm",
-        tone === "error"
-          ? "bg-red-500/10 text-red-200"
-          : "text-muted-foreground bg-white/4",
-      )}
-    >
-      {children}
-    </div>
-  );
-}
+import { FormEvent, useState } from "react";
+import { toast } from "react-hot-toast";
+import {
+  LuCheck,
+  LuChevronsUpDown,
+  LuLoaderCircle,
+  LuRefreshCw,
+} from "react-icons/lu";
 
 export function ShareHandler({
   initialTags,
   sharedUrl,
-  sharedTitle,
   sharedText,
 }: {
   initialTags: Tag[];
@@ -91,14 +62,11 @@ export function ShareHandler({
   }
 
   const [url, setUrl] = useState(defaultUrl);
-  const [title, setTitle] = useState(sharedTitle);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [tagId, setTagId] = useState<string | null>(
     getDefaultTagId(initialTags),
   );
-  const [notice, setNotice] = useState<{
-    type: "error" | "success";
-    message: string;
-  } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const tagsQuery = useQuery({
     queryKey: stashQueryKeys.tags,
@@ -113,16 +81,21 @@ export function ShareHandler({
       : getDefaultTagId(tags);
 
   const createStashMutation = useMutation({
-    mutationFn: (payload: { url: string; tagId: string; title?: string }) =>
-      createStash(payload),
+    mutationFn: (payload: {
+      url: string;
+      tagId: string;
+      title?: string;
+      description?: string;
+    }) => createStash(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: stashQueryKeys.stashes,
       });
+      toast.success("Stashed!");
       router.push("/");
     },
     onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -153,23 +126,44 @@ export function ShareHandler({
 
     const validation = normalizeUrl(url);
     if (!validation.valid) {
-      setNotice({ type: "error", message: validation.message });
+      toast.error(validation.message);
       return;
+    }
+
+    setIsSaving(true);
+    let fetchedTitle = undefined;
+    let fetchedDescription = undefined;
+
+    try {
+      const res = await fetch(
+        `/api/metadata?url=${encodeURIComponent(validation.value)}`,
+      );
+      if (res.ok) {
+        const metadata = await res.json();
+        if (metadata.title) fetchedTitle = metadata.title;
+        if (metadata.description) fetchedDescription = metadata.description;
+      }
+    } catch (err) {
+      console.log(err);
     }
 
     try {
       const actualTagId = resolvedTagId ?? (await ensureInboxTag());
       await createStashMutation.mutateAsync({
         url: validation.value,
-        title: title.trim() || undefined,
+        title: fetchedTitle?.trim() || undefined,
+        description: fetchedDescription?.trim() || undefined,
         tagId: actualTagId,
       });
     } catch {
       // mutation errors are surfaced through state
+    } finally {
+      setIsSaving(false);
     }
   }
 
-  const isSaving = createStashMutation.isPending || createTagMutation.isPending;
+  const isMutationPending =
+    createStashMutation.isPending || createTagMutation.isPending || isSaving;
   const showTagsLoading = tagsQuery.isPending && !tags.length;
   const showTagsError = tagsQuery.isError && !tags.length;
 
@@ -184,23 +178,10 @@ export function ShareHandler({
           Review and stash the shared link.
         </p>
 
-        {notice ? (
-          <div
-            className={cn(
-              "mb-4 rounded-lg border px-3 py-2 text-sm",
-              notice.type === "error"
-                ? "border-red-500/20 bg-red-500/10 text-red-200"
-                : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
-            )}
-          >
-            {notice.message}
-          </div>
-        ) : null}
-
         <div className="space-y-4">
           <div>
             <FieldLabel>URL</FieldLabel>
-            <TextInput
+            <Input
               className="mt-1"
               value={url}
               onChange={(event) => setUrl(event.target.value)}
@@ -209,28 +190,18 @@ export function ShareHandler({
             />
           </div>
 
-          <div>
-            <FieldLabel>Title (Optional)</FieldLabel>
-            <TextInput
-              className="mt-1"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Page title"
-            />
-          </div>
-
           <div className="space-y-2">
             <FieldLabel>Tag</FieldLabel>
 
             {showTagsLoading ? (
-              <InlineStatus>
+              <QueryStatus>
                 <span className="inline-flex items-center gap-2">
                   <LuLoaderCircle size={14} className="animate-spin" />
                   Loading tags...
                 </span>
-              </InlineStatus>
+              </QueryStatus>
             ) : showTagsError ? (
-              <InlineStatus tone="error">
+              <QueryStatus tone="error">
                 <div className="flex items-center justify-between gap-3">
                   <span>Could not load tags.</span>
                   <Button
@@ -242,42 +213,78 @@ export function ShareHandler({
                     Retry
                   </Button>
                 </div>
-              </InlineStatus>
+              </QueryStatus>
             ) : (
               <>
-                <div className="relative">
-                  <Select
-                    value={resolvedTagId ?? "none"}
-                    onValueChange={(value) =>
-                      setTagId(value === "none" ? null : value)
-                    }
+                <div className="relative mt-1">
+                  <Popover
+                    open={tagPopoverOpen}
+                    onOpenChange={setTagPopoverOpen}
                   >
-                    <SelectTrigger className="border-border bg-background text-foreground h-11 w-full focus:ring-0 focus:ring-offset-0">
-                      <SelectValue placeholder="Select a Tag" />
-                    </SelectTrigger>
-                    <SelectContent className="border-border bg-popover text-foreground">
-                      {tags.length ? (
-                        tags.map((tag) => (
-                          <SelectItem key={tag.id} value={tag.id}>
-                            {getTagLabel(tag)}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="none">
-                          (Creates &quot;Inbox&quot; tag)
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="border-border bg-background text-foreground flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus:outline-none"
+                      >
+                        <span className="truncate">
+                          {resolvedTagId
+                            ? getTagLabel(
+                                tags.find((t) => t.id === resolvedTagId)!,
+                              )
+                            : "Select a Tag"}
+                        </span>
+                        <LuChevronsUpDown
+                          size={16}
+                          className="text-muted-foreground shrink-0 opacity-50"
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[calc(100vw-3rem)] rounded-md p-0 sm:w-83.5"
+                      align="start"
+                    >
+                      <Command>
+                        <CommandInput placeholder="Search tags..." />
+                        <CommandList className="max-h-55 overflow-y-auto">
+                          <CommandEmpty>No tags found.</CommandEmpty>
+                          <CommandGroup>
+                            {tags.map((tag) => {
+                              const label = getTagLabel(tag);
+                              const isSelected = tag.id === resolvedTagId;
+                              return (
+                                <CommandItem
+                                  key={tag.id}
+                                  value={label}
+                                  onSelect={() => {
+                                    setTagId(tag.id);
+                                    setTagPopoverOpen(false);
+                                  }}
+                                  className="flex justify-between"
+                                >
+                                  <span className="truncate">{label}</span>
+                                  {isSelected ? (
+                                    <LuCheck
+                                      size={14}
+                                      className="text-foreground shrink-0"
+                                    />
+                                  ) : null}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {tagsQuery.isFetching ? (
-                  <InlineStatus>
+                  <QueryStatus>
                     <span className="inline-flex items-center gap-2">
                       <LuRefreshCw size={14} className="animate-spin" />
                       Syncing tags...
                     </span>
-                  </InlineStatus>
+                  </QueryStatus>
                 ) : null}
               </>
             )}
@@ -296,9 +303,9 @@ export function ShareHandler({
           <Button
             type="submit"
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-lg"
-            disabled={isSaving || !url.trim() || showTagsError}
+            disabled={isMutationPending || !url.trim() || showTagsError}
           >
-            {isSaving ? "Stashing..." : "Stash link"}
+            {isMutationPending ? "Stashing..." : "Stash link"}
           </Button>
         </div>
       </form>

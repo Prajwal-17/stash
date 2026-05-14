@@ -49,20 +49,15 @@ export function StashShell({
 
   return (
     <div className="bg-background text-foreground flex h-dvh flex-col overflow-hidden">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "#151515",
-            color: "#f5f5f5",
-            border: "1px solid rgba(255,255,255,0.12)",
-          },
-        }}
-      />
-
       <div className="mx-auto w-full max-w-2xl px-3 pt-4 sm:px-5 sm:pt-8">
         <header className="mb-4">
-          <StashNavbar />
+          <StashNavbar
+            initialTags={initialTags}
+            initialStashes={initialStashes}
+            userEmail={userEmail}
+            userInitial={userInitial}
+            userName={userName}
+          />
         </header>
       </div>
 
@@ -73,6 +68,16 @@ export function StashShell({
       </div>
 
       <StashDialogs />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#151515",
+            color: "#f5f5f5",
+            border: "1px solid rgba(255,255,255,0.12)",
+          },
+        }}
+      />
     </div>
   );
 }

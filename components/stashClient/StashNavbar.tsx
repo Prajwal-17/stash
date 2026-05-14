@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/popover";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
-import { getDefaultTagId, getTagLabel } from "@/lib/stash-client";
+import { getDefaultTagId, getTagLabel, Stash, Tag } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
 import { useStashStore } from "@/store/stashStore";
 import { useEffect, useMemo, useState } from "react";
@@ -35,7 +35,21 @@ import {
   LuPlus,
 } from "react-icons/lu";
 
-export function StashNavbar() {
+interface StashNavbarProps {
+  initialTags: Tag[];
+  initialStashes: Stash[];
+  userEmail: string;
+  userInitial: string;
+  userName: string;
+}
+
+export function StashNavbar({
+  initialTags,
+  initialStashes,
+  userEmail: propEmail,
+  userInitial: propInitial,
+  userName: propName,
+}: StashNavbarProps) {
   const [open, setOpen] = useState(false);
 
   const activeTagId = useStashStore((s) => s.activeTagId);
@@ -43,11 +57,18 @@ export function StashNavbar() {
   const setComposerTagId = useStashStore((s) => s.setComposerTagId);
   const isLoggingOut = useStashStore((s) => s.isLoggingOut);
   const setTagEditor = useStashStore((s) => s.setTagEditor);
-  const userInitial = useStashStore((s) => s.userInitial);
-  const userName = useStashStore((s) => s.userName);
-  const userEmail = useStashStore((s) => s.userEmail);
+  const storeInitial = useStashStore((s) => s.userInitial);
+  const storeName = useStashStore((s) => s.userName);
+  const storeEmail = useStashStore((s) => s.userEmail);
 
-  const { tags, stashes } = useStashQueries();
+  const userInitial = storeInitial !== "U" ? storeInitial : propInitial;
+  const userName = storeName !== "" ? storeName : propName;
+  const userEmail = storeEmail !== "" ? storeEmail : propEmail;
+
+  const { tags: queriedTags, stashes: queriedStashes } = useStashQueries();
+  const tags = queriedTags.length > 0 ? queriedTags : initialTags;
+  const stashes = queriedStashes.length > 0 ? queriedStashes : initialStashes;
+
   const { handleLogout } = useStashActions();
 
   const resolvedActiveTagId =
@@ -99,6 +120,7 @@ export function StashNavbar() {
           <PopoverTrigger asChild>
             <button
               type="button"
+              suppressHydrationWarning
               className="group flex items-center gap-1.5 focus:outline-none"
             >
               <span className="text-foreground truncate text-lg font-medium">
@@ -172,6 +194,7 @@ export function StashNavbar() {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
+              suppressHydrationWarning
               className="border-border bg-muted text-foreground hover:bg-accent flex size-10 items-center justify-center rounded-full border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isLoggingOut}
               aria-disabled={isLoggingOut}
