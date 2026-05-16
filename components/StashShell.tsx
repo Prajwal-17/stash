@@ -4,6 +4,7 @@ import { EditStashDialog } from "@/components/stashClient/EditStashDialog";
 import { StashActionDrawer } from "@/components/stashClient/StashActionDrawer";
 import { StashComposer } from "@/components/stashClient/StashComposer";
 import { StashList } from "@/components/stashClient/StashList";
+import { StashSearchResults } from "@/components/stashClient/StashSearchResults";
 import { TagEditorDialog } from "@/components/stashClient/TagEditorDialog";
 import { useStashActions } from "@/hooks/useStashActions";
 import { getDefaultTagId, Stash, Tag } from "@/lib/stash-client";
@@ -29,6 +30,7 @@ export function StashShell({
   userName,
 }: StashShellProps) {
   const hydratedRef = useRef<boolean>(null);
+  const isSearchOpen = useStashStore((s) => s.isSearchOpen);
 
   // Hydrate store once with SSR data (React 19 null-check pattern)
   if (hydratedRef.current === null) {
@@ -61,7 +63,7 @@ export function StashShell({
         </header>
       </div>
 
-      <StashList />
+      {isSearchOpen ? <StashSearchResults /> : <StashList />}
 
       <div className="mx-auto w-full max-w-2xl px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:px-5">
         <StashComposer />

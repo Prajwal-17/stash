@@ -42,7 +42,6 @@ export function StashActionDrawer() {
       <SheetContent
         side="bottom"
         className="border-border bg-card w-full rounded-t-[28px] border-t px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+16px)] shadow-[0_-18px_60px_rgba(0,0,0,0.4)]"
-        aria-describedby="drawer-stash-desc"
       >
         <SheetClose asChild>
           <button

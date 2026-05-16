@@ -33,6 +33,8 @@ import {
   LuLoaderCircle,
   LuLogOut,
   LuPlus,
+  LuSearch,
+  LuX,
 } from "react-icons/lu";
 
 interface StashNavbarProps {
@@ -60,6 +62,20 @@ export function StashNavbar({
   const storeInitial = useStashStore((s) => s.userInitial);
   const storeName = useStashStore((s) => s.userName);
   const storeEmail = useStashStore((s) => s.userEmail);
+  const isSearchOpen = useStashStore((s) => s.isSearchOpen);
+  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
+  const searchQuery = useStashStore((s) => s.searchQuery);
+  const setSearchQuery = useStashStore((s) => s.setSearchQuery);
+
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  // Debounce local input to store
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(localSearch);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [localSearch, setSearchQuery]);
 
   const userInitial = storeInitial !== "U" ? storeInitial : propInitial;
   const userName = storeName !== "" ? storeName : propName;
@@ -111,7 +127,57 @@ export function StashNavbar({
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, []);
 
+  // "Ctrl + F" to open search
+  useEffect(() => {
+    const handleSearchShortcut = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLElement &&
+        ["INPUT", "TEXTAREA"].includes(e.target.tagName)
+      ) {
+        return;
+      }
+      if (e.key === "f" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    document.addEventListener("keydown", handleSearchShortcut);
+    return () => document.removeEventListener("keydown", handleSearchShortcut);
+  }, [setIsSearchOpen]);
+
   const activeLabel = activeTag ? getTagLabel(activeTag) : "Inbox";
+
+  if (isSearchOpen) {
+    return (
+      <div className="animate-in fade-in flex w-full items-center gap-3 duration-200">
+        <div className="group relative flex-1 shadow-sm">
+          <LuSearch
+            className="text-muted-foreground group-focus-within:text-foreground absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
+            size={18}
+          />
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search stashes, titles, or descriptions..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full rounded-full border py-2.5 pr-12 pl-10 text-base shadow-inner transition-all outline-none focus:ring-4"
+          />
+          <button
+            type="button"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
+            onClick={() => {
+              setIsSearchOpen(false);
+              setLocalSearch("");
+              setSearchQuery("");
+            }}
+          >
+            <LuX size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full items-start justify-between gap-3">
@@ -190,6 +256,13 @@ export function StashNavbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center transition-colors"
+          onClick={() => setIsSearchOpen(true)}
+        >
+          <LuSearch size={19} />
+        </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -197,7 +270,6 @@ export function StashNavbar({
               suppressHydrationWarning
               className="border-border bg-muted text-foreground hover:bg-accent flex size-10 items-center justify-center rounded-full border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isLoggingOut}
-              aria-disabled={isLoggingOut}
             >
               {userInitial}
             </button>

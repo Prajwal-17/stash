@@ -44,6 +44,12 @@ interface StashStore {
   copiedStashId: string | null;
   setCopiedStashId: (id: string | null) => void;
 
+  isSearchOpen: boolean;
+  setIsSearchOpen: (val: boolean) => void;
+
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+
   isLoggingOut: boolean;
   setIsLoggingOut: (val: boolean) => void;
 
@@ -88,6 +94,12 @@ export const useStashStore = create<StashStore>((set) => ({
 
   copiedStashId: null,
   setCopiedStashId: (id) => set({ copiedStashId: id }),
+
+  isSearchOpen: false,
+  setIsSearchOpen: (val) => set({ isSearchOpen: val }),
+
+  searchQuery: "",
+  setSearchQuery: (val) => set({ searchQuery: val }),
 
   isLoggingOut: false,
   setIsLoggingOut: (val) => set({ isLoggingOut: val }),
