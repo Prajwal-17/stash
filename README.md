@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stash
 
-## Getting Started
+A clean personal bookmark manager. Save URLs, auto-fetch metadata, organize with tags.
 
-First, run the development server:
+Built with Next.js 16, TypeScript, Tailwind CSS, shadcn, Turso (SQLite), better-auth (Google OAuth), Drizzle ORM, Zustand, TanStack Query.
+
+## Features
+
+- Save bookmarks with auto-fetched metadata (title, description, hostname)
+- Tag based organization
+- Full text search across titles, URLs, descriptions
+- Google OAuth login
+- PWA with share target (mobile share-to-stash)
+- Quick Actions(shortcuts)
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env
+pnpm exec drizzle-kit push
+pnpm dev                       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## .env
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+BETTER_AUTH_SECRET=<generate one via `openssl rand -hex 32`>
+BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+DB_FILE_NAME=./.dist/stash.sqlite
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Google OAuth (optional but needed to log in)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 
-## Learn More
+# Turso (production only)
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
 
-To learn more about Next.js, take a look at the following resources:
+- Dev uses a local SQLite file (`.dist/stash.sqlite` by default).
+- Production uses Turso; set `NODE_ENV=production` and `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`.
+- Google OAuth is the only auth provider. Without it you cannot log in.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| cmd                         | desc                    |
+| --------------------------- | ----------------------- |
+| `pnpm dev`                  | Start dev server        |
+| `pnpm build`                | Production build        |
+| `pnpm start`                | Start production server |
+| `pnpm drizzle-kit push`     | Push schema to DB       |
+| `pnpm drizzle-kit generate` | Generate migration      |
+| `pnpm drizzle-kit migrate`  | Apply migration         |
