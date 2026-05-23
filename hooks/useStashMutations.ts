@@ -1,10 +1,10 @@
 import {
-  Stash,
   createStash,
   createTag,
   deleteStash,
   deleteTag,
   MutationError,
+  Stash,
   stashQueryKeys,
   Tag,
   updateStash,
@@ -21,7 +21,6 @@ export function useStashMutations() {
   const setUrlInput = useStashStore((s) => s.setUrlInput);
   const setStashEditor = useStashStore((s) => s.setStashEditor);
   const setDrawerStash = useStashStore((s) => s.setDrawerStash);
-  const setNotice = useStashStore((s) => s.setNotice);
 
   const createTagMutation = useMutation({
     mutationFn: (name: string) => createTag(name),
@@ -32,10 +31,10 @@ export function useStashMutations() {
       ]);
       setActiveTagId(tag.id);
       setComposerTagId(tag.id);
-      setNotice({ type: "success", message: "Tag created." });
+      toast.success("Tag created.");
     },
     onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -46,10 +45,10 @@ export function useStashMutations() {
       queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
         current.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag)),
       );
-      setNotice({ type: "success", message: "Tag updated." });
+      toast.success("Tag updated.");
     },
     onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -61,17 +60,16 @@ export function useStashMutations() {
       );
       queryClient.setQueryData<Stash[]>(
         stashQueryKeys.stashes,
-        (current = []) =>
-          current.filter((stash) => stash.tagId !== tagId),
+        (current = []) => current.filter((stash) => stash.tagId !== tagId),
       );
       // Reset active/composer tag if the deleted tag was selected
       const store = useStashStore.getState();
       if (store.activeTagId === tagId) setActiveTagId(null);
       if (store.composerTagId === tagId) setComposerTagId(null);
-      setNotice({ type: "success", message: "Tag deleted." });
+      toast.success("Tag deleted.");
     },
     onError: (error: MutationError) => {
-      setNotice({ type: "error", message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -125,8 +123,7 @@ export function useStashMutations() {
     onSuccess: (_, stashId) => {
       queryClient.setQueryData<Stash[]>(
         stashQueryKeys.stashes,
-        (current = []) =>
-          current.filter((stash) => stash.id !== stashId),
+        (current = []) => current.filter((stash) => stash.id !== stashId),
       );
       setDrawerStash(null);
       toast.success("Stash removed.");

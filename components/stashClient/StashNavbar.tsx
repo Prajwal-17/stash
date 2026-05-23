@@ -32,8 +32,10 @@ import {
   LuChevronDown,
   LuLoaderCircle,
   LuLogOut,
+  LuPencil,
   LuPlus,
   LuSearch,
+  LuTrash2,
   LuX,
 } from "react-icons/lu";
 
@@ -85,7 +87,7 @@ export function StashNavbar({
   const tags = queriedTags.length > 0 ? queriedTags : initialTags;
   const stashes = queriedStashes.length > 0 ? queriedStashes : initialStashes;
 
-  const { handleLogout } = useStashActions();
+  const { handleLogout, openDeleteConfirmation } = useStashActions();
 
   const resolvedActiveTagId =
     activeTagId && tags.some((tag) => tag.id === activeTagId)
@@ -227,10 +229,56 @@ export function StashNavbar({
                           setComposerTagId(tag.id);
                           setOpen(false);
                         }}
-                        className="flex justify-between"
+                        className="group/tag flex items-center justify-between gap-2"
                       >
                         <span className="truncate">{label}</span>
-                        <span className="text-xs opacity-60">{count}</span>
+                        <span className="flex shrink-0 items-center gap-0.5">
+                          <span className="text-muted-foreground text-xs tabular-nums">
+                            {count}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={`Edit tag ${label}`}
+                            className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex size-6 items-center justify-center rounded transition-colors"
+                            onPointerDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTagEditor({
+                                mode: "edit",
+                                tagId: tag.id,
+                                name: tag.name || label,
+                              });
+                              setOpen(false);
+                            }}
+                          >
+                            <LuPencil size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete tag ${label}`}
+                            className="text-muted-foreground hover:bg-red-500/10 hover:text-red-300 inline-flex size-6 items-center justify-center rounded transition-colors"
+                            onPointerDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteConfirmation({
+                                kind: "tag",
+                                id: tag.id,
+                                title: `Remove "${label}"?`,
+                                description:
+                                  "This removes the tag and all stashes inside it permanently.",
+                                confirmLabel: "Remove tag",
+                              });
+                            }}
+                          >
+                            <LuTrash2 size={12} />
+                          </button>
+                        </span>
                       </CommandItem>
                     );
                   })}
