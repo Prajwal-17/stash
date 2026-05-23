@@ -165,6 +165,7 @@ export function StashNavbar({
           />
           <button
             type="button"
+            aria-label="Close search"
             className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
             onClick={() => {
               setIsSearchOpen(false);
@@ -186,6 +187,7 @@ export function StashNavbar({
           <PopoverTrigger asChild>
             <button
               type="button"
+              aria-label="Switch tag"
               suppressHydrationWarning
               className="group flex items-center gap-1.5 focus:outline-none"
             >
@@ -200,7 +202,7 @@ export function StashNavbar({
                 size={16}
               />
               <Kbd className="ml-1 hidden sm:inline-flex">
-                <span className="text-[10px]">⌘</span>P
+                <span className="text-xs">⌘</span>P
               </Kbd>
             </button>
           </PopoverTrigger>
@@ -258,6 +260,7 @@ export function StashNavbar({
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
+          aria-label="Open search"
           className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center transition-colors"
           onClick={() => setIsSearchOpen(true)}
         >
@@ -267,6 +270,7 @@ export function StashNavbar({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
+              aria-label="User menu"
               suppressHydrationWarning
               className="border-border bg-muted text-foreground hover:bg-accent flex size-10 items-center justify-center rounded-full border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isLoggingOut}

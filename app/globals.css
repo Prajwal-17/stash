@@ -33,37 +33,34 @@
 }
 
 :root {
-  --background: 240 5% 10%;
-  --foreground: 0 0% 98%;
+  --background: 35 10% 8%;
+  --foreground: 35 20% 93%;
 
-  --card: 240 5% 13%;
-  --card-foreground: 0 0% 98%;
+  --card: 35 10% 11%;
+  --card-foreground: 35 20% 93%;
 
-  --popover: 240 5% 13%;
-  --popover-foreground: 0 0% 98%;
+  --popover: 35 10% 11%;
+  --popover-foreground: 35 20% 93%;
 
-  /* Sleek Minimal Primary (White on Dark) */
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5% 10%;
+  --primary: 38 92% 55%;
+  --primary-foreground: 35 10% 8%;
 
-  /* Distinct Secondary for contrasting elements */
-  --secondary: 240 5% 18%;
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 35 10% 15%;
+  --secondary-foreground: 35 20% 93%;
 
-  --muted: 240 5% 18%;
-  --muted-foreground: 240 5% 65%;
+  --muted: 35 10% 15%;
+  --muted-foreground: 35 12% 72%;
 
-  /* Accent for hovers / subtle interactions */
-  --accent: 240 5% 22%;
-  --accent-foreground: 0 0% 98%;
+  --accent: 35 10% 19%;
+  --accent-foreground: 35 20% 93%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 70% 52%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 240 5% 20%;
-  --input: 240 5% 16%;
+  --border: 35 10% 18%;
+  --input: 35 10% 13%;
 
-  --ring: 240 5% 90%;
+  --ring: 38 85% 58%;
 
   --radius: 0.5rem;
 }

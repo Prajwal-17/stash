@@ -132,7 +132,7 @@ export function StashRow({
                 highlightClassName="bg-white/15 text-foreground font-medium p-0"
               />
             </p>
-            <p className="text-muted-foreground truncate text-[11px]">
+            <p className="text-muted-foreground truncate text-xs">
               <Highlighter
                 searchWords={searchWords}
                 autoEscape={true}
@@ -166,6 +166,7 @@ export function StashRow({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
+                      aria-label="View details"
                       className={cn(
                         "text-muted-foreground hover:bg-accent hover:text-foreground hidden size-8 items-center justify-center rounded-lg transition sm:flex",
                         isPreviewOpen && "bg-accent text-foreground",
@@ -194,6 +195,7 @@ export function StashRow({
               <TooltipTrigger asChild>
                 <button
                   type="button"
+                  aria-label="Copy URL"
                   className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition"
                   onClick={(event) => {
                     event.stopPropagation();
@@ -214,6 +216,7 @@ export function StashRow({
               <TooltipTrigger asChild>
                 <button
                   type="button"
+                  aria-label="Edit stash"
                   className="text-muted-foreground hover:bg-accent hover:text-foreground hidden size-8 items-center justify-center rounded-lg transition sm:flex"
                   onClick={(event) => {
                     event.stopPropagation();
@@ -230,6 +233,7 @@ export function StashRow({
               <TooltipTrigger asChild>
                 <button
                   type="button"
+                  aria-label="Delete stash"
                   className="text-muted-foreground hidden size-8 items-center justify-center rounded-lg transition hover:bg-red-500/10 hover:text-red-300 sm:flex"
                   onClick={(event) => {
                     event.stopPropagation();

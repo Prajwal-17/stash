@@ -74,9 +74,9 @@ export function StashShell({
         position="top-center"
         toastOptions={{
           style: {
-            background: "#151515",
-            color: "#f5f5f5",
-            border: "1px solid rgba(255,255,255,0.12)",
+            background: "hsl(35 10% 11%)",
+            color: "hsl(35 20% 93%)",
+            border: "1px solid hsl(35 10% 20%)",
           },
         }}
       />

@@ -2,6 +2,7 @@
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "motion/react";
 import { ReactNode, useState } from "react";
 
 interface ProvidersProps {
@@ -26,7 +27,9 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+      <MotionConfig reducedMotion="user">
+        <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

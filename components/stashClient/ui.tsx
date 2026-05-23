@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 
 export function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <label className="text-muted-foreground block text-[11px] font-semibold tracking-[0.18em] uppercase">
+    <label className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
       {children}
     </label>
   );

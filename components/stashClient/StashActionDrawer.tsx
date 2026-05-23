@@ -46,6 +46,7 @@ export function StashActionDrawer() {
         <SheetClose asChild>
           <button
             type="button"
+            aria-label="Close drawer"
             className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-700"
           />
         </SheetClose>
@@ -67,7 +68,7 @@ export function StashActionDrawer() {
           <div className="space-y-4">
             {/* Full URL */}
             <div className="space-y-1.5">
-              <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 URL
               </p>
               <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
@@ -79,7 +80,7 @@ export function StashActionDrawer() {
             <div className="border-border/50 grid grid-cols-2 gap-3 border-t pt-3">
               {tag ? (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Tag
                   </p>
                   <p className="text-foreground/80 text-xs">
@@ -88,7 +89,7 @@ export function StashActionDrawer() {
                 </div>
               ) : null}
               <div className="space-y-1">
-                <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Added
                 </p>
                 <p className="text-foreground/80 text-xs">
@@ -97,7 +98,7 @@ export function StashActionDrawer() {
               </div>
               {drawerStash.updatedAt !== drawerStash.createdAt ? (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Updated
                   </p>
                   <p className="text-foreground/80 text-xs">
@@ -109,7 +110,7 @@ export function StashActionDrawer() {
 
             {drawerStash.description?.trim() ? (
               <div className="border-border/50 space-y-1 border-t pt-3">
-                <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Description
                 </p>
                 <p className="text-foreground/70 text-xs leading-relaxed">
@@ -122,6 +123,9 @@ export function StashActionDrawer() {
             <div className="border-border/50 flex items-center gap-2 border-t pt-4">
               <button
                 type="button"
+                aria-label={
+                  copiedStashId === drawerStash.id ? "Copied" : "Copy URL"
+                }
                 className="bg-muted text-foreground flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
                 onClick={() => void copyText(drawerStash.url, drawerStash.id)}
               >
@@ -134,6 +138,7 @@ export function StashActionDrawer() {
               </button>
               <button
                 type="button"
+                aria-label="Edit stash"
                 className="bg-muted text-foreground flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
                 onClick={() => openStashEditor(drawerStash)}
               >
@@ -142,6 +147,7 @@ export function StashActionDrawer() {
               </button>
               <button
                 type="button"
+                aria-label="Delete stash"
                 className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs font-medium text-red-300"
                 onClick={() =>
                   openDeleteConfirmation({

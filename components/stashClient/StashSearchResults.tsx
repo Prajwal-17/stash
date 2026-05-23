@@ -135,25 +135,23 @@ export function StashSearchResults() {
         ) : (
           <>
             <div className="border-border/40 mb-1 flex items-center justify-center border-b px-2 pb-2 sm:justify-between">
-              <span className="text-muted-foreground hidden text-[10px] font-semibold tracking-[0.15em] uppercase sm:block">
+              <span className="text-muted-foreground hidden text-xs font-semibold tracking-wider uppercase sm:block">
                 Search Results
               </span>
 
-              <span className="text-muted-foreground/60 text-[10px] sm:hidden">
+              <span className="text-muted-foreground/60 text-xs sm:hidden">
                 Hold on a link to view details
               </span>
 
               <div className="hidden items-center gap-1.5 sm:flex">
                 <Kbd>↑</Kbd>
                 <Kbd>↓</Kbd>
-                <span className="text-muted-foreground/50 text-[10px]">
+                <span className="text-muted-foreground/50 text-xs">
                   navigate
                 </span>
                 <span className="text-muted-foreground/30 mx-0.5">·</span>
                 <Kbd>↵</Kbd>
-                <span className="text-muted-foreground/50 text-[10px]">
-                  open
-                </span>
+                <span className="text-muted-foreground/50 text-xs">open</span>
               </div>
             </div>
 

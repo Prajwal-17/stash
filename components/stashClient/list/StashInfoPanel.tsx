@@ -19,7 +19,7 @@ export function StashInfoPanel({
   return (
     <div className="space-y-3 p-4">
       <div className="space-y-1">
-        <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           URL
         </p>
         <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
@@ -34,7 +34,7 @@ export function StashInfoPanel({
 
       {stash.title?.trim() && stash.title.trim() !== getHostname(stash.url) ? (
         <div className="space-y-1">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Title
           </p>
           <p className="text-foreground/80 text-xs">
@@ -50,7 +50,7 @@ export function StashInfoPanel({
 
       {stash.description?.trim() ? (
         <div className="space-y-1">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Description
           </p>
           <p className="text-foreground/70 text-xs leading-relaxed">
@@ -67,14 +67,14 @@ export function StashInfoPanel({
       <div className="border-border/50 grid grid-cols-2 gap-3 border-t pt-3">
         {tag ? (
           <div className="space-y-1">
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Tag
             </p>
             <p className="text-foreground/80 text-xs">{getTagLabel(tag)}</p>
           </div>
         ) : null}
         <div className="space-y-1">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Added
           </p>
           <p className="text-foreground/80 text-xs">
@@ -83,7 +83,7 @@ export function StashInfoPanel({
         </div>
         {stash.updatedAt !== stash.createdAt ? (
           <div className="space-y-1">
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Updated
             </p>
             <p className="text-foreground/80 text-xs">
