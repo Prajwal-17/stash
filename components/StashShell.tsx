@@ -75,8 +75,8 @@ export function StashShell({
 
   return (
     <div className="bg-background text-foreground flex h-dvh w-full justify-center overflow-hidden">
-      <div className="flex w-full max-w-220">
-        <div className="border-border/40 hidden w-55 shrink-0 border-r md:block">
+      <div className="flex w-full max-w-230">
+        <div className="border-border/40 hidden w-60 shrink-0 border-r md:block">
           <StashSidebar
             initialTags={initialTags}
             userEmail={userEmail}

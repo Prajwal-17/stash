@@ -26,7 +26,8 @@ import {
   LuLogOut,
   LuPlus,
   LuSearch,
-  LuSettings
+  LuSettings,
+  LuX
 } from "react-icons/lu";
 
 interface StashSidebarProps {
@@ -55,6 +56,7 @@ export function StashSidebar({
   const setIsTagsPageOpen = useStashStore((s) => s.setIsTagsPageOpen);
 
   const [isTagsOpen, setIsTagsOpen] = useState(true);
+  const [tagSearchQuery, setTagSearchQuery] = useState("");
 
   const userInitial = storeInitial !== "U" ? storeInitial : propInitial;
   const userName = storeName !== "" ? storeName : propName;
@@ -80,7 +82,7 @@ export function StashSidebar({
   const defaultTagCount = stashCountByTag.get(defaultTagId) ?? 0;
 
   return (
-    <div className="bg-background/50 flex h-full w-55 flex-col">
+    <div className="bg-background/50 flex h-full w-full flex-col">
       <div className="flex items-center gap-2 px-4 py-5">
         <span className="text-foreground text-lg font-bold tracking-tight">Stash</span>
       </div>
@@ -149,7 +151,7 @@ export function StashSidebar({
                 type="button"
                 onClick={() => setIsTagsPageOpen(true)}
                 aria-label="View all tags"
-                className="text-muted-foreground/50 hover:bg-muted hover:text-foreground hidden items-center justify-center rounded p-0.5 group-hover:flex"
+                className="text-muted-foreground/50 hover:bg-muted hover:text-foreground flex items-center justify-center rounded p-0.5"
               >
                 <LuLayoutGrid size={14} />
               </button>
@@ -161,48 +163,74 @@ export function StashSidebar({
         </div>
 
         {isTagsOpen && (
-          <div className="flex-1 overflow-y-auto px-3 py-1">
-            <div className="flex flex-col gap-0.5">
-              {tags
-                .filter((tag) => tag.id !== defaultTagId)
-                .map((tag) => {
-                  const label = getTagLabel(tag);
-                  const count = stashCountByTag.get(tag.id) ?? 0;
-                  const isActive = !isSearchOpen && resolvedActiveTagId === tag.id;
+          <div className="flex flex-1 flex-col overflow-hidden px-3 py-1">
+            {tags.filter((t) => t.id !== defaultTagId).length > 5 && (
+              <div className="relative mb-2 flex shrink-0 items-center">
+                <LuSearch className="text-muted-foreground/45 pointer-events-none absolute left-2.5 size-3" />
+                <input
+                  type="text"
+                  placeholder="Filter tags..."
+                  value={tagSearchQuery}
+                  onChange={(e) => setTagSearchQuery(e.target.value)}
+                  className="border-border/60 bg-muted/20 focus:bg-background text-foreground placeholder:text-muted-foreground/40 focus:border-ring/30 w-full rounded-md border py-1 pr-6 pl-7 text-[11px] transition-colors outline-none"
+                />
+                {tagSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setTagSearchQuery("")}
+                    className="text-muted-foreground/40 hover:text-foreground absolute right-2 rounded-full p-0.5 transition-colors"
+                  >
+                    <LuX size={10} />
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-0.5">
+                {tags
+                  .filter((tag) => tag.id !== defaultTagId)
+                  .filter((tag) =>
+                    getTagLabel(tag).toLowerCase().includes(tagSearchQuery.toLowerCase())
+                  )
+                  .map((tag) => {
+                    const label = getTagLabel(tag);
+                    const count = stashCountByTag.get(tag.id) ?? 0;
+                    const isActive = !isSearchOpen && resolvedActiveTagId === tag.id;
 
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => {
-                        setIsSearchOpen(false);
-                        setActiveTagId(tag.id);
-                        setComposerTagId(tag.id);
-                      }}
-                      className={cn(
-                        "group hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-                        isActive ? "bg-active-bg text-active-fg" : "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-muted-foreground/60">#</span>
-                      <span className="flex-1 truncate text-left">{label}</span>
-                      {count > 0 && (
-                        <span className="text-muted-foreground/40 group-hover:text-muted-foreground/70 text-xs font-semibold transition-colors">
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          setActiveTagId(tag.id);
+                          setComposerTagId(tag.id);
+                        }}
+                        className={cn(
+                          "group hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
+                          isActive ? "bg-active-bg text-active-fg" : "text-muted-foreground"
+                        )}
+                      >
+                        <span className="text-muted-foreground/60">#</span>
+                        <span className="flex-1 truncate text-left">{label}</span>
+                        {count > 0 && (
+                          <span className="text-muted-foreground/40 group-hover:text-muted-foreground/70 text-xs font-semibold transition-colors">
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
 
-              <button
-                type="button"
-                onClick={() => setTagEditor({ mode: "create", name: "" })}
-                className="text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-              >
-                <LuPlus size={16} className="text-muted-foreground/50" />
-                <span className="flex-1 text-left">New tag</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setTagEditor({ mode: "create", name: "" })}
+                  className="text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+                >
+                  <LuPlus size={16} className="text-muted-foreground/50" />
+                  <span className="flex-1 text-left">New tag</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

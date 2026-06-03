@@ -1,9 +1,6 @@
-dist/
-build/
+.dist/
+.next/
 node_modules/
-out/
 drizzle/
-
-src/renderer/src/components/ui/
-
+components/ui/
 pnpm-lock.yaml
