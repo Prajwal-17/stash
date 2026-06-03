@@ -144,7 +144,7 @@ export function StashSearchResults() {
 
   return (
     <main className="flex flex-1 flex-col overflow-y-auto">
-      <header className="border-border/40 bg-background/80 sticky top-0 z-10 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-5">
+      <header className="search-header">
         <div className="group relative flex-1 shadow-sm">
           <LuSearch
             className="text-muted-foreground group-focus-within:text-foreground absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
@@ -156,7 +156,7 @@ export function StashSearchResults() {
             placeholder="Search stashes, titles, or descriptions..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full rounded-full border py-2.5 pr-12 pl-10 text-base shadow-inner transition-all outline-none focus:ring-4"
+            className="search-input"
           />
           <button
             type="button"

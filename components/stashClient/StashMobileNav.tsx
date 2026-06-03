@@ -58,19 +58,18 @@ export function StashMobileNav({
   const { handleLogout } = useStashActions();
 
   return (
-    <div className="border-border/40 bg-background/80 flex h-14 items-center justify-around border-t px-2 backdrop-blur-md md:hidden">
+    <div className="mobile-nav">
       <button
         type="button"
         onClick={() => {
           setIsSearchOpen(false);
-          setIsTagsPageOpen(false);
           setActiveTagId(defaultTagId);
           setComposerTagId(defaultTagId);
         }}
         className={cn(
           "flex h-full w-14 flex-col items-center justify-center gap-1",
           !isSearchOpen && !isTagsPageOpen && activeTagId === defaultTagId
-            ? "text-orange-500"
+            ? "text-active"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
@@ -82,11 +81,10 @@ export function StashMobileNav({
         type="button"
         onClick={() => {
           setIsSearchOpen(true);
-          setIsTagsPageOpen(false);
         }}
         className={cn(
           "flex h-full w-14 flex-col items-center justify-center gap-1",
-          isSearchOpen ? "text-orange-500" : "text-muted-foreground hover:text-foreground"
+          isSearchOpen ? "text-active" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuSearch size={20} />
@@ -96,13 +94,12 @@ export function StashMobileNav({
       <button
         type="button"
         onClick={() => {
-          setIsSearchOpen(false);
           setIsTagsPageOpen(true);
         }}
         className={cn(
           "flex h-full w-14 flex-col items-center justify-center gap-1",
           !isSearchOpen && isTagsPageOpen
-            ? "text-orange-500"
+            ? "text-active"
             : "text-muted-foreground hover:text-foreground"
         )}
       >

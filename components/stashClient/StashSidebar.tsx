@@ -8,8 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { getDefaultTagId, getTagLabel, Tag } from "@/lib/stash-client";
@@ -111,7 +111,7 @@ export function StashSidebar({
           className={cn(
             "hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
             !isSearchOpen && resolvedActiveTagId === defaultTagId
-              ? "bg-[#2a1a12] text-orange-100"
+              ? "bg-active-bg text-active-fg"
               : "text-muted-foreground"
           )}
         >
@@ -181,7 +181,7 @@ export function StashSidebar({
                       }}
                       className={cn(
                         "group hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-                        isActive ? "bg-[#2a1a12] text-orange-100" : "text-muted-foreground"
+                        isActive ? "bg-active-bg text-active-fg" : "text-muted-foreground"
                       )}
                     >
                       <span className="text-muted-foreground/60">#</span>

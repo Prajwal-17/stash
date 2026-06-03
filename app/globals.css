@@ -25,6 +25,10 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
+  --color-active: hsl(var(--active));
+  --color-active-bg: hsl(var(--active-bg));
+  --color-active-fg: hsl(var(--active-fg));
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,6 +67,10 @@
   --ring: 258 60% 55%;
 
   --radius: 0.5rem;
+
+  --active: 24 95% 53%;
+  --active-bg: 24 35% 10%;
+  --active-fg: 24 100% 93%;
 }
 
 @layer base {
@@ -91,4 +99,16 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.8);
+}
+
+@utility mobile-nav {
+  @apply border-border/40 bg-background/80 flex h-14 items-center justify-around border-t px-2 backdrop-blur-md md:hidden;
+}
+
+@utility search-header {
+  @apply border-border/40 bg-background/80 sticky top-0 z-10 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-5;
+}
+
+@utility search-input {
+  @apply border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full rounded-full border py-2.5 pr-12 pl-10 text-base shadow-inner transition-all outline-none focus:ring-4;
 }
