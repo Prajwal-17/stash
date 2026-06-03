@@ -147,6 +147,21 @@ export function StashNavbar({
     return () => document.removeEventListener("keydown", handleSearchShortcut);
   }, [setIsSearchOpen]);
 
+  useEffect(() => {
+    if (!isSearchOpen) return;
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIsSearchOpen(false);
+        setLocalSearch("");
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [isSearchOpen, setIsSearchOpen, setSearchQuery]);
+
   const activeLabel = activeTag ? getTagLabel(activeTag) : "Inbox";
 
   if (isSearchOpen) {
@@ -259,7 +274,7 @@ export function StashNavbar({
                           <button
                             type="button"
                             aria-label={`Delete tag ${label}`}
-                            className="text-muted-foreground hover:bg-red-500/10 hover:text-red-300 inline-flex size-6 items-center justify-center rounded transition-colors"
+                            className="text-muted-foreground inline-flex size-6 items-center justify-center rounded transition-colors hover:bg-red-500/10 hover:text-red-300"
                             onPointerDown={(e) => {
                               e.preventDefault();
                               e.stopPropagation();

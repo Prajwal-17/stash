@@ -88,7 +88,7 @@ export function StashComposer() {
             }
             className="border-border text-foreground placeholder:text-muted-foreground focus:border-ring h-12 flex-1 rounded-lg bg-transparent px-4 pr-32"
           />
-          <div className="pointer-events-none absolute right-3 hidden items-center gap-1.5 sm:flex">
+          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden items-center gap-1.5 rounded bg-background/90 px-1 py-0.5 sm:flex">
             <Kbd>
               <span className="text-xs">⌘</span>K
             </Kbd>

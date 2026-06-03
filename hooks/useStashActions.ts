@@ -56,9 +56,11 @@ export function useStashActions() {
     setIsFetchingMetadata(true);
     let title = undefined;
     let description = undefined;
-    
+
     try {
-      const res = await fetch(`/api/metadata?url=${encodeURIComponent(validation.value)}`);
+      const res = await fetch(
+        `/api/metadata?url=${encodeURIComponent(validation.value)}`,
+      );
       if (res.ok) {
         const metadata = await res.json();
         title = metadata.title || undefined;

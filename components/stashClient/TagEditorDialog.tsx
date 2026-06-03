@@ -31,7 +31,7 @@ export function TagEditorDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
+      <DialogContent className="max-h-[85vh] w-[95vw] gap-0 overflow-y-auto rounded-xl p-0 sm:max-w-md">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl font-semibold tracking-tight">
             {editorState?.mode === "create" ? "Create tag" : "Edit tag"}
