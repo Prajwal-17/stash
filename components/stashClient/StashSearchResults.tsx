@@ -2,23 +2,34 @@
 
 import { StashRow } from "@/components/stashClient/list/StashRow";
 import { QueryStatus } from "@/components/stashClient/ui";
-import { Kbd } from "@/components/ui/kbd";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { getTagLabel, Stash } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { LuLoaderCircle } from "react-icons/lu";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LuLoaderCircle, LuSearch, LuX } from "react-icons/lu";
 
 export function StashSearchResults() {
   const listRef = useRef<HTMLDivElement>(null);
 
   const searchQuery = useStashStore((s) => s.searchQuery);
+  const setSearchQuery = useStashStore((s) => s.setSearchQuery);
+  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
   const previewStash = useStashStore((s) => s.previewStash);
   const setPreviewStash = useStashStore((s) => s.setPreviewStash);
   const focusedStashIndex = useStashStore((s) => s.focusedStashIndex);
   const setFocusedStashIndex = useStashStore((s) => s.setFocusedStashIndex);
 
   const { tags, stashesQuery, stashes } = useStashQueries();
+
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  // Debounce local input to store
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(localSearch);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [localSearch, setSearchQuery]);
 
   const visibleStashes = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -28,16 +39,12 @@ export function StashSearchResults() {
       .filter((stash) => {
         const titleMatch = (stash.title || "").toLowerCase().includes(query);
         const urlMatch = (stash.url || "").toLowerCase().includes(query);
-        const descMatch = (stash.description || "")
-          .toLowerCase()
-          .includes(query);
+        const descMatch = (stash.description || "").toLowerCase().includes(query);
         return titleMatch || urlMatch || descMatch;
       })
       .slice()
       .sort(
-        (left, right) =>
-          new Date(right.createdAt).getTime() -
-          new Date(left.createdAt).getTime(),
+        (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
       );
   }, [stashes, searchQuery]);
 
@@ -77,6 +84,25 @@ export function StashSearchResults() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (previewStash) {
+          setPreviewStash(null);
+        } else {
+          const activeEl = document.activeElement;
+          const isInputFocused =
+            activeEl instanceof HTMLInputElement && activeEl.placeholder.includes("Search stashes");
+
+          if (isInputFocused) {
+            activeEl.blur();
+          } else {
+            setIsSearchOpen(false);
+            setLocalSearch("");
+            setSearchQuery("");
+          }
+        }
+        return;
+      }
+
       const len = flatRenderedStashes.length;
       if (!len) return;
 
@@ -98,10 +124,6 @@ export function StashSearchResults() {
         if (stash) {
           window.open(stash.url, "_blank", "noopener,noreferrer");
         }
-      } else if (e.key === "Escape") {
-        if (previewStash) {
-          setPreviewStash(null);
-        }
       }
     }
 
@@ -114,13 +136,44 @@ export function StashSearchResults() {
     previewStash,
     setPreviewStash,
     scrollToIndex,
+    setIsSearchOpen,
+    setSearchQuery
   ]);
 
   const searchWords = searchQuery.trim() ? [searchQuery.trim()] : [];
 
   return (
-    <main className="flex-1 overflow-y-auto px-3 sm:px-5">
-      <div className="mx-auto w-full max-w-2xl">
+    <main className="flex flex-1 flex-col overflow-y-auto">
+      <header className="border-border/40 bg-background/80 sticky top-0 z-10 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-5">
+        <div className="group relative flex-1 shadow-sm">
+          <LuSearch
+            className="text-muted-foreground group-focus-within:text-foreground absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
+            size={18}
+          />
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search stashes, titles, or descriptions..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full rounded-full border py-2.5 pr-12 pl-10 text-base shadow-inner transition-all outline-none focus:ring-4"
+          />
+          <button
+            type="button"
+            aria-label="Close search"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
+            onClick={() => {
+              setIsSearchOpen(false);
+              setLocalSearch("");
+              setSearchQuery("");
+            }}
+          >
+            <LuX size={16} />
+          </button>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-3xl px-3 pt-4 pb-16 sm:px-6">
         {stashesQuery.isFetching && !stashes.length ? (
           <QueryStatus>
             <span className="inline-flex items-center gap-2">
@@ -134,36 +187,15 @@ export function StashSearchResults() {
           <QueryStatus>No stashes found matching your query.</QueryStatus>
         ) : (
           <>
-            <div className="border-border/40 mb-1 flex items-center justify-center border-b px-2 pb-2 sm:justify-between">
-              <span className="text-muted-foreground hidden text-xs font-semibold tracking-wider uppercase sm:block">
-                Search Results
-              </span>
-
-              <span className="text-muted-foreground/60 text-xs sm:hidden">
-                Hold on a link to view details
-              </span>
-
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <Kbd>↑</Kbd>
-                <Kbd>↓</Kbd>
-                <span className="text-muted-foreground/50 text-xs">
-                  navigate
-                </span>
-                <span className="text-muted-foreground/30 mx-0.5">·</span>
-                <Kbd>↵</Kbd>
-                <span className="text-muted-foreground/50 text-xs">open</span>
-              </div>
-            </div>
-
             <div ref={listRef} className="mt-3 space-y-5">
               {(() => {
                 let globalIndex = 0;
                 return groupedStashes.map(({ tag, stashes }) => (
                   <div key={tag?.id || "unknown"}>
-                    <h3 className="text-muted-foreground mb-1.5 px-2 text-xs font-semibold tracking-wider uppercase">
+                    <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
                       {getTagLabel(tag)}
                     </h3>
-                    <ul className="divide-y divide-white/5">
+                    <ul className="flex flex-col gap-1">
                       {stashes.map((stash) => {
                         const currentIndex = globalIndex++;
                         return (

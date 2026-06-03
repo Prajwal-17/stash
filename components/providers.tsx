@@ -16,13 +16,13 @@ export function Providers({ children }: ProvidersProps) {
         defaultOptions: {
           queries: {
             staleTime: 30_000,
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: false
           },
           mutations: {
-            retry: 1,
-          },
-        },
-      }),
+            retry: 1
+          }
+        }
+      })
   );
 
   return (

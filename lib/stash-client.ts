@@ -38,7 +38,7 @@ export type TagValidationResult =
 
 export const stashQueryKeys = {
   stashes: ["stashes"] as const,
-  tags: ["tags"] as const,
+  tags: ["tags"] as const
 };
 
 export async function requestJson<T>(input: string, init?: RequestInit) {
@@ -46,8 +46,8 @@ export async function requestJson<T>(input: string, init?: RequestInit) {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+      ...(init?.headers ?? {})
+    }
   });
 
   const payload: ApiResponse<T> = await response.json();
@@ -74,7 +74,7 @@ export function createStash(payload: {
 }) {
   return requestJson<Stash>("/api/stashes", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
 }
 
@@ -87,35 +87,35 @@ export function updateStash(payload: {
 }) {
   return requestJson<Stash>("/api/stashes", {
     method: "PATCH",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
 }
 
 export function deleteStash(stashId: string) {
   return requestJson<Stash>("/api/stashes", {
     method: "DELETE",
-    body: JSON.stringify({ stashId }),
+    body: JSON.stringify({ stashId })
   });
 }
 
 export function createTag(name: string) {
   return requestJson<Tag>("/api/tags", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name })
   });
 }
 
 export function updateTag(payload: { tagId: string; name: string }) {
   return requestJson<Tag>("/api/tags", {
     method: "PATCH",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
 }
 
 export function deleteTag(tagId: string) {
   return requestJson<Tag>("/api/tags", {
     method: "DELETE",
-    body: JSON.stringify({ tagId }),
+    body: JSON.stringify({ tagId })
   });
 }
 
@@ -153,11 +153,7 @@ export function validateTagName(value: string): TagValidationResult {
 }
 
 export function getDefaultTagId(tags: Tag[]) {
-  return (
-    tags.find((tag) => tag.name?.trim().toLowerCase() === "inbox")?.id ??
-    tags[0]?.id ??
-    null
-  );
+  return tags.find((tag) => tag.name?.trim().toLowerCase() === "inbox")?.id ?? tags[0]?.id ?? null;
 }
 
 export function getTagLabel(tag: Tag | null | undefined) {

@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { msg: "Successfully fetched stashes", data: result },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error(error);
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -51,10 +51,7 @@ export async function POST(req: NextRequest) {
     const { tagId, url, title, description } = body;
 
     if (!tagId || !url) {
-      return NextResponse.json(
-        { msg: "tagId and url are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ msg: "tagId and url are required" }, { status: 400 });
     }
 
     const parsedUrl = new URL(url);
@@ -67,7 +64,7 @@ export async function POST(req: NextRequest) {
         url,
         title: title || null,
         hostname: parsedUrl.hostname,
-        description: description || null,
+        description: description || null
       })
       .returning();
 
@@ -83,7 +80,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -96,10 +93,7 @@ export async function PATCH(req: NextRequest) {
     const { stashId, tagId, url, title, description } = body;
 
     if (!stashId || !tagId || !url) {
-      return NextResponse.json(
-        { msg: "stashId, tagId, and url are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ msg: "stashId, tagId, and url are required" }, { status: 400 });
     }
 
     const parsedUrl = new URL(url);
@@ -112,22 +106,16 @@ export async function PATCH(req: NextRequest) {
         title: title || null,
         hostname: parsedUrl.hostname,
         description: description || null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
       .where(and(eq(stashes.id, stashId), eq(stashes.userId, user.id)))
       .returning();
 
     if (!updated) {
-      return NextResponse.json(
-        { msg: "Stash not found or not owned by user" },
-        { status: 404 },
-      );
+      return NextResponse.json({ msg: "Stash not found or not owned by user" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { msg: "Stash updated", data: updated },
-      { status: 200 },
-    );
+    return NextResponse.json({ msg: "Stash updated", data: updated }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
@@ -137,7 +125,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -159,16 +147,10 @@ export async function DELETE(req: NextRequest) {
       .returning();
 
     if (!deletedStash) {
-      return NextResponse.json(
-        { msg: "Stash not found or not owned by user" },
-        { status: 404 },
-      );
+      return NextResponse.json({ msg: "Stash not found or not owned by user" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { msg: "Stash removed", data: deletedStash },
-      { status: 200 },
-    );
+    return NextResponse.json({ msg: "Stash removed", data: deletedStash }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });

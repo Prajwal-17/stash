@@ -9,10 +9,12 @@ import { TagEditorDialog } from "@/components/stashClient/TagEditorDialog";
 import { useStashActions } from "@/hooks/useStashActions";
 import { getDefaultTagId, Stash, Tag } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Toaster } from "react-hot-toast";
 import { DeleteConfirmationDialog } from "./stashClient/DeleteConfirmationDialog";
-import { StashNavbar } from "./stashClient/StashNavbar";
+import { StashMobileNav } from "./stashClient/StashMobileNav";
+import { StashSidebar } from "./stashClient/StashSidebar";
+import { TagsPage } from "./stashClient/TagsPage";
 
 interface StashShellProps {
   initialStashes: Stash[];
@@ -27,10 +29,32 @@ export function StashShell({
   initialTags,
   userEmail,
   userInitial,
-  userName,
+  userName
 }: StashShellProps) {
   const hydratedRef = useRef<boolean>(null);
   const isSearchOpen = useStashStore((s) => s.isSearchOpen);
+  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
+  const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
+
+  // Global Ctrl+F / Cmd+F shortcut to open and focus search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        // Focus the search input if it is already mounted, or let autoFocus handle it
+        const searchInput = document.querySelector(
+          'input[placeholder*="Search stashes"]'
+        ) as HTMLInputElement | null;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [setIsSearchOpen]);
 
   // Hydrate store once with SSR data (React 19 null-check pattern)
   if (hydratedRef.current === null) {
@@ -39,7 +63,7 @@ export function StashShell({
     store.setUserInfo({
       email: userEmail,
       initial: userInitial,
-      name: userName,
+      name: userName
     });
 
     const defaultTagId = getDefaultTagId(initialTags);
@@ -50,23 +74,33 @@ export function StashShell({
   }
 
   return (
-    <div className="bg-background text-foreground flex h-dvh flex-col overflow-hidden">
-      <div className="mx-auto w-full max-w-2xl px-3 pt-4 sm:px-5 sm:pt-8">
-        <header className="mb-4">
-          <StashNavbar
+    <div className="bg-background text-foreground flex h-dvh w-full justify-center overflow-hidden">
+      <div className="flex w-full max-w-220">
+        <div className="border-border/40 hidden w-55 shrink-0 border-r md:block">
+          <StashSidebar
             initialTags={initialTags}
-            initialStashes={initialStashes}
             userEmail={userEmail}
             userInitial={userInitial}
             userName={userName}
           />
-        </header>
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] md:pb-0">
+          {isSearchOpen ? <StashSearchResults /> : isTagsPageOpen ? <TagsPage /> : <StashList />}
+
+          <div className="mx-auto w-full max-w-2xl px-3 pb-[calc(env(safe-area-inset-bottom)+68px)] sm:px-6 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <StashComposer />
+          </div>
+        </div>
       </div>
 
-      {isSearchOpen ? <StashSearchResults /> : <StashList />}
-
-      <div className="mx-auto w-full max-w-2xl px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:px-5">
-        <StashComposer />
+      <div className="fixed right-0 bottom-0 left-0 z-50 md:hidden">
+        <StashMobileNav
+          initialTags={initialTags}
+          userEmail={userEmail}
+          userInitial={userInitial}
+          userName={userName}
+        />
       </div>
 
       <StashDialogs />
@@ -76,8 +110,8 @@ export function StashShell({
           style: {
             background: "hsl(35 10% 11%)",
             color: "hsl(35 20% 93%)",
-            border: "1px solid hsl(35 10% 20%)",
-          },
+            border: "1px solid hsl(35 10% 20%)"
+          }
         }}
       />
     </div>
@@ -87,8 +121,7 @@ export function StashShell({
 function StashDialogs() {
   const tagEditor = useStashStore((s) => s.tagEditor);
   const setTagEditor = useStashStore((s) => s.setTagEditor);
-  const { submitTagEditor, isCreateTagPending, isUpdateTagPending } =
-    useStashActions();
+  const { submitTagEditor, isCreateTagPending, isUpdateTagPending } = useStashActions();
 
   return (
     <>
@@ -97,9 +130,7 @@ function StashDialogs() {
         onOpenChange={(open) => {
           if (!open) setTagEditor(null);
         }}
-        onChangeName={(name) =>
-          setTagEditor(tagEditor ? { ...tagEditor, name } : null)
-        }
+        onChangeName={(name) => setTagEditor(tagEditor ? { ...tagEditor, name } : null)}
         onSubmit={submitTagEditor}
         isPending={isCreateTagPending || isUpdateTagPending}
       />

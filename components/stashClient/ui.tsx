@@ -14,7 +14,7 @@ export function FieldLabel({ children }: { children: ReactNode }) {
 export function QueryStatus({
   children,
   tone = "muted",
-  compact = false,
+  compact = false
 }: {
   children: ReactNode;
   tone?: "muted" | "error";
@@ -25,9 +25,7 @@ export function QueryStatus({
       className={cn(
         "rounded-lg px-3 py-2 text-sm",
         compact ? "text-xs" : "text-sm",
-        tone === "error"
-          ? "bg-red-500/10 text-red-200"
-          : "bg-muted text-muted-foreground",
+        tone === "error" ? "bg-red-500/10 text-red-200" : "bg-muted text-muted-foreground"
       )}
     >
       {children}

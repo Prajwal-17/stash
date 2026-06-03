@@ -1,8 +1,4 @@
-import {
-  ConfirmationState,
-  EditStashState,
-  TagEditorState,
-} from "@/components/stashClient/types";
+import { ConfirmationState, EditStashState, TagEditorState } from "@/components/stashClient/types";
 import { Stash, Tag } from "@/lib/stash-client";
 import { create } from "zustand";
 
@@ -46,6 +42,9 @@ interface StashStore {
 
   isSearchOpen: boolean;
   setIsSearchOpen: (val: boolean) => void;
+
+  isTagsPageOpen: boolean;
+  setIsTagsPageOpen: (val: boolean) => void;
 
   searchQuery: string;
   setSearchQuery: (val: string) => void;
@@ -96,7 +95,10 @@ export const useStashStore = create<StashStore>((set) => ({
   setCopiedStashId: (id) => set({ copiedStashId: id }),
 
   isSearchOpen: false,
-  setIsSearchOpen: (val) => set({ isSearchOpen: val }),
+  setIsSearchOpen: (val) => set({ isSearchOpen: val, isTagsPageOpen: false }),
+
+  isTagsPageOpen: false,
+  setIsTagsPageOpen: (val) => set({ isTagsPageOpen: val, isSearchOpen: false }),
 
   searchQuery: "",
   setSearchQuery: (val) => set({ searchQuery: val }),
@@ -112,6 +114,5 @@ export const useStashStore = create<StashStore>((set) => ({
 
   initialStashes: [],
   initialTags: [],
-  setInitialData: ({ stashes, tags }) =>
-    set({ initialStashes: stashes, initialTags: tags }),
+  setInitialData: ({ stashes, tags }) => set({ initialStashes: stashes, initialTags: tags })
 }));

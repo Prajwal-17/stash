@@ -3,15 +3,22 @@
 import { StashRow } from "@/components/stashClient/list/StashRow";
 import { QueryStatus } from "@/components/stashClient/ui";
 import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
-import { getDefaultTagId } from "@/lib/stash-client";
+import { getDefaultTagId, getTagLabel, Stash } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
+import { LuEllipsis, LuLoaderCircle, LuPencil, LuRefreshCw, LuTrash2 } from "react-icons/lu";
 
 export function StashList() {
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const activeTagId = useStashStore((s) => s.activeTagId);
   const setTagEditor = useStashStore((s) => s.setTagEditor);
@@ -20,12 +27,17 @@ export function StashList() {
   const previewStash = useStashStore((s) => s.previewStash);
   const setPreviewStash = useStashStore((s) => s.setPreviewStash);
 
+  const { openDeleteConfirmation } = useStashActions();
+
   const { tagsQuery, stashesQuery, tags, stashes } = useStashQueries();
 
   const resolvedActiveTagId =
-    activeTagId && tags.some((tag) => tag.id === activeTagId)
-      ? activeTagId
-      : getDefaultTagId(tags);
+    activeTagId && tags.some((tag) => tag.id === activeTagId) ? activeTagId : getDefaultTagId(tags);
+
+  const activeTag = useMemo(
+    () => tags.find((tag) => tag.id === resolvedActiveTagId) ?? null,
+    [resolvedActiveTagId, tags]
+  );
 
   const visibleStashes = useMemo(() => {
     const filtered = resolvedActiveTagId
@@ -35,17 +47,37 @@ export function StashList() {
     return filtered
       .slice()
       .sort(
-        (left, right) =>
-          new Date(right.createdAt).getTime() -
-          new Date(left.createdAt).getTime(),
+        (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
       );
   }, [stashes, resolvedActiveTagId]);
+
+  const groupedStashes = useMemo(() => {
+    const today: Stash[] = [];
+    const thisWeek: Stash[] = [];
+    const older: Stash[] = [];
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekStart = todayStart - 6 * 24 * 60 * 60 * 1000;
+
+    for (const stash of visibleStashes) {
+      const time = new Date(stash.createdAt).getTime();
+      if (time >= todayStart) {
+        today.push(stash);
+      } else if (time >= weekStart) {
+        thisWeek.push(stash);
+      } else {
+        older.push(stash);
+      }
+    }
+
+    return { today, thisWeek, older };
+  }, [visibleStashes]);
 
   const showTagLoadState = tagsQuery.isPending && !tags.length;
   const showStashLoadState = stashesQuery.isPending && !stashes.length;
   const showTagErrorState = tagsQuery.isError && !tags.length;
 
-  // Reset focused index when visible stashes change
   useEffect(() => {
     setFocusedStashIndex(-1);
   }, [resolvedActiveTagId, setFocusedStashIndex]);
@@ -62,11 +94,7 @@ export function StashList() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // don't capture when typing in input
-      if (
-        e.target instanceof HTMLElement &&
-        ["INPUT", "TEXTAREA"].includes(e.target.tagName)
-      ) {
+      if (e.target instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
         return;
       }
 
@@ -114,21 +142,84 @@ export function StashList() {
     setFocusedStashIndex,
     previewStash,
     setPreviewStash,
-    scrollToIndex,
+    scrollToIndex
   ]);
 
+  const isDefaultTag = resolvedActiveTagId === getDefaultTagId(tags);
+
+  let globalIndex = 0;
+
   return (
-    <main className="flex-1 overflow-y-auto px-3 sm:px-5">
-      <div className="mx-auto w-full max-w-2xl">
+    <main className="flex flex-1 flex-col overflow-y-auto">
+      <header className="border-border/40 bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-3">
+        <h1 className="text-base font-medium tracking-tight">
+          {isDefaultTag ? (
+            <span className="text-foreground">Inbox</span>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground/60">Tags</span>
+              <span className="text-muted-foreground/30 font-normal">/</span>
+              <span className="text-foreground font-semibold">
+                {activeTag ? getTagLabel(activeTag) : "unknown"}
+              </span>
+            </span>
+          )}
+        </h1>
+        <div className="flex items-center gap-2">
+          {!isDefaultTag && activeTag && (
+            <DropdownMenu>
+              <DropdownMenuTrigger id="list-tag-options-dropdown-trigger" asChild>
+                <Button
+                  id="list-tag-options-dropdown-trigger"
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 rounded-full"
+                >
+                  <LuEllipsis size={18} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem
+                  onClick={() =>
+                    setTagEditor({
+                      mode: "edit",
+                      tagId: activeTag.id,
+                      name: activeTag.name || getTagLabel(activeTag)
+                    })
+                  }
+                >
+                  <LuPencil className="mr-2 h-4 w-4" />
+                  Edit tag
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                  onClick={() =>
+                    openDeleteConfirmation({
+                      kind: "tag",
+                      id: activeTag.id,
+                      title: `Remove "${getTagLabel(activeTag)}"?`,
+                      description: "This removes the tag and all stashes inside it permanently.",
+                      confirmLabel: "Remove tag"
+                    })
+                  }
+                >
+                  <LuTrash2 className="mr-2 h-4 w-4" />
+                  Delete tag
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-3xl px-3 pt-2 pb-16 sm:px-6">
         <div className="mb-4 space-y-3">
           {tagsQuery.isError ? (
             <QueryStatus tone="error">
               <div className="flex items-center justify-between gap-3">
-                <span>
-                  {tags.length
-                    ? "Could not refresh tags."
-                    : "Could not load tags."}
-                </span>
+                <span>{tags.length ? "Could not refresh tags." : "Could not load tags."}</span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -171,9 +262,7 @@ export function StashList() {
           <QueryStatus tone="error">
             <div className="flex items-center justify-between gap-3">
               <span>
-                {stashes.length
-                  ? "Could not refresh stashes."
-                  : "Could not load stashes."}
+                {stashes.length ? "Could not refresh stashes." : "Could not load stashes."}
               </span>
               <Button
                 type="button"
@@ -194,46 +283,52 @@ export function StashList() {
           </QueryStatus>
         ) : !visibleStashes.length ? (
           <QueryStatus>
-            {resolvedActiveTagId
-              ? "No stashes in this tag yet."
-              : "No stashes here yet."}
+            {resolvedActiveTagId ? "No stashes in this tag yet." : "No stashes here yet."}
           </QueryStatus>
         ) : (
-          <>
-            <div className="border-border/40 mb-1 flex items-center justify-center border-b px-2 pb-2 sm:justify-between">
-              <span className="text-muted-foreground hidden text-xs font-semibold tracking-wider uppercase sm:block">
-                Title
-              </span>
+          <div ref={listRef} className="flex flex-col gap-6">
+            {groupedStashes.today.length > 0 && (
+              <section>
+                <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
+                  Today
+                </h3>
+                <ul className="flex flex-col gap-1">
+                  {groupedStashes.today.map((stash) => {
+                    const currentIndex = globalIndex++;
+                    return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
+                  })}
+                </ul>
+              </section>
+            )}
 
-              <span className="text-muted-foreground/60 text-xs sm:hidden">
-                Hold on a link to view details
-              </span>
+            {groupedStashes.thisWeek.length > 0 && (
+              <section>
+                <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
+                  This week
+                </h3>
+                <ul className="flex flex-col gap-1">
+                  {groupedStashes.thisWeek.map((stash) => {
+                    const currentIndex = globalIndex++;
+                    return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
+                  })}
+                </ul>
+              </section>
+            )}
 
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <Kbd>↑</Kbd>
-                <Kbd>↓</Kbd>
-                <span className="text-muted-foreground/50 text-xs">
-                  navigate
-                </span>
-                <span className="text-muted-foreground/30 mx-0.5">·</span>
-                <Kbd>Space</Kbd>
-                <span className="text-muted-foreground/50 text-xs">
-                  preview
-                </span>
-                <span className="text-muted-foreground/30 mx-0.5">·</span>
-                <Kbd>↵</Kbd>
-                <span className="text-muted-foreground/50 text-xs">
-                  open
-                </span>
-              </div>
-            </div>
-
-            <ul ref={listRef} className="divide-y divide-white/5">
-              {visibleStashes.map((stash, index) => (
-                <StashRow key={stash.id} stash={stash} index={index} />
-              ))}
-            </ul>
-          </>
+            {groupedStashes.older.length > 0 && (
+              <section>
+                <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
+                  Older
+                </h3>
+                <ul className="flex flex-col gap-1">
+                  {groupedStashes.older.map((stash) => {
+                    const currentIndex = globalIndex++;
+                    return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
+                  })}
+                </ul>
+              </section>
+            )}
+          </div>
         )}
 
         {stashesQuery.isFetching && !showStashLoadState ? (

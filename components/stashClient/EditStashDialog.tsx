@@ -8,7 +8,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandList,
+  CommandList
 } from "@/components/ui/command";
 import {
   Dialog,
@@ -16,14 +16,10 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
@@ -54,18 +50,11 @@ export function EditStashDialog() {
     >
       <DialogContent className="w-[95vw] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-xl font-semibold tracking-tight">
-            Edit stash
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Edit the details of this stash.
-          </DialogDescription>
+          <DialogTitle className="text-xl font-semibold tracking-tight">Edit stash</DialogTitle>
+          <DialogDescription className="sr-only">Edit the details of this stash.</DialogDescription>
         </DialogHeader>
 
-        <form
-          className="px-6 pt-2 pb-6"
-          onSubmit={(event) => void submitStashEditor(event)}
-        >
+        <form className="px-6 pt-2 pb-6" onSubmit={(event) => void submitStashEditor(event)}>
           <div className="space-y-4">
             <div className="space-y-2">
               <FieldLabel>URL</FieldLabel>
@@ -73,11 +62,7 @@ export function EditStashDialog() {
                 autoFocus
                 value={stashEditor?.url ?? ""}
                 onChange={(event) =>
-                  setStashEditor(
-                    stashEditor
-                      ? { ...stashEditor, url: event.target.value }
-                      : null,
-                  )
+                  setStashEditor(stashEditor ? { ...stashEditor, url: event.target.value } : null)
                 }
                 className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-lg border px-4 text-sm"
               />
@@ -90,9 +75,7 @@ export function EditStashDialog() {
                   value={stashEditor?.title ?? ""}
                   onChange={(event) =>
                     setStashEditor(
-                      stashEditor
-                        ? { ...stashEditor, title: event.target.value }
-                        : null,
+                      stashEditor ? { ...stashEditor, title: event.target.value } : null
                     )
                   }
                   className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-lg border px-4 text-sm"
@@ -107,24 +90,19 @@ export function EditStashDialog() {
                       type="button"
                       className={cn(
                         "border-border bg-muted text-foreground flex h-12 w-full items-center justify-between rounded-lg border px-4 text-sm",
-                        !selectedTag && "text-muted-foreground",
+                        !selectedTag && "text-muted-foreground"
                       )}
                     >
                       <span className="truncate">
-                        {selectedTag
-                          ? getTagLabel(selectedTag)
-                          : "Select a tag"}
+                        {selectedTag ? getTagLabel(selectedTag) : "Select a tag"}
                       </span>
-                      <LuChevronsUpDown
-                        size={14}
-                        className="text-muted-foreground shrink-0"
-                      />
+                      <LuChevronsUpDown size={14} className="text-muted-foreground shrink-0" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[--radix-popover-trigger-width] rounded-md p-0">
                     <Command>
                       <CommandInput placeholder="Search tags..." />
-                      <CommandList className="max-h-45 overflow-y-auto">
+                      <CommandList className="max-h-48 overflow-y-auto">
                         <CommandEmpty>No tags found.</CommandEmpty>
                         <CommandGroup>
                           {tags.map((tag) => {
@@ -139,9 +117,9 @@ export function EditStashDialog() {
                                     stashEditor
                                       ? {
                                           ...stashEditor,
-                                          tagId: tag.id,
+                                          tagId: tag.id
                                         }
-                                      : null,
+                                      : null
                                   );
                                   setTagPopoverOpen(false);
                                 }}
@@ -149,10 +127,7 @@ export function EditStashDialog() {
                               >
                                 <span className="truncate">{label}</span>
                                 {isSelected ? (
-                                  <LuCheck
-                                    size={14}
-                                    className="text-foreground shrink-0"
-                                  />
+                                  <LuCheck size={14} className="text-foreground shrink-0" />
                                 ) : null}
                               </CommandItem>
                             );
@@ -171,9 +146,7 @@ export function EditStashDialog() {
                 value={stashEditor?.description ?? ""}
                 onChange={(event) =>
                   setStashEditor(
-                    stashEditor
-                      ? { ...stashEditor, description: event.target.value }
-                      : null,
+                    stashEditor ? { ...stashEditor, description: event.target.value } : null
                   )
                 }
                 className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring min-h-28 w-full rounded-lg border px-4 py-3 text-sm"
@@ -190,11 +163,7 @@ export function EditStashDialog() {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isUpdateStashPending}
-                className="h-9"
-              >
+              <Button type="submit" disabled={isUpdateStashPending} className="h-9">
                 {isUpdateStashPending ? "Stashing..." : "Update stash"}
               </Button>
             </DialogFooter>

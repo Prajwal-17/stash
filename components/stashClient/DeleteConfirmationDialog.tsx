@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashStore } from "@/store/stashStore";
@@ -16,8 +16,7 @@ export function DeleteConfirmationDialog() {
   const confirmation = useStashStore((s) => s.confirmation);
   const setConfirmation = useStashStore((s) => s.setConfirmation);
 
-  const { handleDeleteConfirmation, isDeleteStashPending, isDeleteTagPending } =
-    useStashActions();
+  const { handleDeleteConfirmation, isDeleteStashPending, isDeleteTagPending } = useStashActions();
 
   const isOpen = confirmation !== null;
   const isDeleting = isDeleteStashPending || isDeleteTagPending;
@@ -39,9 +38,7 @@ export function DeleteConfirmationDialog() {
               {confirmation.description}
             </DialogDescription>
           ) : (
-            <DialogDescription className="sr-only">
-              Confirm this action
-            </DialogDescription>
+            <DialogDescription className="sr-only">Confirm this action</DialogDescription>
           )}
         </DialogHeader>
 
@@ -63,9 +60,7 @@ export function DeleteConfirmationDialog() {
               onClick={() => void handleDeleteConfirmation()}
               className="h-9"
             >
-              {isDeleting
-                ? "Removing..."
-                : (confirmation?.confirmLabel ?? "Delete")}
+              {isDeleting ? "Removing..." : (confirmation?.confirmLabel ?? "Delete")}
             </Button>
           </DialogFooter>
         </div>

@@ -8,10 +8,7 @@ import { ComponentPropsWithoutRef, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuLoaderCircle, LuShieldCheck } from "react-icons/lu";
 
-export function LoginForm({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<"div">) {
+export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div">) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,7 +20,7 @@ export function LoginForm({
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: "/"
       });
 
       if (error) {
@@ -41,18 +38,13 @@ export function LoginForm({
       <div className="border-border bg-card text-card-foreground relative overflow-hidden rounded-2xl border p-6 shadow-2xl shadow-black/30 sm:p-8">
         <div className="bg-muted pointer-events-none absolute -top-16 -right-20 h-48 w-48 rounded-full blur-2xl" />
         <div className="relative">
-          <p className="text-muted-foreground text-sm font-semibold tracking-wide">
-            STASH
-          </p>
-          <h1 className="text-foreground mt-3 text-2xl font-semibold sm:text-3xl">
-            Welcome back
-          </h1>
+          <p className="text-muted-foreground text-sm font-semibold tracking-wide">STASH</p>
+          <h1 className="text-foreground mt-3 text-2xl font-semibold sm:text-3xl">Welcome back</h1>
           <p className="text-muted-foreground mt-2 text-sm">
             Sign in with Google to access your stash securely.
           </p>
           <p className="text-muted-foreground mt-1 text-xs">
-            Stash is a lightweight personal link manager for saving and
-            organizing links.
+            Stash is a lightweight personal link manager for saving and organizing links.
           </p>
         </div>
 

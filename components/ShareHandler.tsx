@@ -8,14 +8,10 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandList,
+  CommandList
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   createStash,
   createTag,
@@ -25,23 +21,18 @@ import {
   MutationError,
   normalizeUrl,
   stashQueryKeys,
-  Tag,
+  Tag
 } from "@/lib/stash-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { toast } from "react-hot-toast";
-import {
-  LuCheck,
-  LuChevronsUpDown,
-  LuLoaderCircle,
-  LuRefreshCw,
-} from "react-icons/lu";
+import { LuCheck, LuChevronsUpDown, LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
 
 export function ShareHandler({
   initialTags,
   sharedUrl,
-  sharedText,
+  sharedText
 }: {
   initialTags: Tag[];
   sharedUrl: string;
@@ -63,40 +54,32 @@ export function ShareHandler({
 
   const [url, setUrl] = useState(defaultUrl);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
-  const [tagId, setTagId] = useState<string | null>(
-    getDefaultTagId(initialTags),
-  );
+  const [tagId, setTagId] = useState<string | null>(getDefaultTagId(initialTags));
   const [isSaving, setIsSaving] = useState(false);
 
   const tagsQuery = useQuery({
     queryKey: stashQueryKeys.tags,
     queryFn: fetchTags,
-    initialData: initialTags,
+    initialData: initialTags
   });
 
   const tags = tagsQuery.data ?? initialTags;
   const resolvedTagId =
-    tagId && tags.some((tag) => tag.id === tagId)
-      ? tagId
-      : getDefaultTagId(tags);
+    tagId && tags.some((tag) => tag.id === tagId) ? tagId : getDefaultTagId(tags);
 
   const createStashMutation = useMutation({
-    mutationFn: (payload: {
-      url: string;
-      tagId: string;
-      title?: string;
-      description?: string;
-    }) => createStash(payload),
+    mutationFn: (payload: { url: string; tagId: string; title?: string; description?: string }) =>
+      createStash(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: stashQueryKeys.stashes,
+        queryKey: stashQueryKeys.stashes
       });
       toast.success("Stashed!");
       router.push("/");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   const createTagMutation = useMutation({
@@ -104,15 +87,13 @@ export function ShareHandler({
     onSuccess: (createdTag) => {
       queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) => [
         ...current,
-        createdTag,
+        createdTag
       ]);
-    },
+    }
   });
 
   async function ensureInboxTag() {
-    const existingInbox = tags.find(
-      (tag) => tag.name?.trim().toLowerCase() === "inbox",
-    );
+    const existingInbox = tags.find((tag) => tag.name?.trim().toLowerCase() === "inbox");
     if (existingInbox) {
       return existingInbox.id;
     }
@@ -135,9 +116,7 @@ export function ShareHandler({
     let fetchedDescription = undefined;
 
     try {
-      const res = await fetch(
-        `/api/metadata?url=${encodeURIComponent(validation.value)}`,
-      );
+      const res = await fetch(`/api/metadata?url=${encodeURIComponent(validation.value)}`);
       if (res.ok) {
         const metadata = await res.json();
         if (metadata.title) fetchedTitle = metadata.title;
@@ -153,7 +132,7 @@ export function ShareHandler({
         url: validation.value,
         title: fetchedTitle?.trim() || undefined,
         description: fetchedDescription?.trim() || undefined,
-        tagId: actualTagId,
+        tagId: actualTagId
       });
     } catch {
       // mutation errors are surfaced through state
@@ -174,9 +153,7 @@ export function ShareHandler({
         className="border-border bg-card w-full max-w-sm rounded-xl border p-6 shadow-2xl"
       >
         <h1 className="text-foreground mb-2 text-lg font-medium">Stash Link</h1>
-        <p className="text-muted-foreground mb-6 text-sm">
-          Review and stash the shared link.
-        </p>
+        <p className="text-muted-foreground mb-6 text-sm">Review and stash the shared link.</p>
 
         <div className="space-y-4">
           <div>
@@ -217,10 +194,7 @@ export function ShareHandler({
             ) : (
               <>
                 <div className="relative mt-1">
-                  <Popover
-                    open={tagPopoverOpen}
-                    onOpenChange={setTagPopoverOpen}
-                  >
+                  <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
                     <PopoverTrigger asChild>
                       <button
                         type="button"
@@ -228,9 +202,7 @@ export function ShareHandler({
                       >
                         <span className="truncate">
                           {resolvedTagId
-                            ? getTagLabel(
-                                tags.find((t) => t.id === resolvedTagId)!,
-                              )
+                            ? getTagLabel(tags.find((t) => t.id === resolvedTagId)!)
                             : "Select a Tag"}
                         </span>
                         <LuChevronsUpDown
@@ -245,7 +217,7 @@ export function ShareHandler({
                     >
                       <Command>
                         <CommandInput placeholder="Search tags..." />
-                        <CommandList className="max-h-55 overflow-y-auto">
+                        <CommandList className="max-h-48 overflow-y-auto">
                           <CommandEmpty>No tags found.</CommandEmpty>
                           <CommandGroup>
                             {tags.map((tag) => {
@@ -263,10 +235,7 @@ export function ShareHandler({
                                 >
                                   <span className="truncate">{label}</span>
                                   {isSelected ? (
-                                    <LuCheck
-                                      size={14}
-                                      className="text-foreground shrink-0"
-                                    />
+                                    <LuCheck size={14} className="text-foreground shrink-0" />
                                   ) : null}
                                 </CommandItem>
                               );

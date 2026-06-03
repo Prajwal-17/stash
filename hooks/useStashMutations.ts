@@ -8,7 +8,7 @@ import {
   stashQueryKeys,
   Tag,
   updateStash,
-  updateTag,
+  updateTag
 } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,42 +25,37 @@ export function useStashMutations() {
   const createTagMutation = useMutation({
     mutationFn: (name: string) => createTag(name),
     onSuccess: (tag) => {
-      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) => [
-        ...current,
-        tag,
-      ]);
+      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) => [...current, tag]);
       setActiveTagId(tag.id);
       setComposerTagId(tag.id);
       toast.success("Tag created.");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   const updateTagMutation = useMutation({
-    mutationFn: ({ tagId, name }: { tagId: string; name: string }) =>
-      updateTag({ tagId, name }),
+    mutationFn: ({ tagId, name }: { tagId: string; name: string }) => updateTag({ tagId, name }),
     onSuccess: (updatedTag) => {
       queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
-        current.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag)),
+        current.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag))
       );
       toast.success("Tag updated.");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   const deleteTagMutation = useMutation({
     mutationFn: (tagId: string) => deleteTag(tagId),
     onSuccess: (_, tagId) => {
       queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, (current = []) =>
-        current.filter((tag) => tag.id !== tagId),
+        current.filter((tag) => tag.id !== tagId)
       );
-      queryClient.setQueryData<Stash[]>(
-        stashQueryKeys.stashes,
-        (current = []) => current.filter((stash) => stash.tagId !== tagId),
+      queryClient.setQueryData<Stash[]>(stashQueryKeys.stashes, (current = []) =>
+        current.filter((stash) => stash.tagId !== tagId)
       );
       // Reset active/composer tag if the deleted tag was selected
       const store = useStashStore.getState();
@@ -70,27 +65,23 @@ export function useStashMutations() {
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   const createStashMutation = useMutation({
-    mutationFn: (payload: {
-      url: string;
-      tagId: string;
-      title?: string;
-      description?: string;
-    }) => createStash(payload),
+    mutationFn: (payload: { url: string; tagId: string; title?: string; description?: string }) =>
+      createStash(payload),
     onSuccess: (stash) => {
-      queryClient.setQueryData<Stash[]>(
-        stashQueryKeys.stashes,
-        (current = []) => [stash, ...current],
-      );
+      queryClient.setQueryData<Stash[]>(stashQueryKeys.stashes, (current = []) => [
+        stash,
+        ...current
+      ]);
       setUrlInput("");
       toast.success("Stashed!");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   const updateStashMutation = useMutation({
@@ -102,12 +93,8 @@ export function useStashMutations() {
       description?: string;
     }) => updateStash(payload),
     onSuccess: (updatedStash) => {
-      queryClient.setQueryData<Stash[]>(
-        stashQueryKeys.stashes,
-        (current = []) =>
-          current.map((stash) =>
-            stash.id === updatedStash.id ? updatedStash : stash,
-          ),
+      queryClient.setQueryData<Stash[]>(stashQueryKeys.stashes, (current = []) =>
+        current.map((stash) => (stash.id === updatedStash.id ? updatedStash : stash))
       );
       setStashEditor(null);
       setDrawerStash(null);
@@ -115,22 +102,21 @@ export function useStashMutations() {
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   const deleteStashMutation = useMutation({
     mutationFn: (stashId: string) => deleteStash(stashId),
     onSuccess: (_, stashId) => {
-      queryClient.setQueryData<Stash[]>(
-        stashQueryKeys.stashes,
-        (current = []) => current.filter((stash) => stash.id !== stashId),
+      queryClient.setQueryData<Stash[]>(stashQueryKeys.stashes, (current = []) =>
+        current.filter((stash) => stash.id !== stashId)
       );
       setDrawerStash(null);
       toast.success("Stash removed.");
     },
     onError: (error: MutationError) => {
       toast.error(error.message);
-    },
+    }
   });
 
   return {
@@ -139,6 +125,6 @@ export function useStashMutations() {
     deleteTagMutation,
     createStashMutation,
     updateStashMutation,
-    deleteStashMutation,
+    deleteStashMutation
   };
 }

@@ -7,7 +7,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { FormEvent } from "react";
@@ -25,7 +25,7 @@ export function TagEditorDialog({
   onOpenChange,
   onChangeName,
   onSubmit,
-  isPending,
+  isPending
 }: TagEditorDialogProps) {
   const isOpen = editorState !== null;
 
@@ -41,9 +41,7 @@ export function TagEditorDialog({
           <div className="space-y-5">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-muted-foreground text-sm font-medium">
-                  Name
-                </label>
+                <label className="text-muted-foreground text-sm font-medium">Name</label>
                 {editorState?.name && editorState.name.length >= 80 && (
                   <span className="text-destructive animate-in fade-in zoom-in slide-in-from-top-1 text-xs">
                     Length limit reached

@@ -7,12 +7,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function SharePage({
-  searchParams,
+  searchParams
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: await headers()
   });
 
   if (!session) {
@@ -30,7 +30,7 @@ export default async function SharePage({
   const initialTags = tagRows.map((tag) => ({
     ...tag,
     createdAt: new Date(tag.createdAt).toISOString(),
-    updatedAt: new Date(tag.updatedAt).toISOString(),
+    updatedAt: new Date(tag.updatedAt).toISOString()
   }));
 
   const params = await searchParams;

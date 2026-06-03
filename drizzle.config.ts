@@ -5,9 +5,7 @@ import { dirname, resolve } from "node:path";
 
 const isProd = process.env.NODE_ENV === "production";
 const localDbFile = process.env.DB_FILE_NAME || "./.dist/stash.sqlite";
-const localDbUrl = localDbFile.startsWith("file:")
-  ? localDbFile
-  : `file:${localDbFile}`;
+const localDbUrl = localDbFile.startsWith("file:") ? localDbFile : `file:${localDbFile}`;
 
 if (!isProd) {
   mkdirSync(dirname(resolve(localDbFile)), { recursive: true });
@@ -20,9 +18,9 @@ export default defineConfig({
   dbCredentials: isProd
     ? {
         url: process.env.TURSO_DATABASE_URL!,
-        authToken: process.env.TURSO_AUTH_TOKEN!,
+        authToken: process.env.TURSO_AUTH_TOKEN!
       }
     : {
-        url: localDbUrl,
-      },
+        url: localDbUrl
+      }
 });

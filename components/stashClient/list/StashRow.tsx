@@ -1,21 +1,9 @@
 "use client";
 
-import {
-  getFaviconUrl,
-  getHostname,
-  getStashTitle,
-} from "@/components/stashClient/helpers";
+import { getFaviconUrl, getHostname, getStashTitle } from "@/components/stashClient/helpers";
 import { StashInfoPanel } from "@/components/stashClient/list/StashInfoPanel";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStashActions } from "@/hooks/useStashActions";
 import { Stash } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
@@ -37,7 +25,7 @@ export function StashRow({
   stash,
   index,
   searchWords = [],
-  expandedLayout = false,
+  expandedLayout = false
 }: StashRowProps) {
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
@@ -49,8 +37,7 @@ export function StashRow({
   const previewStash = useStashStore((s) => s.previewStash);
   const setPreviewStash = useStashStore((s) => s.setPreviewStash);
 
-  const { copyText, openStashEditor, openDeleteConfirmation } =
-    useStashActions();
+  const { copyText, openStashEditor, openDeleteConfirmation } = useStashActions();
 
   const isFocused = index === focusedStashIndex;
   const isPreviewOpen = previewStash?.id === stash.id;
@@ -98,7 +85,7 @@ export function StashRow({
       <div
         className={cn(
           "cursor-pointer rounded-lg px-2 py-1.5 transition duration-150",
-          isFocused ? "bg-accent ring-ring/30 ring-1" : "hover:bg-muted",
+          isFocused ? "bg-accent ring-ring/30 ring-1" : "hover:bg-muted"
         )}
         onPointerDown={queueLongPress}
         onPointerUp={clearLongPress}
@@ -169,7 +156,7 @@ export function StashRow({
                       aria-label="View details"
                       className={cn(
                         "text-muted-foreground hover:bg-accent hover:text-foreground hidden size-8 items-center justify-center rounded-lg transition sm:flex",
-                        isPreviewOpen && "bg-accent text-foreground",
+                        isPreviewOpen && "bg-accent text-foreground"
                       )}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -241,9 +228,8 @@ export function StashRow({
                       kind: "stash",
                       id: stash.id,
                       title: "Remove stash?",
-                      description:
-                        "This removes the link from your stash permanently.",
-                      confirmLabel: "Remove stash",
+                      description: "This removes the link from your stash permanently.",
+                      confirmLabel: "Remove stash"
                     });
                   }}
                 >

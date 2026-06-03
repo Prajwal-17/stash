@@ -1,14 +1,11 @@
-import {
-  formatRelativeDate,
-  getHostname,
-} from "@/components/stashClient/helpers";
+import { formatRelativeDate, getHostname } from "@/components/stashClient/helpers";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { Stash, getTagLabel } from "@/lib/stash-client";
 import Highlighter from "react-highlight-words";
 
 export function StashInfoPanel({
   stash,
-  searchWords = [],
+  searchWords = []
 }: {
   stash: Stash;
   searchWords?: string[];
@@ -19,9 +16,7 @@ export function StashInfoPanel({
   return (
     <div className="space-y-3 p-4">
       <div className="space-y-1">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          URL
-        </p>
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">URL</p>
         <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
           <Highlighter
             searchWords={searchWords}
@@ -77,18 +72,14 @@ export function StashInfoPanel({
           <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Added
           </p>
-          <p className="text-foreground/80 text-xs">
-            {formatRelativeDate(stash.createdAt)}
-          </p>
+          <p className="text-foreground/80 text-xs">{formatRelativeDate(stash.createdAt)}</p>
         </div>
         {stash.updatedAt !== stash.createdAt ? (
           <div className="space-y-1">
             <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Updated
             </p>
-            <p className="text-foreground/80 text-xs">
-              {formatRelativeDate(stash.updatedAt)}
-            </p>
+            <p className="text-foreground/80 text-xs">{formatRelativeDate(stash.updatedAt)}</p>
           </div>
         ) : null}
       </div>

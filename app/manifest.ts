@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         src: "/stash-192x192.png",
         sizes: "192x192",
-        type: "image/png",
-      },
+        type: "image/png"
+      }
     ],
     share_target: {
       action: "/share",
@@ -23,8 +23,8 @@ export default function manifest(): MetadataRoute.Manifest {
       params: {
         title: "title",
         text: "text",
-        url: "url",
-      },
-    },
+        url: "url"
+      }
+    }
   };
 }

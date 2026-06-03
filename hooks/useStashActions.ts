@@ -4,12 +4,7 @@ import { ConfirmationState } from "@/components/stashClient/types";
 import { useStashMutations } from "@/hooks/useStashMutations";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { authClient } from "@/lib/auth-client";
-import {
-  Stash,
-  getDefaultTagId,
-  normalizeUrl,
-  validateTagName,
-} from "@/lib/stash-client";
+import { Stash, getDefaultTagId, normalizeUrl, validateTagName } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -25,7 +20,7 @@ export function useStashActions() {
     deleteTagMutation,
     createStashMutation,
     updateStashMutation,
-    deleteStashMutation,
+    deleteStashMutation
   } = useStashMutations();
 
   const resolvedComposerTagId =
@@ -34,9 +29,7 @@ export function useStashActions() {
       : getDefaultTagId(tags);
 
   async function ensureInboxTag() {
-    const existingInbox = tags.find(
-      (tag) => tag.name?.trim().toLowerCase() === "inbox",
-    );
+    const existingInbox = tags.find((tag) => tag.name?.trim().toLowerCase() === "inbox");
     if (existingInbox) {
       return existingInbox.id;
     }
@@ -58,9 +51,7 @@ export function useStashActions() {
     let description = undefined;
 
     try {
-      const res = await fetch(
-        `/api/metadata?url=${encodeURIComponent(validation.value)}`,
-      );
+      const res = await fetch(`/api/metadata?url=${encodeURIComponent(validation.value)}`);
       if (res.ok) {
         const metadata = await res.json();
         title = metadata.title || undefined;
@@ -77,7 +68,7 @@ export function useStashActions() {
       tagId: targetTagId,
       url: validation.value,
       title,
-      description,
+      description
     });
   }
 
@@ -90,7 +81,7 @@ export function useStashActions() {
     } catch {
       store.setNotice({
         type: "error",
-        message: "Logout failed. Please try again.",
+        message: "Logout failed. Please try again."
       });
       store.setIsLoggingOut(false);
     }
@@ -113,7 +104,7 @@ export function useStashActions() {
       url: stash.url,
       title: stash.title ?? "",
       description: stash.description ?? "",
-      tagId: stash.tagId,
+      tagId: stash.tagId
     });
   }
 
@@ -138,7 +129,7 @@ export function useStashActions() {
       tagId: editor.tagId,
       url: validation.value,
       title: editor.title.trim() || undefined,
-      description: editor.description.trim() || undefined,
+      description: editor.description.trim() || undefined
     });
   }
 
@@ -158,7 +149,7 @@ export function useStashActions() {
     } else if (editor.tagId) {
       await updateTagMutation.mutateAsync({
         tagId: editor.tagId,
-        name: validation.value,
+        name: validation.value
       });
     }
 
@@ -195,12 +186,10 @@ export function useStashActions() {
     isUpdateTagPending: updateTagMutation.isPending,
     isDeleteTagPending: deleteTagMutation.isPending,
     isTagMutationPending:
-      createTagMutation.isPending ||
-      updateTagMutation.isPending ||
-      deleteTagMutation.isPending,
+      createTagMutation.isPending || updateTagMutation.isPending || deleteTagMutation.isPending,
     isStashMutationPending:
       createStashMutation.isPending ||
       updateStashMutation.isPending ||
-      deleteStashMutation.isPending,
+      deleteStashMutation.isPending
   };
 }

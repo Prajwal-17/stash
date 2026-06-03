@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -19,10 +19,7 @@ export async function GET(req: NextRequest) {
 
     const allTags = await db.select().from(tags).where(eq(tags.userId, userId));
 
-    return NextResponse.json(
-      { msg: "Successfully fetch tags", data: allTags },
-      { status: 200 },
-    );
+    return NextResponse.json({ msg: "Successfully fetch tags", data: allTags }, { status: 200 });
   } catch (error) {
     console.log(error);
     return NextResponse.json({ msg: "Something went wrong" }, { status: 500 });
@@ -32,7 +29,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -62,7 +59,7 @@ export async function POST(req: NextRequest) {
       .insert(tags)
       .values({
         userId: userId,
-        name,
+        name
       })
       .returning();
 
@@ -73,10 +70,10 @@ export async function POST(req: NextRequest) {
       {
         msg: "Created a new tag",
         data: {
-          ...newTag,
-        },
+          ...newTag
+        }
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
     console.error(error);
@@ -87,7 +84,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -108,16 +105,13 @@ export async function PATCH(req: NextRequest) {
       .update(tags)
       .set({
         name,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
       .where(and(eq(tags.id, body.tagId), eq(tags.userId, userId)))
       .returning();
 
     if (updatedTag && updatedTag.id) {
-      return NextResponse.json(
-        { msg: "Updated tag", data: updatedTag },
-        { status: 200 },
-      );
+      return NextResponse.json({ msg: "Updated tag", data: updatedTag }, { status: 200 });
     }
 
     return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
@@ -130,7 +124,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: req.headers
     });
 
     if (!session) {
@@ -155,9 +149,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
     }
 
-    await db
-      .delete(stashes)
-      .where(and(eq(stashes.tagId, tagId), eq(stashes.userId, userId)));
+    await db.delete(stashes).where(and(eq(stashes.tagId, tagId), eq(stashes.userId, userId)));
 
     const [deletedTag] = await db
       .delete(tags)
@@ -166,7 +158,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json(
       { msg: "Deleted tag and its stashes", data: deletedTag },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error(error);

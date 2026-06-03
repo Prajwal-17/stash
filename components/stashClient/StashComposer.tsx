@@ -26,7 +26,7 @@ export function StashComposer() {
     isFetchingMetadata,
     isCreateStashPending,
     isTagMutationPending,
-    isStashMutationPending,
+    isStashMutationPending
   } = useStashActions();
 
   const showTagErrorState = tagsQuery.isError && !tags.length;
@@ -62,7 +62,7 @@ export function StashComposer() {
               "mb-3 rounded-lg border px-3 py-2 text-sm",
               notice.type === "error"
                 ? "border-red-500/20 bg-red-500/10 text-red-200"
-                : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
+                : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
             )}
           >
             {notice.message}
@@ -83,41 +83,28 @@ export function StashComposer() {
             }}
             onKeyDown={handleComposerKeyDown}
             placeholder="Paste link to stash..."
-            disabled={
-              isCreateStashPending || isFetchingMetadata || showTagErrorState
-            }
+            disabled={isCreateStashPending || isFetchingMetadata || showTagErrorState}
             className="border-border text-foreground placeholder:text-muted-foreground focus:border-ring h-12 flex-1 rounded-lg bg-transparent px-4 pr-32"
           />
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden items-center gap-1.5 rounded bg-background/90 px-1 py-0.5 sm:flex">
+          <div className="bg-background/90 pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 items-center gap-1.5 rounded px-1 py-0.5 sm:flex">
             <Kbd>
               <span className="text-xs">⌘</span>K
             </Kbd>
-            <span className="text-muted-foreground/60 text-xs font-medium">
-              to focus
-            </span>
+            <span className="text-muted-foreground/60 text-xs font-medium">to focus</span>
             <div className="bg-border mx-1 h-3 w-px" />
             <Kbd className="px-2">↵</Kbd>
-            <span className="text-muted-foreground/60 text-xs font-medium">
-              to add
-            </span>
+            <span className="text-muted-foreground/60 text-xs font-medium">to add</span>
           </div>
         </div>
 
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0 rounded-lg px-5 font-semibold"
           disabled={
-            isCreateStashPending ||
-            isFetchingMetadata ||
-            !urlInput.trim() ||
-            showTagErrorState
+            isCreateStashPending || isFetchingMetadata || !urlInput.trim() || showTagErrorState
           }
           onClick={() => void handleSave()}
         >
-          {isFetchingMetadata
-            ? "Fetching..."
-            : isCreateStashPending
-              ? "Stashing..."
-              : "+ Stash"}
+          {isFetchingMetadata ? "Fetching..." : isCreateStashPending ? "Stashing..." : "+ Stash"}
         </Button>
       </div>
 

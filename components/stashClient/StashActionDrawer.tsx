@@ -1,16 +1,12 @@
 "use client";
 
-import {
-  formatRelativeDate,
-  getHostname,
-  getStashTitle,
-} from "@/components/stashClient/helpers";
+import { formatRelativeDate, getHostname, getStashTitle } from "@/components/stashClient/helpers";
 import {
   Sheet,
   SheetClose,
   SheetContent,
   SheetDescription,
-  SheetTitle,
+  SheetTitle
 } from "@/components/ui/sheet";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
@@ -23,8 +19,7 @@ export function StashActionDrawer() {
   const setDrawerStash = useStashStore((s) => s.setDrawerStash);
   const copiedStashId = useStashStore((s) => s.copiedStashId);
 
-  const { copyText, openStashEditor, openDeleteConfirmation } =
-    useStashActions();
+  const { copyText, openStashEditor, openDeleteConfirmation } = useStashActions();
   const { tags } = useStashQueries();
 
   const isOpen = drawerStash !== null;
@@ -56,10 +51,7 @@ export function StashActionDrawer() {
           <SheetTitle className="text-foreground text-base leading-tight font-semibold">
             {title}
           </SheetTitle>
-          <SheetDescription
-            id="drawer-stash-desc"
-            className="text-muted-foreground mt-1 text-xs"
-          >
+          <SheetDescription id="drawer-stash-desc" className="text-muted-foreground mt-1 text-xs">
             {hostname}
           </SheetDescription>
         </div>
@@ -83,9 +75,7 @@ export function StashActionDrawer() {
                   <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     Tag
                   </p>
-                  <p className="text-foreground/80 text-xs">
-                    {getTagLabel(tag)}
-                  </p>
+                  <p className="text-foreground/80 text-xs">{getTagLabel(tag)}</p>
                 </div>
               ) : null}
               <div className="space-y-1">
@@ -123,9 +113,7 @@ export function StashActionDrawer() {
             <div className="border-border/50 flex items-center gap-2 border-t pt-4">
               <button
                 type="button"
-                aria-label={
-                  copiedStashId === drawerStash.id ? "Copied" : "Copy URL"
-                }
+                aria-label={copiedStashId === drawerStash.id ? "Copied" : "Copy URL"}
                 className="bg-muted text-foreground flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
                 onClick={() => void copyText(drawerStash.url, drawerStash.id)}
               >
@@ -154,9 +142,8 @@ export function StashActionDrawer() {
                     kind: "stash",
                     id: drawerStash.id,
                     title: "Remove stash?",
-                    description:
-                      "This removes the link from your stash permanently.",
-                    confirmLabel: "Remove stash",
+                    description: "This removes the link from your stash permanently.",
+                    confirmLabel: "Remove stash"
                   })
                 }
               >
