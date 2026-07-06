@@ -20,7 +20,8 @@ import {
   LuLoaderCircle,
   LuLogOut,
   LuSearch,
-  LuSettings
+  LuSettings,
+  LuBookOpen
 } from "react-icons/lu";
 
 interface StashMobileNavProps {
@@ -42,6 +43,8 @@ export function StashMobileNav({
   const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
   const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
   const setIsTagsPageOpen = useStashStore((s) => s.setIsTagsPageOpen);
+  const isReadingListView = useStashStore((s) => s.isReadingListView);
+  const setIsReadingListView = useStashStore((s) => s.setIsReadingListView);
   const isLoggingOut = useStashStore((s) => s.isLoggingOut);
 
   const storeInitial = useStashStore((s) => s.userInitial);
@@ -63,12 +66,13 @@ export function StashMobileNav({
         type="button"
         onClick={() => {
           setIsSearchOpen(false);
+          setIsReadingListView(false);
           setActiveTagId(defaultTagId);
           setComposerTagId(defaultTagId);
         }}
         className={cn(
           "flex h-full w-14 flex-col items-center justify-center gap-1",
-          !isSearchOpen && !isTagsPageOpen && activeTagId === defaultTagId
+          !isSearchOpen && !isTagsPageOpen && !isReadingListView && activeTagId === defaultTagId
             ? "text-active"
             : "text-muted-foreground hover:text-foreground"
         )}
@@ -109,10 +113,14 @@ export function StashMobileNav({
 
       <button
         type="button"
-        className="text-muted-foreground hover:text-foreground flex h-full w-14 flex-col items-center justify-center gap-1"
+        onClick={() => setIsReadingListView(true)}
+        className={cn(
+          "flex h-full w-14 flex-col items-center justify-center gap-1",
+          isReadingListView ? "text-active" : "text-muted-foreground hover:text-foreground"
+        )}
       >
-        <LuArchive size={20} />
-        <span className="text-[10px] font-medium">Archive</span>
+        <LuBookOpen size={20} />
+        <span className="text-[10px] font-medium">Read</span>
       </button>
 
       <DropdownMenu>
@@ -139,6 +147,10 @@ export function StashMobileNav({
           <DropdownMenuItem className="text-muted-foreground focus:bg-accent focus:text-foreground">
             Settings
             <LuSettings size={16} className="ml-auto" />
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-muted-foreground focus:bg-accent focus:text-foreground">
+            Archive
+            <LuArchive size={16} className="ml-auto" />
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

@@ -19,6 +19,19 @@ export interface Tag {
   updatedAt: string;
 }
 
+export interface ReadingListItem {
+  id: string;
+  userId: string;
+  url: string;
+  title: string | null;
+  hostname: string | null;
+  description: string | null;
+  scheduledFor: number | null;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ApiResponse<T> {
   msg: string;
   data: T;
@@ -38,7 +51,8 @@ export type TagValidationResult =
 
 export const stashQueryKeys = {
   stashes: ["stashes"] as const,
-  tags: ["tags"] as const
+  tags: ["tags"] as const,
+  readingList: ["readingList"] as const
 };
 
 export async function requestJson<T>(input: string, init?: RequestInit) {
@@ -116,6 +130,36 @@ export function deleteTag(tagId: string) {
   return requestJson<Tag>("/api/tags", {
     method: "DELETE",
     body: JSON.stringify({ tagId })
+  });
+}
+
+export function fetchReadingList(all = false) {
+  const url = all ? "/api/reading-list?all=true" : "/api/reading-list";
+  return requestJson<ReadingListItem[]>(url);
+}
+
+export function createReadingListItem(payload: { url: string; scheduledFor?: number | null }) {
+  return requestJson<ReadingListItem>("/api/reading-list", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateReadingListItem(payload: {
+  id: string;
+  scheduledFor?: number | null;
+  isRead?: boolean;
+}) {
+  return requestJson<ReadingListItem>("/api/reading-list", {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteReadingListItem(id: string) {
+  return requestJson<{ id: string }>("/api/reading-list", {
+    method: "DELETE",
+    body: JSON.stringify({ id })
   });
 }
 

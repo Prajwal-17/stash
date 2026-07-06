@@ -6,6 +6,7 @@ import { StashComposer } from "@/components/stashClient/StashComposer";
 import { StashList } from "@/components/stashClient/StashList";
 import { StashSearchResults } from "@/components/stashClient/StashSearchResults";
 import { TagEditorDialog } from "@/components/stashClient/TagEditorDialog";
+import { ReadingListView } from "@/components/readingList/ReadingListView";
 import { useStashActions } from "@/hooks/useStashActions";
 import { getDefaultTagId, Stash, Tag } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
@@ -35,6 +36,7 @@ export function StashShell({
   const isSearchOpen = useStashStore((s) => s.isSearchOpen);
   const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
   const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
+  const isReadingListView = useStashStore((s) => s.isReadingListView);
 
   // Global Ctrl+F / Cmd+F shortcut to open and focus search
   useEffect(() => {
@@ -86,11 +88,21 @@ export function StashShell({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] md:pb-0">
-          {isSearchOpen ? <StashSearchResults /> : isTagsPageOpen ? <TagsPage /> : <StashList />}
+          {isSearchOpen ? (
+            <StashSearchResults />
+          ) : isTagsPageOpen ? (
+            <TagsPage />
+          ) : isReadingListView ? (
+            <ReadingListView />
+          ) : (
+            <StashList />
+          )}
 
-          <div className="mx-auto w-full max-w-2xl px-3 pb-[calc(env(safe-area-inset-bottom)+68px)] sm:px-6 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
-            <StashComposer />
-          </div>
+          {!isReadingListView && (
+            <div className="mx-auto w-full max-w-2xl px-3 pb-[calc(env(safe-area-inset-bottom)+68px)] sm:px-6 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+              <StashComposer />
+            </div>
+          )}
         </div>
       </div>
 

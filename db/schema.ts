@@ -145,6 +145,38 @@ export const stashToTags = sqliteTable(
   ]
 );
 
+export const readingList = sqliteTable(
+  "reading_list",
+  {
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => uuidv4()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    title: text("title"),
+    hostname: text("hostname"),
+    description: text("description"),
+    scheduledFor: integer("scheduled_for", { mode: "timestamp_ms" }),
+    isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+    createdAt: text("created_at")
+      .default(sql`(STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+      .notNull(),
+    updatedAt: text("updated_at")
+      .default(sql`(STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+      .notNull()
+  },
+  (table) => [
+    index("reading_list_userId_isRead_scheduledFor_idx").on(
+      table.userId,
+      table.isRead,
+      table.scheduledFor
+    )
+  ]
+);
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account)

@@ -52,6 +52,9 @@ interface StashStore {
   isLoggingOut: boolean;
   setIsLoggingOut: (val: boolean) => void;
 
+  isReadingListView: boolean;
+  setIsReadingListView: (val: boolean) => void;
+
   userEmail: string;
   userInitial: string;
   userName: string;
@@ -105,6 +108,10 @@ export const useStashStore = create<StashStore>((set) => ({
 
   isLoggingOut: false,
   setIsLoggingOut: (val) => set({ isLoggingOut: val }),
+
+  isReadingListView: false,
+  setIsReadingListView: (val) =>
+    set({ isReadingListView: val, isSearchOpen: false, isTagsPageOpen: false }),
 
   userEmail: "",
   userInitial: "U",

@@ -27,7 +27,8 @@ import {
   LuPlus,
   LuSearch,
   LuSettings,
-  LuX
+  LuX,
+  LuBookOpen
 } from "react-icons/lu";
 
 interface StashSidebarProps {
@@ -54,6 +55,9 @@ export function StashSidebar({
   const isSearchOpen = useStashStore((s) => s.isSearchOpen);
   const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
   const setIsTagsPageOpen = useStashStore((s) => s.setIsTagsPageOpen);
+  const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
+  const isReadingListView = useStashStore((s) => s.isReadingListView);
+  const setIsReadingListView = useStashStore((s) => s.setIsReadingListView);
 
   const [isTagsOpen, setIsTagsOpen] = useState(true);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
@@ -107,12 +111,16 @@ export function StashSidebar({
           type="button"
           onClick={() => {
             setIsSearchOpen(false);
+            setIsReadingListView(false);
             setActiveTagId(defaultTagId);
             setComposerTagId(defaultTagId);
           }}
           className={cn(
             "hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-            !isSearchOpen && resolvedActiveTagId === defaultTagId
+            !isSearchOpen &&
+              !isReadingListView &&
+              !isTagsPageOpen &&
+              resolvedActiveTagId === defaultTagId
               ? "bg-active-bg text-active-fg"
               : "text-muted-foreground"
           )}
@@ -132,6 +140,18 @@ export function StashSidebar({
         >
           <LuArchive size={16} />
           <span className="flex-1 text-left">Archive</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsReadingListView(true)}
+          className={cn(
+            "hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
+            isReadingListView ? "bg-active-bg text-active-fg" : "text-muted-foreground"
+          )}
+        >
+          <LuBookOpen size={16} />
+          <span className="flex-1 text-left">Reading List</span>
         </button>
       </div>
 
