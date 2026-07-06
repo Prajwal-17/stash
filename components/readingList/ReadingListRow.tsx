@@ -2,6 +2,14 @@
 
 import { getFaviconUrl } from "@/components/stashClient/helpers";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ReadingListItem } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
@@ -31,6 +39,7 @@ export function ReadingListRow({
   const title = item.title?.trim() || hostname;
 
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     item.scheduledFor ? new Date(item.scheduledFor) : undefined
   );
@@ -118,7 +127,7 @@ export function ReadingListRow({
           </div>
 
           {!isCompleted && (
-            <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <div className="flex shrink-0 items-center gap-0.5 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:focus-within:opacity-100">
               {scheduleLabel && (
                 <span
                   className={cn(
@@ -184,13 +193,50 @@ export function ReadingListRow({
                 className="text-muted-foreground flex size-7 items-center justify-center rounded-lg transition hover:bg-red-500/10 hover:text-red-400"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(item.id);
+                  setShowDeleteDialog(true);
                 }}
               >
                 <LuTrash2 size={14} />
               </button>
             </div>
           )}
+
+          {/* Delete confirmation dialog */}
+          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <DialogContent className="w-[95vw] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
+              <DialogHeader className="px-6 pt-6 pb-2">
+                <DialogTitle className="text-xl font-semibold tracking-tight">
+                  Remove from reading list
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground text-sm">
+                  Are you sure you want to remove "{title}"?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="px-6 pt-2 pb-6">
+                <DialogFooter className="gap-2 sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowDeleteDialog(false)}
+                    className="h-9"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => {
+                      setShowDeleteDialog(false);
+                      onDelete(item.id);
+                    }}
+                    className="h-9"
+                  >
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </li>
