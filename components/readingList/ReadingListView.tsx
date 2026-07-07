@@ -40,7 +40,7 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
   const [urlInput, setUrlInput] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("queue");
   const [showUpcoming, setShowUpcoming] = useState(false);
-  const [showList, setShowList] = useState(false);
+  const [showList, setShowList] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 

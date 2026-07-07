@@ -109,7 +109,7 @@ export function useReadingListQueries() {
   const grouped = useMemo(() => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const tomorrowEnd = todayStart + 2 * 24 * 60 * 60 * 1000;
+    const tomorrowEnd = todayStart + 24 * 60 * 60 * 1000;
     const weekEnd = todayStart + 7 * 24 * 60 * 60 * 1000;
 
     const queue: ReadingListItem[] = [];

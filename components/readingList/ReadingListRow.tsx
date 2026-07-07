@@ -110,7 +110,7 @@ export function ReadingListRow({
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <p
               className={cn(
-                "line-clamp-1 text-sm leading-tight font-medium",
+                "text-sm leading-tight font-medium",
                 isCompleted ? "text-muted-foreground/60 line-through" : "text-foreground"
               )}
             >
