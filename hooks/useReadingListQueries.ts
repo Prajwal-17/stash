@@ -3,6 +3,7 @@ import {
   deleteReadingListItem,
   fetchReadingList,
   ReadingListItem,
+  ReadingListUpdatePayload,
   stashQueryKeys,
   updateReadingListItem
 } from "@/lib/stash-client";
@@ -62,14 +63,31 @@ export function useReadingListQueries() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: { id: string; scheduledFor?: number | null; isRead?: boolean }) =>
-      updateReadingListItem(payload),
+    mutationFn: (payload: ReadingListUpdatePayload) => updateReadingListItem(payload),
     onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey: stashQueryKeys.readingList });
       const previous = queryClient.getQueryData<ReadingListItem[]>(stashQueryKeys.readingList);
       queryClient.setQueryData<ReadingListItem[]>(stashQueryKeys.readingList, (old) => {
         if (!old) return old;
-        return old.map((item) => (item.id === payload.id ? { ...item, ...payload } : item));
+        return old.map((item) => {
+          if (item.id !== payload.id) return item;
+
+          let hostname = item.hostname;
+          if (payload.url) {
+            try {
+              hostname = new URL(payload.url).hostname;
+            } catch {
+              // The form validates URLs before the optimistic update.
+            }
+          }
+
+          return {
+            ...item,
+            ...payload,
+            hostname,
+            updatedAt: new Date().toISOString()
+          };
+        });
       });
       return { previous };
     },

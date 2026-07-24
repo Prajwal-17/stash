@@ -1,6 +1,5 @@
 "use client";
 
-import { getStashTitle } from "@/components/stashClient/helpers";
 import {
   Sheet,
   SheetClose,
@@ -8,33 +7,52 @@ import {
   SheetDescription,
   SheetTitle
 } from "@/components/ui/sheet";
-import { useStashActions } from "@/hooks/useStashActions";
-import { useStashQueries } from "@/hooks/useStashQueries";
-import { getTagLabel } from "@/lib/stash-client";
+import { ReadingListItem } from "@/lib/stash-client";
 import { formatRelativeDate, getHostname } from "@/lib/link-utils";
-import { useStashStore } from "@/store/stashStore";
+import { format } from "date-fns";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { LuCheck, LuCopy, LuPencil, LuTrash2 } from "react-icons/lu";
 
-export function StashActionDrawer() {
-  const drawerStash = useStashStore((s) => s.drawerStash);
-  const setDrawerStash = useStashStore((s) => s.setDrawerStash);
-  const copiedStashId = useStashStore((s) => s.copiedStashId);
+interface ReadingListActionDrawerProps {
+  item: ReadingListItem | null;
+  onOpenChange: (open: boolean) => void;
+  onEdit: (item: ReadingListItem) => void;
+  onDelete: (item: ReadingListItem) => void;
+}
 
-  const { copyText, openStashEditor, openDeleteConfirmation } = useStashActions();
-  const { tags } = useStashQueries();
+export function ReadingListActionDrawer({
+  item,
+  onOpenChange,
+  onEdit,
+  onDelete
+}: ReadingListActionDrawerProps) {
+  const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
+  const hostname = item ? item.hostname || getHostname(item.url) : "";
+  const title = item ? item.title?.trim() || hostname : "Reading item";
 
-  const isOpen = drawerStash !== null;
-  const title = drawerStash ? getStashTitle(drawerStash) : "Stash";
-  const hostname = drawerStash ? getHostname(drawerStash.url) : "";
-  const tag = drawerStash ? tags.find((t) => t.id === drawerStash.tagId) : null;
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  async function copyUrl() {
+    if (!item) return;
+
+    try {
+      await navigator.clipboard.writeText(item.url);
+      if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+      setCopiedItemId(item.id);
+      copyTimerRef.current = window.setTimeout(() => setCopiedItemId(null), 1200);
+    } catch {
+      toast.error("Clipboard write failed");
+    }
+  }
 
   return (
-    <Sheet
-      open={isOpen}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) setDrawerStash(null);
-      }}
-    >
+    <Sheet open={item !== null} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         className="border-border bg-card max-h-[88dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-[28px] border-t px-4 pt-1 pb-[calc(env(safe-area-inset-bottom)+16px)] shadow-[0_-18px_60px_rgba(0,0,0,0.4)] outline-none sm:px-5"
@@ -58,53 +76,45 @@ export function StashActionDrawer() {
           </SheetDescription>
         </div>
 
-        {drawerStash ? (
+        {item ? (
           <div className="space-y-4">
             <div className="space-y-1.5">
               <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 URL
               </p>
               <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
-                {drawerStash.url}
+                {item.url}
               </p>
             </div>
 
             <div className="border-border/50 grid grid-cols-2 gap-3 border-t pt-3">
-              {tag ? (
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Tag
-                  </p>
-                  <p className="text-foreground/80 text-xs wrap-break-word">{getTagLabel(tag)}</p>
-                </div>
-              ) : null}
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Status
+                </p>
+                <p className="text-foreground/80 text-xs">
+                  {item.isRead
+                    ? "Completed"
+                    : item.scheduledFor
+                      ? `Scheduled ${format(new Date(item.scheduledFor), "MMM d")}`
+                      : "In list"}
+                </p>
+              </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Added
                 </p>
-                <p className="text-foreground/80 text-xs">
-                  {formatRelativeDate(drawerStash.createdAt)}
-                </p>
+                <p className="text-foreground/80 text-xs">{formatRelativeDate(item.createdAt)}</p>
               </div>
-              {drawerStash.updatedAt !== drawerStash.createdAt ? (
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Updated
-                  </p>
-                  <p className="text-foreground/80 text-xs">
-                    {formatRelativeDate(drawerStash.updatedAt)}
-                  </p>
-                </div>
-              ) : null}
             </div>
 
-            {drawerStash.description?.trim() ? (
+            {item.description?.trim() ? (
               <div className="border-border/50 space-y-1 border-t pt-3">
                 <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Description
                 </p>
-                <p className="text-foreground/70 text-xs leading-relaxed">
-                  {drawerStash.description.trim()}
+                <p className="text-foreground/70 text-xs leading-relaxed wrap-break-word">
+                  {item.description.trim()}
                 </p>
               </div>
             ) : null}
@@ -112,39 +122,31 @@ export function StashActionDrawer() {
             <div className="border-border/50 flex items-center gap-2 border-t pt-4">
               <button
                 type="button"
-                aria-label={copiedStashId === drawerStash.id ? "Copied" : "Copy URL"}
+                aria-label={copiedItemId === item.id ? "Copied" : "Copy URL"}
                 className="bg-muted text-foreground focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
-                onClick={() => void copyText(drawerStash.url, drawerStash.id)}
+                onClick={() => void copyUrl()}
               >
-                {copiedStashId === drawerStash.id ? (
+                {copiedItemId === item.id ? (
                   <LuCheck size={14} className="text-emerald-400" />
                 ) : (
                   <LuCopy size={14} />
                 )}
-                {copiedStashId === drawerStash.id ? "Copied" : "Copy"}
+                {copiedItemId === item.id ? "Copied" : "Copy"}
               </button>
               <button
                 type="button"
-                aria-label="Edit stash"
+                aria-label="Edit reading item"
                 className="bg-muted text-foreground focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
-                onClick={() => openStashEditor(drawerStash)}
+                onClick={() => onEdit(item)}
               >
                 <LuPencil size={14} />
                 Edit
               </button>
               <button
                 type="button"
-                aria-label="Delete stash"
+                aria-label="Delete reading item"
                 className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-red-500/10 px-2 text-xs font-medium text-red-300 focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:outline-none"
-                onClick={() =>
-                  openDeleteConfirmation({
-                    kind: "stash",
-                    id: drawerStash.id,
-                    title: "Remove stash?",
-                    description: "This removes the link from your stash permanently.",
-                    confirmLabel: "Remove stash"
-                  })
-                }
+                onClick={() => onDelete(item)}
               >
                 <LuTrash2 size={14} />
                 Delete

@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { useStashStore } from "@/store/stashStore";
 import { useMemo, useState } from "react";
 import {
-  LuArchive,
+  LuBookOpen,
   LuChevronDown,
   LuChevronRight,
   LuInbox,
@@ -26,9 +26,7 @@ import {
   LuLogOut,
   LuPlus,
   LuSearch,
-  LuSettings,
-  LuX,
-  LuBookOpen
+  LuX
 } from "react-icons/lu";
 
 interface StashSidebarProps {
@@ -52,12 +50,8 @@ export function StashSidebar({
   const storeInitial = useStashStore((s) => s.userInitial);
   const storeName = useStashStore((s) => s.userName);
   const storeEmail = useStashStore((s) => s.userEmail);
-  const isSearchOpen = useStashStore((s) => s.isSearchOpen);
-  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
-  const setIsTagsPageOpen = useStashStore((s) => s.setIsTagsPageOpen);
-  const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
-  const isReadingListView = useStashStore((s) => s.isReadingListView);
-  const setIsReadingListView = useStashStore((s) => s.setIsReadingListView);
+  const activeView = useStashStore((s) => s.activeView);
+  const setActiveView = useStashStore((s) => s.setActiveView);
 
   const [isTagsOpen, setIsTagsOpen] = useState(true);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
@@ -94,10 +88,11 @@ export function StashSidebar({
       <div className="flex flex-col gap-0.5 px-3">
         <button
           type="button"
-          onClick={() => setIsSearchOpen(true)}
+          data-search-trigger
+          onClick={() => setActiveView("search")}
           className={cn(
-            "hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-            isSearchOpen ? "bg-muted text-foreground" : "text-muted-foreground"
+            "hover:bg-muted/50 focus-visible:ring-ring/50 flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+            activeView === "search" ? "bg-muted text-foreground" : "text-muted-foreground"
           )}
         >
           <LuSearch size={16} />
@@ -110,17 +105,13 @@ export function StashSidebar({
         <button
           type="button"
           onClick={() => {
-            setIsSearchOpen(false);
-            setIsReadingListView(false);
+            setActiveView("stash");
             setActiveTagId(defaultTagId);
             setComposerTagId(defaultTagId);
           }}
           className={cn(
-            "hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-            !isSearchOpen &&
-              !isReadingListView &&
-              !isTagsPageOpen &&
-              resolvedActiveTagId === defaultTagId
+            "hover:bg-muted/50 focus-visible:ring-ring/50 flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+            activeView === "stash" && resolvedActiveTagId === defaultTagId
               ? "bg-active-bg text-active-fg"
               : "text-muted-foreground"
           )}
@@ -136,18 +127,10 @@ export function StashSidebar({
 
         <button
           type="button"
-          className="text-muted-foreground hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-        >
-          <LuArchive size={16} />
-          <span className="flex-1 text-left">Archive</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsReadingListView(true)}
+          onClick={() => setActiveView("reading-list")}
           className={cn(
-            "hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-            isReadingListView ? "bg-active-bg text-active-fg" : "text-muted-foreground"
+            "hover:bg-muted/50 focus-visible:ring-ring/50 flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+            activeView === "reading-list" ? "bg-active-bg text-active-fg" : "text-muted-foreground"
           )}
         >
           <LuBookOpen size={16} />
@@ -169,9 +152,12 @@ export function StashSidebar({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                onClick={() => setIsTagsPageOpen(true)}
+                onClick={() => setActiveView("tags")}
                 aria-label="View all tags"
-                className="text-muted-foreground/50 hover:bg-muted hover:text-foreground flex items-center justify-center rounded p-0.5"
+                className={cn(
+                  "text-muted-foreground/50 hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 flex size-7 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                  activeView === "tags" && "bg-muted text-foreground"
+                )}
               >
                 <LuLayoutGrid size={14} />
               </button>
@@ -189,6 +175,7 @@ export function StashSidebar({
                 <LuSearch className="text-muted-foreground/45 pointer-events-none absolute left-2.5 size-3" />
                 <input
                   type="text"
+                  aria-label="Filter tags"
                   placeholder="Filter tags..."
                   value={tagSearchQuery}
                   onChange={(e) => setTagSearchQuery(e.target.value)}
@@ -197,8 +184,9 @@ export function StashSidebar({
                 {tagSearchQuery && (
                   <button
                     type="button"
+                    aria-label="Clear tag filter"
                     onClick={() => setTagSearchQuery("")}
-                    className="text-muted-foreground/40 hover:text-foreground absolute right-2 rounded-full p-0.5 transition-colors"
+                    className="text-muted-foreground/40 hover:text-foreground focus-visible:ring-ring/50 absolute right-1.5 flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
                     <LuX size={10} />
                   </button>
@@ -215,19 +203,19 @@ export function StashSidebar({
                   .map((tag) => {
                     const label = getTagLabel(tag);
                     const count = stashCountByTag.get(tag.id) ?? 0;
-                    const isActive = !isSearchOpen && resolvedActiveTagId === tag.id;
+                    const isActive = activeView === "stash" && resolvedActiveTagId === tag.id;
 
                     return (
                       <button
                         key={tag.id}
                         type="button"
                         onClick={() => {
-                          setIsSearchOpen(false);
+                          setActiveView("stash");
                           setActiveTagId(tag.id);
                           setComposerTagId(tag.id);
                         }}
                         className={cn(
-                          "group hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
+                          "hover:bg-muted/50 focus-visible:ring-ring/50 group flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                           isActive ? "bg-active-bg text-active-fg" : "text-muted-foreground"
                         )}
                       >
@@ -245,7 +233,7 @@ export function StashSidebar({
                 <button
                   type="button"
                   onClick={() => setTagEditor({ mode: "create", name: "" })}
-                  className="text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+                  className="text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring/50 mt-1 flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <LuPlus size={16} className="text-muted-foreground/50" />
                   <span className="flex-1 text-left">New tag</span>
@@ -257,14 +245,6 @@ export function StashSidebar({
       </div>
 
       <div className="flex shrink-0 flex-col gap-0.5 p-3">
-        <button
-          type="button"
-          className="text-muted-foreground hover:bg-muted/50 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-        >
-          <LuSettings size={16} />
-          <span className="flex-1 text-left">Settings</span>
-        </button>
-
         <DropdownMenu>
           <DropdownMenuTrigger id="sidebar-profile-dropdown-trigger" asChild>
             <button
@@ -276,16 +256,22 @@ export function StashSidebar({
               <div className="border-border/50 bg-muted text-foreground flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
                 {userInitial}
               </div>
-              <div className="flex flex-1 flex-col items-start overflow-hidden">
-                <span className="text-foreground truncate text-sm font-medium">{userName}</span>
+              <div className="flex min-w-0 flex-1 flex-col items-start overflow-hidden">
+                <span className="text-foreground w-full truncate text-left text-sm font-medium">
+                  {userName}
+                </span>
               </div>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-57.5" align="start" side="top">
+          <DropdownMenuContent className="w-57.5 max-w-[calc(100vw-1rem)]" align="start" side="top">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-foreground text-sm leading-none font-medium">{userName}</p>
-                <p className="text-muted-foreground text-xs leading-none">{userEmail}</p>
+                <p className="text-foreground text-sm leading-tight font-medium wrap-break-word">
+                  {userName}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs leading-tight break-all">
+                  {userEmail}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

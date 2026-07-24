@@ -1,6 +1,6 @@
 "use client";
 
-import { QueryStatus } from "@/components/stashClient/ui";
+import { QueryStatus } from "@/components/shared/QueryStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStashQueries } from "@/hooks/useStashQueries";
@@ -12,7 +12,7 @@ import { LuPlus, LuSearch, LuTag, LuX } from "react-icons/lu";
 export function TagsPage() {
   const setActiveTagId = useStashStore((s) => s.setActiveTagId);
   const setComposerTagId = useStashStore((s) => s.setComposerTagId);
-  const setIsTagsPageOpen = useStashStore((s) => s.setIsTagsPageOpen);
+  const setActiveView = useStashStore((s) => s.setActiveView);
   const setTagEditor = useStashStore((s) => s.setTagEditor);
 
   const { tags, stashes, tagsQuery } = useStashQueries();
@@ -39,15 +39,17 @@ export function TagsPage() {
   }, [customTags, searchQuery]);
 
   return (
-    <main className="flex flex-1 flex-col overflow-y-auto">
-      <header className="border-border/40 bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-3">
-        <h1 className="text-foreground text-base font-medium tracking-tight">Tags</h1>
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6">
+        <h1 className="text-foreground min-w-0 truncate text-base font-medium tracking-tight">
+          Tags
+        </h1>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 rounded-full"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 size-9 rounded-full focus-visible:ring-2 focus-visible:outline-none sm:size-8"
             onClick={() => setTagEditor({ mode: "create", name: "" })}
             aria-label="New Tag"
           >
@@ -57,9 +59,9 @@ export function TagsPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 rounded-full"
-            onClick={() => setIsTagsPageOpen(false)}
-            aria-label="Close Tags Page"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 size-9 rounded-full focus-visible:ring-2 focus-visible:outline-none sm:size-8"
+            onClick={() => setActiveView("stash")}
+            aria-label="Close tags"
           >
             <LuX size={18} />
           </Button>
@@ -67,7 +69,16 @@ export function TagsPage() {
       </header>
 
       <div className="mx-auto w-full max-w-3xl px-3 pt-4 pb-20 sm:px-6">
-        {tagsQuery.isFetching && !tags.length ? (
+        {tagsQuery.isError && !tags.length ? (
+          <QueryStatus tone="error">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span>Could not load tags.</span>
+              <Button type="button" variant="ghost" size="sm" onClick={() => tagsQuery.refetch()}>
+                Retry
+              </Button>
+            </div>
+          </QueryStatus>
+        ) : tagsQuery.isFetching && !tags.length ? (
           <QueryStatus>Loading tags...</QueryStatus>
         ) : customTags.length === 0 ? (
           <QueryStatus>
@@ -80,6 +91,7 @@ export function TagsPage() {
               <LuSearch className="text-muted-foreground/50 pointer-events-none absolute left-3 size-4" />
               <Input
                 type="text"
+                aria-label="Search tags"
                 placeholder="Search tags..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -88,8 +100,9 @@ export function TagsPage() {
               {searchQuery && (
                 <button
                   type="button"
+                  aria-label="Clear tag search"
                   onClick={() => setSearchQuery("")}
-                  className="text-muted-foreground/50 hover:text-foreground absolute right-3 rounded-full p-0.5 transition-colors"
+                  className="text-muted-foreground/50 hover:text-foreground focus-visible:ring-ring/50 absolute right-2 flex size-7 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <LuX size={14} />
                 </button>
@@ -114,7 +127,7 @@ export function TagsPage() {
                         onClick={() => {
                           setActiveTagId(tag.id);
                           setComposerTagId(tag.id);
-                          setIsTagsPageOpen(false);
+                          setActiveView("stash");
                         }}
                         className="group hover:bg-muted flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition duration-150"
                       >

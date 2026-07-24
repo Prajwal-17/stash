@@ -1,13 +1,3 @@
-import { Stash, Tag } from "@/lib/stash-client";
-
-export interface StashClientProps {
-  initialStashes: Stash[];
-  initialTags: Tag[];
-  userEmail: string;
-  userInitial: string;
-  userName: string;
-}
-
 export interface EditStashState {
   stashId: string;
   url: string;

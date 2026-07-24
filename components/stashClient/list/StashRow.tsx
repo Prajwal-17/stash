@@ -1,16 +1,23 @@
 "use client";
 
-import { getFaviconUrl, getHostname, getStashTitle } from "@/components/stashClient/helpers";
+import { getStashTitle } from "@/components/stashClient/helpers";
 import { StashInfoPanel } from "@/components/stashClient/list/StashInfoPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStashActions } from "@/hooks/useStashActions";
 import { Stash } from "@/lib/stash-client";
+import { getFaviconUrl, getHostname } from "@/lib/link-utils";
 import { cn } from "@/lib/utils";
 import { useStashStore } from "@/store/stashStore";
 import { motion } from "motion/react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef } from "react";
+import {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useRef
+} from "react";
 import Highlighter from "react-highlight-words";
 import { LuCheck, LuCopy, LuInfo, LuPencil, LuTrash2 } from "react-icons/lu";
 
@@ -29,6 +36,8 @@ export function StashRow({
 }: StashRowProps) {
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
+  const longPressPointerRef = useRef<{ id: number; x: number; y: number } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const copiedStashId = useStashStore((s) => s.copiedStashId);
   const setDrawerStash = useStashStore((s) => s.setDrawerStash);
@@ -53,52 +62,85 @@ export function StashRow({
     };
   }, []);
 
-  const queueLongPress = useCallback(() => {
-    if (window.innerWidth >= 640) return;
-    if (longPressTimerRef.current) {
-      window.clearTimeout(longPressTimerRef.current);
-    }
-    longPressTriggeredRef.current = false;
-    longPressTimerRef.current = window.setTimeout(() => {
-      longPressTriggeredRef.current = true;
-      setDrawerStash(stash);
-    }, 480);
-  }, [stash, setDrawerStash]);
-
   const clearLongPress = useCallback(() => {
     if (longPressTimerRef.current) {
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+    longPressPointerRef.current = null;
   }, []);
 
-  function handleRowOpen() {
-    if (longPressTriggeredRef.current) {
+  const queueLongPress = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (window.innerWidth >= 640 || event.pointerType === "mouse") return;
+      if ((event.target as HTMLElement).closest("[data-row-action]")) return;
+
+      clearLongPress();
       longPressTriggeredRef.current = false;
-      return;
+      suppressClickRef.current = false;
+      longPressPointerRef.current = {
+        id: event.pointerId,
+        x: event.clientX,
+        y: event.clientY
+      };
+      longPressTimerRef.current = window.setTimeout(() => {
+        longPressTriggeredRef.current = true;
+        suppressClickRef.current = true;
+        setDrawerStash(stash);
+      }, 480);
+    },
+    [clearLongPress, stash, setDrawerStash]
+  );
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const start = longPressPointerRef.current;
+    if (!start || start.id !== event.pointerId) return;
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 10) {
+      clearLongPress();
     }
-    window.open(stash.url, "_blank", "noopener,noreferrer");
+  }
+
+  function handleLinkClick(event: ReactMouseEvent<HTMLAnchorElement>) {
+    if (longPressTriggeredRef.current || suppressClickRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      longPressTriggeredRef.current = false;
+      suppressClickRef.current = false;
+    }
   }
 
   return (
     <motion.li layout className="group py-0.5" data-stash-row>
       <div
         className={cn(
-          "cursor-pointer rounded-lg px-2 py-1.5 transition duration-150",
+          "has-focus-visible:ring-ring/50 relative cursor-pointer touch-pan-y rounded-lg px-2 py-1.5 transition duration-150 select-none has-focus-visible:ring-2 sm:select-auto",
           isFocused ? "bg-accent ring-ring/30 ring-1" : "hover:bg-muted"
         )}
         onPointerDown={queueLongPress}
-        onPointerUp={clearLongPress}
+        onPointerMove={handlePointerMove}
+        onPointerUp={() => clearLongPress()}
         onPointerCancel={clearLongPress}
         onPointerLeave={clearLongPress}
-        onClick={handleRowOpen}
+        onContextMenu={(event) => {
+          if (window.innerWidth < 640) event.preventDefault();
+        }}
         onMouseEnter={() => {
           if (window.innerWidth >= 640) {
             setFocusedStashIndex(index);
           }
         }}
       >
-        <div className="flex items-start gap-3">
+        <a
+          data-row-link
+          href={stash.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${title}, ${hostname}. Open in a new tab`}
+          className="absolute inset-0 z-0 rounded-lg focus:outline-none"
+          onClick={handleLinkClick}
+          onFocus={() => setFocusedStashIndex(index)}
+        />
+        <div className="pointer-events-none relative z-10 flex items-start gap-3">
           <div className="bg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border shadow-sm">
             <Image
               src={getFaviconUrl(hostname)}
@@ -140,7 +182,10 @@ export function StashRow({
             )}
           </div>
 
-          <div className="mt-0.5 flex shrink-0 items-center gap-0.5">
+          <div
+            data-row-action
+            className="pointer-events-auto mt-0.5 hidden shrink-0 items-center gap-0.5 sm:flex"
+          >
             <Popover
               open={isPreviewOpen}
               onOpenChange={(open) => {
@@ -155,7 +200,7 @@ export function StashRow({
                       type="button"
                       aria-label="View details"
                       className={cn(
-                        "text-muted-foreground hover:bg-accent hover:text-foreground hidden size-8 items-center justify-center rounded-lg transition sm:flex",
+                        "text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition",
                         isPreviewOpen && "bg-accent text-foreground"
                       )}
                       onClick={(e) => e.stopPropagation()}
@@ -167,7 +212,7 @@ export function StashRow({
                 <TooltipContent side="bottom">Details</TooltipContent>
               </Tooltip>
               <PopoverContent
-                className="w-80 p-0"
+                className="max-h-[min(32rem,calc(100dvh-1rem))] w-80 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain p-0"
                 align="end"
                 side="bottom"
                 sideOffset={6}
@@ -204,7 +249,7 @@ export function StashRow({
                 <button
                   type="button"
                   aria-label="Edit stash"
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground hidden size-8 items-center justify-center rounded-lg transition sm:flex"
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition"
                   onClick={(event) => {
                     event.stopPropagation();
                     openStashEditor(stash);
@@ -221,7 +266,7 @@ export function StashRow({
                 <button
                   type="button"
                   aria-label="Delete stash"
-                  className="text-muted-foreground hidden size-8 items-center justify-center rounded-lg transition hover:bg-red-500/10 hover:text-red-300 sm:flex"
+                  className="text-muted-foreground flex size-8 items-center justify-center rounded-lg transition hover:bg-red-500/10 hover:text-red-300"
                   onClick={(event) => {
                     event.stopPropagation();
                     openDeleteConfirmation({

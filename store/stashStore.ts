@@ -1,8 +1,13 @@
-import { ConfirmationState, EditStashState, TagEditorState } from "@/components/stashClient/types";
 import { Stash, Tag } from "@/lib/stash-client";
+import type { ConfirmationState, EditStashState, TagEditorState } from "@/store/stash-types";
 import { create } from "zustand";
 
+export type ActiveView = "stash" | "search" | "tags" | "reading-list";
+
 interface StashStore {
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
+
   activeTagId: string | null;
   composerTagId: string | null;
   setActiveTagId: (id: string | null) => void;
@@ -40,20 +45,11 @@ interface StashStore {
   copiedStashId: string | null;
   setCopiedStashId: (id: string | null) => void;
 
-  isSearchOpen: boolean;
-  setIsSearchOpen: (val: boolean) => void;
-
-  isTagsPageOpen: boolean;
-  setIsTagsPageOpen: (val: boolean) => void;
-
   searchQuery: string;
   setSearchQuery: (val: string) => void;
 
   isLoggingOut: boolean;
   setIsLoggingOut: (val: boolean) => void;
-
-  isReadingListView: boolean;
-  setIsReadingListView: (val: boolean) => void;
 
   userEmail: string;
   userInitial: string;
@@ -66,6 +62,15 @@ interface StashStore {
 }
 
 export const useStashStore = create<StashStore>((set) => ({
+  activeView: "stash",
+  setActiveView: (activeView) =>
+    set({
+      activeView,
+      focusedStashIndex: -1,
+      previewStash: null,
+      drawerStash: null
+    }),
+
   activeTagId: null,
   composerTagId: null,
   setActiveTagId: (id) => set({ activeTagId: id }),
@@ -97,21 +102,11 @@ export const useStashStore = create<StashStore>((set) => ({
   copiedStashId: null,
   setCopiedStashId: (id) => set({ copiedStashId: id }),
 
-  isSearchOpen: false,
-  setIsSearchOpen: (val) => set({ isSearchOpen: val, isTagsPageOpen: false }),
-
-  isTagsPageOpen: false,
-  setIsTagsPageOpen: (val) => set({ isTagsPageOpen: val, isSearchOpen: false }),
-
   searchQuery: "",
   setSearchQuery: (val) => set({ searchQuery: val }),
 
   isLoggingOut: false,
   setIsLoggingOut: (val) => set({ isLoggingOut: val }),
-
-  isReadingListView: false,
-  setIsReadingListView: (val) =>
-    set({ isReadingListView: val, isSearchOpen: false, isTagsPageOpen: false }),
 
   userEmail: "",
   userInitial: "U",

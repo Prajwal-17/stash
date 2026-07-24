@@ -1,7 +1,7 @@
 "use client";
 
 import { StashRow } from "@/components/stashClient/list/StashRow";
-import { QueryStatus } from "@/components/stashClient/ui";
+import { QueryStatus } from "@/components/shared/QueryStatus";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -80,7 +80,17 @@ export function StashList() {
 
   useEffect(() => {
     setFocusedStashIndex(-1);
-  }, [resolvedActiveTagId, setFocusedStashIndex]);
+    setPreviewStash(null);
+  }, [resolvedActiveTagId, setFocusedStashIndex, setPreviewStash]);
+
+  useEffect(() => {
+    if (focusedStashIndex >= visibleStashes.length) {
+      setFocusedStashIndex(-1);
+    }
+    if (previewStash && !visibleStashes.some((stash) => stash.id === previewStash.id)) {
+      setPreviewStash(null);
+    }
+  }, [focusedStashIndex, previewStash, setFocusedStashIndex, setPreviewStash, visibleStashes]);
 
   const scrollToIndex = useCallback((index: number) => {
     const list = listRef.current;
@@ -88,14 +98,16 @@ export function StashList() {
     const items = list.querySelectorAll("[data-stash-row]");
     const item = items[index] as HTMLElement | undefined;
     if (item) {
+      item.querySelector<HTMLAnchorElement>("[data-row-link]")?.focus({ preventScroll: true });
       item.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.target instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
-        return;
+      if (e.target instanceof HTMLElement) {
+        if (e.target.closest("input, textarea, button, [contenteditable='true']")) return;
+        if (e.key === "Enter" && e.target.closest("a")) return;
       }
 
       const len = visibleStashes.length;
@@ -150,16 +162,16 @@ export function StashList() {
   let globalIndex = 0;
 
   return (
-    <main className="flex flex-1 flex-col overflow-y-auto">
-      <header className="border-border/40 bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-3">
-        <h1 className="text-base font-medium tracking-tight">
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6">
+        <h1 className="min-w-0 truncate text-base font-medium tracking-tight">
           {isDefaultTag ? (
             <span className="text-foreground">Inbox</span>
           ) : (
-            <span className="flex items-center gap-1.5">
+            <span className="flex min-w-0 items-center gap-1.5">
               <span className="text-muted-foreground/60">Tags</span>
               <span className="text-muted-foreground/30 font-normal">/</span>
-              <span className="text-foreground font-semibold">
+              <span className="text-foreground truncate font-semibold">
                 {activeTag ? getTagLabel(activeTag) : "unknown"}
               </span>
             </span>
@@ -179,7 +191,7 @@ export function StashList() {
                   <LuEllipsis size={18} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent align="end" className="w-40 max-w-[calc(100vw-1rem)]">
                 <DropdownMenuItem
                   onClick={() =>
                     setTagEditor({
@@ -218,7 +230,7 @@ export function StashList() {
         <div className="mb-4 space-y-3">
           {tagsQuery.isError ? (
             <QueryStatus tone="error">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <span>{tags.length ? "Could not refresh tags." : "Could not load tags."}</span>
                 <Button
                   type="button"
@@ -234,7 +246,7 @@ export function StashList() {
 
           {!showTagLoadState && !showTagErrorState && !tags.length ? (
             <QueryStatus>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <span>No tags yet. Create one with the `+` button.</span>
                 <Button
                   type="button"
@@ -260,7 +272,7 @@ export function StashList() {
 
         {stashesQuery.isError ? (
           <QueryStatus tone="error">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <span>
                 {stashes.length ? "Could not refresh stashes." : "Could not load stashes."}
               </span>

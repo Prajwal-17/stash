@@ -1,11 +1,11 @@
 "use client";
 
-import { ConfirmationState } from "@/components/stashClient/types";
 import { useStashMutations } from "@/hooks/useStashMutations";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { authClient } from "@/lib/auth-client";
 import { Stash, getDefaultTagId, normalizeUrl, validateTagName } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
+import type { ConfirmationState } from "@/store/stash-types";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -57,19 +57,23 @@ export function useStashActions() {
         title = metadata.title || undefined;
         description = metadata.description || undefined;
       }
-    } catch (e) {
-      // Ignore error and proceed without metadata
+    } catch {
+      // Metadata is optional; the URL can still be saved.
     } finally {
       setIsFetchingMetadata(false);
     }
 
     const targetTagId = resolvedComposerTagId ?? (await ensureInboxTag());
-    await createStashMutation.mutateAsync({
-      tagId: targetTagId,
-      url: validation.value,
-      title,
-      description
-    });
+    try {
+      await createStashMutation.mutateAsync({
+        tagId: targetTagId,
+        url: validation.value,
+        title,
+        description
+      });
+    } catch {
+      // The mutation surfaces its error with a toast.
+    }
   }
 
   async function handleLogout() {
@@ -79,10 +83,7 @@ export function useStashActions() {
       await authClient.signOut();
       router.replace("/auth/login");
     } catch {
-      store.setNotice({
-        type: "error",
-        message: "Logout failed. Please try again."
-      });
+      toast.error("Logout failed. Please try again.");
       store.setIsLoggingOut(false);
     }
   }
@@ -91,7 +92,11 @@ export function useStashActions() {
     try {
       await navigator.clipboard.writeText(value);
       store.setCopiedStashId(stashId);
-      window.setTimeout(() => store.setCopiedStashId(null), 1200);
+      window.setTimeout(() => {
+        if (useStashStore.getState().copiedStashId === stashId) {
+          store.setCopiedStashId(null);
+        }
+      }, 1200);
     } catch {
       store.setNotice({ type: "error", message: "Clipboard write failed." });
     }
@@ -120,17 +125,21 @@ export function useStashActions() {
 
     const validation = normalizeUrl(editor.url);
     if (!validation.valid) {
-      store.setNotice({ type: "error", message: validation.message });
+      toast.error(validation.message);
       return;
     }
 
-    await updateStashMutation.mutateAsync({
-      stashId: editor.stashId,
-      tagId: editor.tagId,
-      url: validation.value,
-      title: editor.title.trim() || undefined,
-      description: editor.description.trim() || undefined
-    });
+    try {
+      await updateStashMutation.mutateAsync({
+        stashId: editor.stashId,
+        tagId: editor.tagId,
+        url: validation.value,
+        title: editor.title.trim() || undefined,
+        description: editor.description.trim() || undefined
+      });
+    } catch {
+      // The mutation surfaces its error with a toast.
+    }
   }
 
   async function submitTagEditor(event: FormEvent) {
@@ -140,32 +149,39 @@ export function useStashActions() {
 
     const validation = validateTagName(editor.name);
     if (!validation.valid) {
-      store.setNotice({ type: "error", message: validation.message });
+      toast.error(validation.message);
       return;
     }
 
-    if (editor.mode === "create") {
-      await createTagMutation.mutateAsync(validation.value);
-    } else if (editor.tagId) {
-      await updateTagMutation.mutateAsync({
-        tagId: editor.tagId,
-        name: validation.value
-      });
+    try {
+      if (editor.mode === "create") {
+        await createTagMutation.mutateAsync(validation.value);
+      } else if (editor.tagId) {
+        await updateTagMutation.mutateAsync({
+          tagId: editor.tagId,
+          name: validation.value
+        });
+      }
+      store.setTagEditor(null);
+    } catch {
+      // The mutation surfaces its error with a toast.
     }
-
-    store.setTagEditor(null);
   }
 
   async function handleDeleteConfirmation() {
     const conf = store.confirmation;
     if (!conf) return;
 
-    if (conf.kind === "stash") {
-      await deleteStashMutation.mutateAsync(conf.id);
-    } else {
-      await deleteTagMutation.mutateAsync(conf.id);
+    try {
+      if (conf.kind === "stash") {
+        await deleteStashMutation.mutateAsync(conf.id);
+      } else {
+        await deleteTagMutation.mutateAsync(conf.id);
+      }
+      store.setConfirmation(null);
+    } catch {
+      // The mutation surfaces its error with a toast.
     }
-    store.setConfirmation(null);
   }
 
   return {

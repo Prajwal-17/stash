@@ -1,4 +1,4 @@
-import { formatRelativeDate, getHostname } from "@/components/stashClient/helpers";
+import { formatRelativeDate, getHostname } from "@/lib/link-utils";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { Stash, getTagLabel } from "@/lib/stash-client";
 import Highlighter from "react-highlight-words";

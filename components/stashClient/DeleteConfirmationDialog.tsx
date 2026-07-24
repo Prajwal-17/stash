@@ -25,16 +25,16 @@ export function DeleteConfirmationDialog() {
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) setConfirmation(null);
+        if (!open && !isDeleting) setConfirmation(null);
       }}
     >
-      <DialogContent className="w-[95vw] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-xl font-semibold tracking-tight">
+      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-md">
+        <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
+          <DialogTitle className="pr-5 text-xl font-semibold tracking-tight wrap-break-word">
             {confirmation?.title ?? "Confirm"}
           </DialogTitle>
           {confirmation?.description ? (
-            <DialogDescription className="text-muted-foreground text-sm">
+            <DialogDescription className="text-muted-foreground text-sm wrap-break-word">
               {confirmation.description}
             </DialogDescription>
           ) : (
@@ -42,14 +42,14 @@ export function DeleteConfirmationDialog() {
           )}
         </DialogHeader>
 
-        <div className="px-6 pt-2 pb-6">
+        <div className="px-5 pt-2 pb-6 sm:px-6">
           <DialogFooter className="gap-2 sm:justify-end">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setConfirmation(null)}
               disabled={isDeleting}
-              className="h-9"
+              className="h-11 sm:h-9"
             >
               Cancel
             </Button>
@@ -58,7 +58,7 @@ export function DeleteConfirmationDialog() {
               variant="destructive"
               disabled={isDeleting}
               onClick={() => void handleDeleteConfirmation()}
-              className="h-9"
+              className="h-11 sm:h-9"
             >
               {isDeleting ? "Removing..." : (confirmation?.confirmLabel ?? "Delete")}
             </Button>

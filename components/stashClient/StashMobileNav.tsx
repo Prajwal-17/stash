@@ -14,14 +14,12 @@ import { getDefaultTagId, Tag } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
 import { useStashStore } from "@/store/stashStore";
 import {
-  LuArchive,
+  LuBookOpen,
   LuInbox,
   LuLayoutGrid,
   LuLoaderCircle,
   LuLogOut,
-  LuSearch,
-  LuSettings,
-  LuBookOpen
+  LuSearch
 } from "react-icons/lu";
 
 interface StashMobileNavProps {
@@ -32,6 +30,7 @@ interface StashMobileNavProps {
 }
 
 export function StashMobileNav({
+  initialTags,
   userEmail: propEmail,
   userInitial: propInitial,
   userName: propName
@@ -39,12 +38,8 @@ export function StashMobileNav({
   const activeTagId = useStashStore((s) => s.activeTagId);
   const setActiveTagId = useStashStore((s) => s.setActiveTagId);
   const setComposerTagId = useStashStore((s) => s.setComposerTagId);
-  const isSearchOpen = useStashStore((s) => s.isSearchOpen);
-  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
-  const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
-  const setIsTagsPageOpen = useStashStore((s) => s.setIsTagsPageOpen);
-  const isReadingListView = useStashStore((s) => s.isReadingListView);
-  const setIsReadingListView = useStashStore((s) => s.setIsReadingListView);
+  const activeView = useStashStore((s) => s.activeView);
+  const setActiveView = useStashStore((s) => s.setActiveView);
   const isLoggingOut = useStashStore((s) => s.isLoggingOut);
 
   const storeInitial = useStashStore((s) => s.userInitial);
@@ -55,24 +50,29 @@ export function StashMobileNav({
   const userName = storeName !== "" ? storeName : propName;
   const userEmail = storeEmail !== "" ? storeEmail : propEmail;
 
-  const { tags } = useStashQueries();
+  const { tags: queriedTags } = useStashQueries();
+  const tags = queriedTags.length ? queriedTags : initialTags;
   const defaultTagId = getDefaultTagId(tags);
+  const resolvedActiveTagId =
+    activeTagId && tags.some((tag) => tag.id === activeTagId) ? activeTagId : defaultTagId;
 
   const { handleLogout } = useStashActions();
 
   return (
-    <div className="mobile-nav">
+    <div className="border-border/40 bg-background/90 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-start justify-around border-t px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
       <button
         type="button"
         onClick={() => {
-          setIsSearchOpen(false);
-          setIsReadingListView(false);
+          setActiveView("stash");
           setActiveTagId(defaultTagId);
           setComposerTagId(defaultTagId);
         }}
+        aria-current={
+          activeView === "stash" && resolvedActiveTagId === defaultTagId ? "page" : undefined
+        }
         className={cn(
-          "flex h-full w-14 flex-col items-center justify-center gap-1",
-          !isSearchOpen && !isTagsPageOpen && !isReadingListView && activeTagId === defaultTagId
+          "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
+          activeView === "stash" && resolvedActiveTagId === defaultTagId
             ? "text-active"
             : "text-muted-foreground hover:text-foreground"
         )}
@@ -83,12 +83,12 @@ export function StashMobileNav({
 
       <button
         type="button"
-        onClick={() => {
-          setIsSearchOpen(true);
-        }}
+        data-search-trigger
+        onClick={() => setActiveView("search")}
+        aria-current={activeView === "search" ? "page" : undefined}
         className={cn(
-          "flex h-full w-14 flex-col items-center justify-center gap-1",
-          isSearchOpen ? "text-active" : "text-muted-foreground hover:text-foreground"
+          "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
+          activeView === "search" ? "text-active" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuSearch size={20} />
@@ -97,14 +97,11 @@ export function StashMobileNav({
 
       <button
         type="button"
-        onClick={() => {
-          setIsTagsPageOpen(true);
-        }}
+        onClick={() => setActiveView("tags")}
+        aria-current={activeView === "tags" ? "page" : undefined}
         className={cn(
-          "flex h-full w-14 flex-col items-center justify-center gap-1",
-          !isSearchOpen && isTagsPageOpen
-            ? "text-active"
-            : "text-muted-foreground hover:text-foreground"
+          "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
+          activeView === "tags" ? "text-active" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuLayoutGrid size={20} />
@@ -113,10 +110,13 @@ export function StashMobileNav({
 
       <button
         type="button"
-        onClick={() => setIsReadingListView(true)}
+        onClick={() => setActiveView("reading-list")}
+        aria-current={activeView === "reading-list" ? "page" : undefined}
         className={cn(
-          "flex h-full w-14 flex-col items-center justify-center gap-1",
-          isReadingListView ? "text-active" : "text-muted-foreground hover:text-foreground"
+          "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
+          activeView === "reading-list"
+            ? "text-active"
+            : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuBookOpen size={20} />
@@ -128,7 +128,8 @@ export function StashMobileNav({
           <button
             id="mobile-profile-dropdown-trigger"
             type="button"
-            className="text-muted-foreground hover:text-foreground flex h-full w-14 flex-col items-center justify-center gap-1"
+            disabled={isLoggingOut}
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
           >
             <div className="border-border/50 bg-muted text-foreground flex size-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold">
               {userInitial}
@@ -136,22 +137,17 @@ export function StashMobileNav({
             <span className="text-[10px] font-medium">Profile</span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-50" align="end" side="top">
+        <DropdownMenuContent className="w-50 max-w-[calc(100vw-1rem)]" align="end" side="top">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-foreground text-sm leading-none font-medium">{userName}</p>
-              <p className="text-muted-foreground text-xs leading-none">{userEmail}</p>
+              <p className="text-foreground text-sm leading-tight font-medium wrap-break-word">
+                {userName}
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs leading-tight break-all">
+                {userEmail}
+              </p>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-muted-foreground focus:bg-accent focus:text-foreground">
-            Settings
-            <LuSettings size={16} className="ml-auto" />
-          </DropdownMenuItem>
-          <DropdownMenuItem className="text-muted-foreground focus:bg-accent focus:text-foreground">
-            Archive
-            <LuArchive size={16} className="ml-auto" />
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-muted-foreground focus:bg-accent focus:text-foreground"

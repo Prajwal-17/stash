@@ -33,32 +33,25 @@ export function StashShell({
   userName
 }: StashShellProps) {
   const hydratedRef = useRef<boolean>(null);
-  const isSearchOpen = useStashStore((s) => s.isSearchOpen);
-  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
-  const isTagsPageOpen = useStashStore((s) => s.isTagsPageOpen);
-  const isReadingListView = useStashStore((s) => s.isReadingListView);
+  const activeView = useStashStore((s) => s.activeView);
+  const setActiveView = useStashStore((s) => s.setActiveView);
 
-  // Global Ctrl+F / Cmd+F shortcut to open and focus search
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        setIsSearchOpen(true);
-        // Focus the search input if it is already mounted, or let autoFocus handle it
-        const searchInput = document.querySelector(
-          'input[placeholder*="Search stashes"]'
-        ) as HTMLInputElement | null;
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
+        setActiveView("search");
+        window.requestAnimationFrame(() => {
+          const searchInput = document.querySelector<HTMLInputElement>("[data-stash-search-input]");
+          searchInput?.focus();
+          searchInput?.select();
+        });
       }
     };
     document.addEventListener("keydown", handleGlobalKeyDown);
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [setIsSearchOpen]);
+  }, [setActiveView]);
 
-  // Hydrate store once with SSR data (React 19 null-check pattern)
   if (hydratedRef.current === null) {
     const store = useStashStore.getState();
     store.setInitialData({ stashes: initialStashes, tags: initialTags });
@@ -76,8 +69,8 @@ export function StashShell({
   }
 
   return (
-    <div className="bg-background text-foreground flex h-dvh w-full justify-center overflow-hidden">
-      <div className="flex w-full max-w-230">
+    <div className="bg-background text-foreground flex h-dvh min-h-svh w-full justify-center overflow-hidden">
+      <div className="flex min-h-0 w-full max-w-230">
         <div className="border-border/40 hidden w-60 shrink-0 border-r md:block">
           <StashSidebar
             initialTags={initialTags}
@@ -87,26 +80,21 @@ export function StashShell({
           />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] md:pb-0">
-          {isSearchOpen ? (
-            <StashSearchResults />
-          ) : isTagsPageOpen ? (
-            <TagsPage />
-          ) : isReadingListView ? (
-            <ReadingListView />
-          ) : (
-            <StashList />
-          )}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {activeView === "search" && <StashSearchResults />}
+          {activeView === "tags" && <TagsPage />}
+          {activeView === "reading-list" && <ReadingListView />}
+          {activeView === "stash" && <StashList />}
 
-          {!isReadingListView && (
-            <div className="mx-auto w-full max-w-2xl px-3 pb-[calc(env(safe-area-inset-bottom)+68px)] sm:px-6 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+          {activeView !== "reading-list" && (
+            <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3">
               <StashComposer />
             </div>
           )}
         </div>
       </div>
 
-      <div className="fixed right-0 bottom-0 left-0 z-50 md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 md:hidden">
         <StashMobileNav
           initialTags={initialTags}
           userEmail={userEmail}

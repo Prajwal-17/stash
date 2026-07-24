@@ -127,9 +127,9 @@ export async function PATCH(req: NextRequest) {
 
     const user = session.user;
     const body = await req.json();
-    const { id, scheduledFor, isRead } = body;
+    const { id, scheduledFor, isRead, url, title, description } = body;
 
-    if (!id) {
+    if (typeof id !== "string" || !id.trim()) {
       return NextResponse.json({ msg: "id is required" }, { status: 400 });
     }
 
@@ -137,11 +137,53 @@ export async function PATCH(req: NextRequest) {
       updatedAt: new Date().toISOString()
     };
 
+    if (
+      scheduledFor !== undefined &&
+      scheduledFor !== null &&
+      (typeof scheduledFor !== "number" || !Number.isFinite(scheduledFor))
+    ) {
+      return NextResponse.json(
+        { msg: "scheduledFor must be a timestamp or null" },
+        { status: 400 }
+      );
+    }
+    if (isRead !== undefined && typeof isRead !== "boolean") {
+      return NextResponse.json({ msg: "isRead must be a boolean" }, { status: 400 });
+    }
+    if (title !== undefined && title !== null && typeof title !== "string") {
+      return NextResponse.json({ msg: "title must be text or null" }, { status: 400 });
+    }
+    if (description !== undefined && description !== null && typeof description !== "string") {
+      return NextResponse.json({ msg: "description must be text or null" }, { status: 400 });
+    }
+
     if (scheduledFor !== undefined) {
       updateData.scheduledFor = scheduledFor;
     }
     if (isRead !== undefined) {
       updateData.isRead = isRead;
+    }
+    if (url !== undefined) {
+      if (typeof url !== "string" || !url.trim()) {
+        return NextResponse.json({ msg: "URL is required" }, { status: 400 });
+      }
+
+      try {
+        const parsedUrl = new URL(url.trim());
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+          return NextResponse.json({ msg: "Use an http or https URL" }, { status: 400 });
+        }
+        updateData.url = url.trim();
+        updateData.hostname = parsedUrl.hostname;
+      } catch {
+        return NextResponse.json({ msg: "Enter a valid URL" }, { status: 400 });
+      }
+    }
+    if (title !== undefined) {
+      updateData.title = title?.trim() || null;
+    }
+    if (description !== undefined) {
+      updateData.description = description?.trim() || null;
     }
 
     const [updated] = await db

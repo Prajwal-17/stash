@@ -1,7 +1,7 @@
 "use client";
 
 import { StashRow } from "@/components/stashClient/list/StashRow";
-import { QueryStatus } from "@/components/stashClient/ui";
+import { QueryStatus } from "@/components/shared/QueryStatus";
 import { useStashQueries } from "@/hooks/useStashQueries";
 import { getTagLabel, Stash } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
@@ -13,7 +13,7 @@ export function StashSearchResults() {
 
   const searchQuery = useStashStore((s) => s.searchQuery);
   const setSearchQuery = useStashStore((s) => s.setSearchQuery);
-  const setIsSearchOpen = useStashStore((s) => s.setIsSearchOpen);
+  const setActiveView = useStashStore((s) => s.setActiveView);
   const previewStash = useStashStore((s) => s.previewStash);
   const setPreviewStash = useStashStore((s) => s.setPreviewStash);
   const focusedStashIndex = useStashStore((s) => s.focusedStashIndex);
@@ -23,7 +23,6 @@ export function StashSearchResults() {
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
 
-  // Debounce local input to store
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(localSearch);
@@ -67,10 +66,20 @@ export function StashSearchResults() {
     return groupedStashes.flatMap((group) => group.stashes);
   }, [groupedStashes]);
 
-  // reset focused index when search changes
   useEffect(() => {
     setFocusedStashIndex(-1);
-  }, [searchQuery, setFocusedStashIndex]);
+    setPreviewStash(null);
+  }, [searchQuery, setFocusedStashIndex, setPreviewStash]);
+
+  const closeSearch = useCallback(() => {
+    setActiveView("stash");
+    setLocalSearch("");
+    setSearchQuery("");
+    window.requestAnimationFrame(() => {
+      const triggers = Array.from(document.querySelectorAll<HTMLElement>("[data-search-trigger]"));
+      triggers.find((trigger) => trigger.offsetParent !== null)?.focus();
+    });
+  }, [setActiveView, setSearchQuery]);
 
   const scrollToIndex = useCallback((index: number) => {
     const list = listRef.current;
@@ -78,27 +87,23 @@ export function StashSearchResults() {
     const items = list.querySelectorAll("[data-stash-row]");
     const item = items[index] as HTMLElement | undefined;
     if (item) {
+      item.querySelector<HTMLAnchorElement>("[data-row-link]")?.focus({ preventScroll: true });
       item.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLElement) {
+        if (e.target.closest("button, [contenteditable='true']")) return;
+        if (e.key === "Enter" && e.target.closest("a")) return;
+      }
+
       if (e.key === "Escape") {
         if (previewStash) {
           setPreviewStash(null);
         } else {
-          const activeEl = document.activeElement;
-          const isInputFocused =
-            activeEl instanceof HTMLInputElement && activeEl.placeholder.includes("Search stashes");
-
-          if (isInputFocused) {
-            activeEl.blur();
-          } else {
-            setIsSearchOpen(false);
-            setLocalSearch("");
-            setSearchQuery("");
-          }
+          closeSearch();
         }
         return;
       }
@@ -136,15 +141,14 @@ export function StashSearchResults() {
     previewStash,
     setPreviewStash,
     scrollToIndex,
-    setIsSearchOpen,
-    setSearchQuery
+    closeSearch
   ]);
 
   const searchWords = searchQuery.trim() ? [searchQuery.trim()] : [];
 
   return (
-    <main className="flex flex-1 flex-col overflow-y-auto">
-      <header className="search-header">
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6">
         <div className="group relative flex-1 shadow-sm">
           <LuSearch
             className="text-muted-foreground group-focus-within:text-foreground absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
@@ -152,21 +156,19 @@ export function StashSearchResults() {
           />
           <input
             autoFocus
+            data-stash-search-input
             type="text"
+            aria-label="Search stashes"
             placeholder="Search stashes, titles, or descriptions..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="search-input"
+            className="border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full min-w-0 rounded-full border py-2.5 pr-12 pl-10 text-sm shadow-inner transition-all outline-none focus:ring-4 sm:text-base"
           />
           <button
             type="button"
             aria-label="Close search"
             className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
-            onClick={() => {
-              setIsSearchOpen(false);
-              setLocalSearch("");
-              setSearchQuery("");
-            }}
+            onClick={closeSearch}
           >
             <LuX size={16} />
           </button>
@@ -174,7 +176,11 @@ export function StashSearchResults() {
       </header>
 
       <div className="mx-auto w-full max-w-3xl px-3 pt-4 pb-16 sm:px-6">
-        {stashesQuery.isFetching && !stashes.length ? (
+        {stashesQuery.isError && !stashes.length ? (
+          <QueryStatus tone="error">
+            Could not load stashes. Try again when you’re online.
+          </QueryStatus>
+        ) : stashesQuery.isFetching && !stashes.length ? (
           <QueryStatus>
             <span className="inline-flex items-center gap-2">
               <LuLoaderCircle size={14} className="animate-spin" />

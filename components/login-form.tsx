@@ -4,15 +4,20 @@ import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
-import { ComponentPropsWithoutRef, useState } from "react";
+import { ComponentPropsWithoutRef, FormEvent, useEffect, useRef, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuLoaderCircle, LuShieldCheck } from "react-icons/lu";
 
 export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div">) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
-  const handleGoogleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
+
+  const handleGoogleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -48,14 +53,17 @@ export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div
           </p>
         </div>
 
-        <form onSubmit={handleGoogleLogin} className="mt-6">
+        <form onSubmit={handleGoogleLogin} className="mt-6" aria-busy={isLoading}>
           <AnimatePresence>
             {error ? (
               <motion.p
+                ref={errorRef}
+                role="alert"
+                tabIndex={-1}
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-100"
+                className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm wrap-break-word text-red-100 focus:outline-none"
               >
                 {error}
               </motion.p>
@@ -64,7 +72,7 @@ export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div
 
           <Button
             type="submit"
-            className="group bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-xl px-4 text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            className="group bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-xl px-4 text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
             disabled={isLoading}
           >
             {isLoading ? (

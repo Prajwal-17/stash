@@ -1,6 +1,6 @@
 "use client";
 
-import { FieldLabel } from "@/components/stashClient/ui";
+import { FieldLabel } from "@/components/shared/FieldLabel";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -45,20 +45,24 @@ export function EditStashDialog() {
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) setStashEditor(null);
+        if (!open && !isUpdateStashPending) setStashEditor(null);
       }}
     >
-      <DialogContent className="w-[95vw] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
-        <DialogHeader className="px-6 pt-6 pb-2">
+      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg">
+        <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
           <DialogTitle className="text-xl font-semibold tracking-tight">Edit stash</DialogTitle>
           <DialogDescription className="sr-only">Edit the details of this stash.</DialogDescription>
         </DialogHeader>
 
-        <form className="px-6 pt-2 pb-6" onSubmit={(event) => void submitStashEditor(event)}>
+        <form
+          className="px-5 pt-2 pb-6 sm:px-6"
+          onSubmit={(event) => void submitStashEditor(event)}
+        >
           <div className="space-y-4">
             <div className="space-y-2">
-              <FieldLabel>URL</FieldLabel>
+              <FieldLabel htmlFor="stash-url">URL</FieldLabel>
               <Input
+                id="stash-url"
                 autoFocus
                 value={stashEditor?.url ?? ""}
                 onChange={(event) =>
@@ -70,8 +74,9 @@ export function EditStashDialog() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <FieldLabel>Title</FieldLabel>
+                <FieldLabel htmlFor="stash-title">Title</FieldLabel>
                 <Input
+                  id="stash-title"
                   value={stashEditor?.title ?? ""}
                   onChange={(event) =>
                     setStashEditor(
@@ -83,11 +88,12 @@ export function EditStashDialog() {
               </div>
 
               <div className="space-y-2">
-                <FieldLabel>Tag</FieldLabel>
+                <FieldLabel id="stash-tag-label">Tag</FieldLabel>
                 <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
                   <PopoverTrigger asChild>
                     <button
                       type="button"
+                      aria-labelledby="stash-tag-label"
                       className={cn(
                         "border-border bg-muted text-foreground flex h-12 w-full items-center justify-between rounded-lg border px-4 text-sm",
                         !selectedTag && "text-muted-foreground"
@@ -99,7 +105,7 @@ export function EditStashDialog() {
                       <LuChevronsUpDown size={14} className="text-muted-foreground shrink-0" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] rounded-md p-0">
+                  <PopoverContent className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0">
                     <Command>
                       <CommandInput placeholder="Search tags..." />
                       <CommandList className="max-h-48 overflow-y-auto">
@@ -141,8 +147,9 @@ export function EditStashDialog() {
             </div>
 
             <div className="space-y-2">
-              <FieldLabel>Description</FieldLabel>
+              <FieldLabel htmlFor="stash-description">Description</FieldLabel>
               <Textarea
+                id="stash-description"
                 value={stashEditor?.description ?? ""}
                 onChange={(event) =>
                   setStashEditor(
@@ -159,11 +166,11 @@ export function EditStashDialog() {
                 variant="ghost"
                 onClick={() => setStashEditor(null)}
                 disabled={isUpdateStashPending}
-                className="h-9"
+                className="h-11 sm:h-9"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdateStashPending} className="h-9">
+              <Button type="submit" disabled={isUpdateStashPending} className="h-11 sm:h-9">
                 {isUpdateStashPending ? "Stashing..." : "Update stash"}
               </Button>
             </DialogFooter>

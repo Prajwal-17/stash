@@ -32,6 +32,15 @@ export interface ReadingListItem {
   updatedAt: string;
 }
 
+export interface ReadingListUpdatePayload {
+  id: string;
+  scheduledFor?: number | null;
+  isRead?: boolean;
+  url?: string;
+  title?: string | null;
+  description?: string | null;
+}
+
 interface ApiResponse<T> {
   msg: string;
   data: T;
@@ -145,11 +154,7 @@ export function createReadingListItem(payload: { url: string; scheduledFor?: num
   });
 }
 
-export function updateReadingListItem(payload: {
-  id: string;
-  scheduledFor?: number | null;
-  isRead?: boolean;
-}) {
+export function updateReadingListItem(payload: ReadingListUpdatePayload) {
   return requestJson<ReadingListItem>("/api/reading-list", {
     method: "PATCH",
     body: JSON.stringify(payload)

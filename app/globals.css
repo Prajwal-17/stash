@@ -84,6 +84,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100%;
+    min-width: 0;
     color-scheme: dark;
   }
 }
@@ -108,16 +109,21 @@
   background: hsl(var(--muted-foreground) / 0.55);
 }
 
-@utility mobile-nav {
-  @apply border-border/40 bg-background/80 flex h-14 items-center justify-around border-t px-2 backdrop-blur-md md:hidden;
+@media (hover: none) {
+  [data-slot="tooltip-content"] {
+    display: none;
+  }
 }
 
-@utility search-header {
-  @apply border-border/40 bg-background/80 sticky top-0 z-10 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-8 sm:py-5;
-}
-
-@utility search-input {
-  @apply border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full rounded-full border py-2.5 pr-12 pl-10 text-base shadow-inner transition-all outline-none focus:ring-4;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* react-day-picker dark theme */

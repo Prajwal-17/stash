@@ -1,9 +1,17 @@
 "use client";
 
+import { DeleteReadingListDialog } from "@/components/readingList/DeleteReadingListDialog";
+import {
+  EditReadingListDialog,
+  ReadingListEditorState
+} from "@/components/readingList/EditReadingListDialog";
+import { ReadingListActionDrawer } from "@/components/readingList/ReadingListActionDrawer";
 import { ReadingListRow } from "@/components/readingList/ReadingListRow";
+import { QueryStatus } from "@/components/shared/QueryStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useReadingListQueries } from "@/hooks/useReadingListQueries";
+import { ReadingListItem, ReadingListUpdatePayload } from "@/lib/stash-client";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -27,6 +35,7 @@ interface ReadingListViewProps {
 
 export function ReadingListView({ standalone = false }: ReadingListViewProps) {
   const {
+    query,
     items,
     grouped,
     stats,
@@ -42,15 +51,25 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showList, setShowList] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [drawerItem, setDrawerItem] = useState<ReadingListItem | null>(null);
+  const [editor, setEditor] = useState<ReadingListEditorState | null>(null);
+  const [deleteItem, setDeleteItem] = useState<ReadingListItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!urlInput.trim()) return;
     try {
-      new URL(urlInput.trim());
-      createMutation.mutate({ url: urlInput.trim() });
-      setUrlInput("");
+      const nextUrl = urlInput.trim();
+      new URL(nextUrl);
+      createMutation.mutate(
+        { url: nextUrl },
+        {
+          onSuccess: () => {
+            setUrlInput((current) => (current.trim() === nextUrl ? "" : current));
+          }
+        }
+      );
     } catch {
       toast.error("Please enter a valid URL");
     }
@@ -60,12 +79,44 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
     updateMutation.mutate({ id, scheduledFor: dateMs ?? null });
   };
 
-  const handleMarkRead = (id: string) => {
-    updateMutation.mutate({ id, isRead: true });
+  const handleMarkRead = (id: string, isRead: boolean) => {
+    updateMutation.mutate({ id, isRead });
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+  const handleEditRequest = (item: ReadingListItem) => {
+    setDrawerItem(null);
+    setEditor({
+      id: item.id,
+      url: item.url,
+      title: item.title ?? "",
+      description: item.description ?? ""
+    });
+  };
+
+  const handleEditSubmit = async (payload: ReadingListUpdatePayload) => {
+    try {
+      await updateMutation.mutateAsync(payload);
+      setEditor(null);
+      toast.success("Reading item updated");
+    } catch {
+      // The mutation surfaces its error with a toast.
+    }
+  };
+
+  const handleDeleteRequest = (item: ReadingListItem) => {
+    setDrawerItem(null);
+    setDeleteItem(item);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteItem) return;
+
+    try {
+      await deleteMutation.mutateAsync(deleteItem.id);
+      setDeleteItem(null);
+    } catch {
+      // The mutation surfaces its error with a toast.
+    }
   };
 
   const todayItems = grouped.today;
@@ -85,29 +136,17 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
     {} as Record<string, typeof upcomingItems>
   );
 
-  if (isError) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground text-sm">Failed to load reading list</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2"
-            onClick={() => window.location.reload()}
-          >
-            Retry
-          </Button>
-        </div>
-      </main>
-    );
-  }
+  const completedItems = [...grouped.completed].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+  const pendingUpdateId = updateMutation.isPending ? updateMutation.variables?.id : null;
+  const pendingDeleteId = deleteMutation.isPending ? deleteMutation.variables : null;
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-      <main className="flex flex-1 flex-col overflow-y-auto">
-        <header className="border-border/40 bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-2.5 backdrop-blur-md sm:px-8 sm:py-3">
-          <div className="flex items-center gap-3">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-3 backdrop-blur-md sm:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             {standalone && (
               <Button
                 variant="ghost"
@@ -115,25 +154,27 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                 asChild
                 className="text-muted-foreground hover:text-foreground h-8 w-8 md:hidden"
               >
-                <Link href="/">
+                <Link href="/" aria-label="Back to Stash">
                   <LuArrowLeft size={16} />
                 </Link>
               </Button>
             )}
-            <h1 className="text-base font-medium tracking-tight">Reading List</h1>
+            <h1 className="truncate text-base font-medium tracking-tight">Reading List</h1>
             {isLoading && items.length === 0 ? (
               <LuLoaderCircle size={14} className="text-muted-foreground/50 animate-spin" />
             ) : (
               <span className="text-muted-foreground/40 font-mono text-xs">{stats.total}</span>
             )}
           </div>
-          <div className="bg-muted/30 flex items-center gap-0.5 rounded-lg p-0.5 md:hidden">
+          <div className="bg-muted/30 order-last grid w-full grid-cols-3 items-center gap-0.5 rounded-lg p-0.5 sm:order-0 sm:flex sm:w-auto md:hidden">
             {(["queue", "scheduled", "completed"] as const).map((tab) => (
               <button
                 key={tab}
+                type="button"
                 onClick={() => setActiveTab(tab)}
+                aria-pressed={activeTab === tab}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors",
+                  "focus-visible:ring-ring/50 flex min-h-8 items-center justify-center rounded-md px-2 py-1 text-xs font-medium capitalize transition-colors focus-visible:ring-2 focus-visible:outline-none",
                   activeTab === tab
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -177,7 +218,39 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
         </header>
 
         <div className="mx-auto w-full max-w-3xl px-3 pt-4 pb-16 sm:px-6">
-          {isLoading && items.length === 0 ? (
+          {isError && items.length > 0 ? (
+            <div className="mb-4">
+              <QueryStatus tone="error">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span>Could not refresh the reading list.</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={query.isFetching}
+                    onClick={() => void query.refetch()}
+                  >
+                    {query.isFetching ? "Retrying..." : "Retry"}
+                  </Button>
+                </div>
+              </QueryStatus>
+            </div>
+          ) : null}
+
+          {isError && items.length === 0 ? (
+            <QueryStatus tone="error">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span>Failed to load the reading list.</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={query.isFetching}
+                  onClick={() => void query.refetch()}
+                >
+                  {query.isFetching ? "Retrying..." : "Retry"}
+                </Button>
+              </div>
+            </QueryStatus>
+          ) : isLoading && items.length === 0 ? (
             <div className="py-16 text-center">
               <LuLoaderCircle size={20} className="text-muted-foreground/40 mx-auto animate-spin" />
               <p className="text-muted-foreground/40 mt-3 text-sm">Loading reading list...</p>
@@ -194,9 +267,8 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
             </div>
           ) : (
             <div className="flex flex-col gap-6">
-              {/* Today section — always on top, always expanded */}
-              {(activeTab === "queue" || activeTab === "scheduled") && todayItems.length > 0 && (
-                <section>
+              {todayItems.length > 0 && (
+                <section className={cn(activeTab !== "scheduled" && "hidden md:block")}>
                   <div className="mb-2 flex items-baseline justify-between px-2">
                     <h3 className="text-foreground/80 text-sm font-semibold tracking-tight">
                       Today
@@ -215,19 +287,23 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                         item={item}
                         onSchedule={handleSchedule}
                         onMarkRead={handleMarkRead}
-                        onDelete={handleDelete}
+                        onEdit={handleEditRequest}
+                        onDelete={handleDeleteRequest}
+                        onLongPress={setDrawerItem}
+                        isPending={pendingUpdateId === item.id || pendingDeleteId === item.id}
                       />
                     ))}
                   </ul>
                 </section>
               )}
 
-              {/* Upcoming section — collapsible, default collapsed */}
-              {(activeTab === "queue" || activeTab === "scheduled") && upcomingItems.length > 0 && (
-                <section>
+              {upcomingItems.length > 0 && (
+                <section className={cn(activeTab !== "scheduled" && "hidden md:block")}>
                   <button
+                    type="button"
                     onClick={() => setShowUpcoming(!showUpcoming)}
-                    className="hover:bg-muted/30 mb-2 flex w-full items-center justify-between rounded-md px-2 transition-colors"
+                    aria-expanded={showUpcoming || activeTab === "scheduled"}
+                    className="hover:bg-muted/30 focus-visible:ring-ring/50 mb-2 flex min-h-8 w-full items-center justify-between rounded-md px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
                     <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
                       Upcoming
@@ -240,12 +316,12 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                         size={14}
                         className={cn(
                           "text-muted-foreground/40 transition-transform",
-                          showUpcoming && "rotate-180"
+                          (showUpcoming || activeTab === "scheduled") && "rotate-180"
                         )}
                       />
                     </span>
                   </button>
-                  {showUpcoming && (
+                  {(showUpcoming || activeTab === "scheduled") && (
                     <div className="space-y-4">
                       {Object.entries(groupedUpcoming).map(([date, dateItems]) => (
                         <div key={date}>
@@ -259,7 +335,12 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                                 item={item}
                                 onSchedule={handleSchedule}
                                 onMarkRead={handleMarkRead}
-                                onDelete={handleDelete}
+                                onEdit={handleEditRequest}
+                                onDelete={handleDeleteRequest}
+                                onLongPress={setDrawerItem}
+                                isPending={
+                                  pendingUpdateId === item.id || pendingDeleteId === item.id
+                                }
                               />
                             ))}
                           </ul>
@@ -270,12 +351,13 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                 </section>
               )}
 
-              {/* List section — unscheduled items, collapsible, default collapsed */}
-              {(activeTab === "queue" || !standalone) && grouped.queue.length > 0 && (
-                <section>
+              {grouped.queue.length > 0 && (
+                <section className={cn(activeTab !== "queue" && "hidden md:block")}>
                   <button
+                    type="button"
                     onClick={() => setShowList(!showList)}
-                    className="hover:bg-muted/30 mb-2 flex w-full items-center justify-between rounded-md px-2 transition-colors"
+                    aria-expanded={showList}
+                    className="hover:bg-muted/30 focus-visible:ring-ring/50 mb-2 flex min-h-8 w-full items-center justify-between rounded-md px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
                     <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
                       List
@@ -301,7 +383,10 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                           item={item}
                           onSchedule={handleSchedule}
                           onMarkRead={handleMarkRead}
-                          onDelete={handleDelete}
+                          onEdit={handleEditRequest}
+                          onDelete={handleDeleteRequest}
+                          onLongPress={setDrawerItem}
+                          isPending={pendingUpdateId === item.id || pendingDeleteId === item.id}
                         />
                       ))}
                     </ul>
@@ -309,93 +394,91 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                 </section>
               )}
 
-              {/* Empty state when queue tab has nothing */}
-              {activeTab === "queue" &&
-                grouped.queue.length === 0 &&
-                todayItems.length === 0 &&
-                upcomingItems.length === 0 && (
-                  <section>
-                    <div className="py-12 text-center">
-                      <p className="text-muted-foreground/40 text-sm">No items added yet</p>
-                    </div>
-                  </section>
-                )}
+              {activeTab === "queue" && grouped.queue.length === 0 && (
+                <section className="md:hidden">
+                  <div className="py-12 text-center">
+                    <p className="text-muted-foreground/40 text-sm">No items added yet</p>
+                  </div>
+                </section>
+              )}
 
-              {/* Empty state when scheduled tab has nothing */}
               {activeTab === "scheduled" &&
                 todayItems.length === 0 &&
                 upcomingItems.length === 0 && (
-                  <section>
+                  <section className="md:hidden">
                     <div className="py-12 text-center">
                       <p className="text-muted-foreground/40 text-sm">No scheduled items</p>
                     </div>
                   </section>
                 )}
 
-              {/* Empty state when completed tab has nothing */}
               {activeTab === "completed" && grouped.completed.length === 0 && (
-                <section>
+                <section className="md:hidden">
                   <div className="py-12 text-center">
                     <p className="text-muted-foreground/40 text-sm">No completed items yet</p>
                   </div>
                 </section>
               )}
 
-              {/* Completed section — collapsed by default */}
-              {(activeTab === "queue" || activeTab === "completed") &&
-                grouped.completed.length > 0 && (
-                  <section>
-                    <button
-                      onClick={() => setShowCompleted(!showCompleted)}
-                      className="hover:bg-muted/30 mb-2 flex w-full items-center justify-between rounded-md px-2 transition-colors"
-                    >
-                      <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
-                        Completed
-                      </h3>
-                      <span className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground/40 font-mono text-xs">
-                          {grouped.completed.length}
-                        </span>
-                        <LuChevronDown
-                          size={14}
-                          className={cn(
-                            "text-muted-foreground/40 transition-transform",
-                            showCompleted && "rotate-180"
-                          )}
-                        />
+              {grouped.completed.length > 0 && (
+                <section className={cn(activeTab !== "completed" && "hidden md:block")}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCompleted(!showCompleted)}
+                    aria-expanded={showCompleted || activeTab === "completed"}
+                    className="hover:bg-muted/30 focus-visible:ring-ring/50 mb-2 flex min-h-8 w-full items-center justify-between rounded-md px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
+                      Completed
+                    </h3>
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground/40 font-mono text-xs">
+                        {grouped.completed.length}
                       </span>
-                    </button>
-                    {showCompleted && (
-                      <ul className="flex flex-col gap-1">
-                        {grouped.completed
-                          .sort(
-                            (a, b) =>
-                              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-                          )
-                          .map((item) => (
-                            <ReadingListRow
-                              key={item.id}
-                              item={item}
-                              onSchedule={handleSchedule}
-                              onMarkRead={handleMarkRead}
-                              onDelete={handleDelete}
-                              isCompleted
-                            />
-                          ))}
-                      </ul>
-                    )}
-                  </section>
-                )}
+                      <LuChevronDown
+                        size={14}
+                        className={cn(
+                          "text-muted-foreground/40 transition-transform",
+                          (showCompleted || activeTab === "completed") && "rotate-180"
+                        )}
+                      />
+                    </span>
+                  </button>
+                  {(showCompleted || activeTab === "completed") && (
+                    <ul className="flex flex-col gap-1">
+                      {completedItems.map((item) => (
+                        <ReadingListRow
+                          key={item.id}
+                          item={item}
+                          onSchedule={handleSchedule}
+                          onMarkRead={handleMarkRead}
+                          onEdit={handleEditRequest}
+                          onDelete={handleDeleteRequest}
+                          onLongPress={setDrawerItem}
+                          isCompleted
+                          isPending={pendingUpdateId === item.id || pendingDeleteId === item.id}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
             </div>
           )}
         </div>
       </main>
 
-      <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pb-[calc(env(safe-area-inset-bottom)+68px)] sm:px-6 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <div
+        className={cn(
+          "mx-auto w-full max-w-2xl shrink-0 px-3 pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3",
+          standalone && "pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+        )}
+      >
         <div className="w-full">
           <div className="border-border/30 bg-muted/15 focus-within:border-primary/50 focus-within:ring-primary/15 flex w-full items-center gap-2 rounded-xl border p-1.5 transition-all focus-within:ring-4">
             <Input
               ref={inputRef}
+              aria-label="Article URL"
               value={urlInput}
               onChange={(event) => setUrlInput(event.target.value)}
               onKeyDown={(e) => {
@@ -406,7 +489,7 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
               }}
               placeholder="Paste article URL to add..."
               disabled={createMutation.isPending}
-              className="text-foreground placeholder:text-muted-foreground/40 h-10 flex-1 border-0 bg-transparent px-3 py-1.5 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="text-foreground placeholder:text-muted-foreground/40 h-10 min-w-0 flex-1 border-0 bg-transparent px-3 py-1.5 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <Button
               className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 shrink-0 rounded-lg px-4 font-semibold shadow-sm transition-all"
@@ -418,6 +501,29 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
           </div>
         </div>
       </div>
+
+      <ReadingListActionDrawer
+        item={drawerItem}
+        onOpenChange={(open) => {
+          if (!open) setDrawerItem(null);
+        }}
+        onEdit={handleEditRequest}
+        onDelete={handleDeleteRequest}
+      />
+      <EditReadingListDialog
+        editor={editor}
+        onEditorChange={setEditor}
+        onSubmit={handleEditSubmit}
+        isPending={updateMutation.isPending && updateMutation.variables?.id === editor?.id}
+      />
+      <DeleteReadingListDialog
+        item={deleteItem}
+        isPending={deleteMutation.isPending && deleteMutation.variables === deleteItem?.id}
+        onOpenChange={(open) => {
+          if (!open && !deleteMutation.isPending) setDeleteItem(null);
+        }}
+        onConfirm={() => void handleDeleteConfirm()}
+      />
     </div>
   );
 }

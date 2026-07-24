@@ -1,6 +1,7 @@
 "use client";
 
-import { FieldLabel, QueryStatus } from "@/components/stashClient/ui";
+import { FieldLabel } from "@/components/shared/FieldLabel";
+import { QueryStatus } from "@/components/shared/QueryStatus";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -32,6 +33,7 @@ import { LuCheck, LuChevronsUpDown, LuLoaderCircle, LuRefreshCw } from "react-ic
 export function ShareHandler({
   initialTags,
   sharedUrl,
+  sharedTitle,
   sharedText
 }: {
   initialTags: Tag[];
@@ -89,6 +91,9 @@ export function ShareHandler({
         ...current,
         createdTag
       ]);
+    },
+    onError: (error: MutationError) => {
+      toast.error(error.message);
     }
   });
 
@@ -112,25 +117,25 @@ export function ShareHandler({
     }
 
     setIsSaving(true);
-    let fetchedTitle = undefined;
-    let fetchedDescription = undefined;
+    let fetchedTitle: string | undefined;
+    let fetchedDescription: string | undefined;
 
     try {
       const res = await fetch(`/api/metadata?url=${encodeURIComponent(validation.value)}`);
       if (res.ok) {
-        const metadata = await res.json();
+        const metadata = (await res.json()) as { title?: string; description?: string };
         if (metadata.title) fetchedTitle = metadata.title;
         if (metadata.description) fetchedDescription = metadata.description;
       }
-    } catch (err) {
-      console.log(err);
+    } catch {
+      // Shared content can still be saved when metadata is unavailable.
     }
 
     try {
       const actualTagId = resolvedTagId ?? (await ensureInboxTag());
       await createStashMutation.mutateAsync({
         url: validation.value,
-        title: fetchedTitle?.trim() || undefined,
+        title: fetchedTitle?.trim() || sharedTitle.trim() || undefined,
         description: fetchedDescription?.trim() || undefined,
         tagId: actualTagId
       });
@@ -147,18 +152,20 @@ export function ShareHandler({
   const showTagsError = tagsQuery.isError && !tags.length;
 
   return (
-    <div className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center p-4">
+    <div className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center px-3 py-6 sm:p-6">
       <form
         onSubmit={handleSubmit}
-        className="border-border bg-card w-full max-w-sm rounded-xl border p-6 shadow-2xl"
+        aria-busy={isMutationPending}
+        className="border-border bg-card w-full max-w-sm rounded-xl border p-5 shadow-2xl sm:p-6"
       >
         <h1 className="text-foreground mb-2 text-lg font-medium">Stash Link</h1>
         <p className="text-muted-foreground mb-6 text-sm">Review and stash the shared link.</p>
 
         <div className="space-y-4">
           <div>
-            <FieldLabel>URL</FieldLabel>
+            <FieldLabel htmlFor="shared-url">URL</FieldLabel>
             <Input
+              id="shared-url"
               className="mt-1"
               value={url}
               onChange={(event) => setUrl(event.target.value)}
@@ -168,7 +175,7 @@ export function ShareHandler({
           </div>
 
           <div className="space-y-2">
-            <FieldLabel>Tag</FieldLabel>
+            <FieldLabel id="shared-tag-label">Tag</FieldLabel>
 
             {showTagsLoading ? (
               <QueryStatus>
@@ -198,7 +205,8 @@ export function ShareHandler({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="border-border bg-background text-foreground flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus:outline-none"
+                        aria-labelledby="shared-tag-label"
+                        className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
                       >
                         <span className="truncate">
                           {resolvedTagId
@@ -212,7 +220,8 @@ export function ShareHandler({
                       </button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-[calc(100vw-3rem)] rounded-md p-0 sm:w-83.5"
+                      collisionPadding={8}
+                      className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0"
                       align="start"
                     >
                       <Command>
@@ -248,7 +257,7 @@ export function ShareHandler({
                 </div>
 
                 {tagsQuery.isFetching ? (
-                  <QueryStatus>
+                  <QueryStatus compact>
                     <span className="inline-flex items-center gap-2">
                       <LuRefreshCw size={14} className="animate-spin" />
                       Syncing tags...
@@ -260,18 +269,18 @@ export function ShareHandler({
           </div>
         </div>
 
-        <div className="mt-8 flex gap-3">
+        <div className="mt-8 flex min-w-0 gap-3">
           <Button
             type="button"
             variant="outline"
-            className="border-border bg-background text-muted-foreground hover:bg-card hover:text-foreground flex-1 rounded-lg"
+            className="border-border bg-background text-muted-foreground hover:bg-card hover:text-foreground min-h-11 min-w-0 flex-1 rounded-lg"
             onClick={() => router.push("/")}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 min-h-11 min-w-0 flex-1 rounded-lg"
             disabled={isMutationPending || !url.trim() || showTagsError}
           >
             {isMutationPending ? "Stashing..." : "Stash link"}
