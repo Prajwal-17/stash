@@ -253,6 +253,20 @@ export function ArchiveView() {
                     return (
                       <li key={tag.id}>
                         <div className="flex items-center gap-2 px-3 py-2">
+                          <button
+                            type="button"
+                            aria-label={
+                              isExpanded ? `Hide links in ${label}` : `Show links in ${label}`
+                            }
+                            title={isExpanded ? "Hide links" : "Show links"}
+                            aria-expanded={isExpanded}
+                            onClick={() => toggleTagContents(tag.id)}
+                            className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          >
+                            <LuChevronRight
+                              className={`size-4 transition-transform motion-reduce:transition-none ${isExpanded ? "rotate-90" : ""}`}
+                            />
+                          </button>
                           <div className="min-w-0 flex-1">
                             <p className="text-foreground truncate text-sm font-medium">
                               <span className="text-muted-foreground/50 mr-1.5">#</span>
@@ -265,19 +279,6 @@ export function ArchiveView() {
                             </p>
                           </div>
                           <div className="flex shrink-0 items-center gap-0.5">
-                            <button
-                              type="button"
-                              aria-label={
-                                isExpanded ? `Hide links in ${label}` : `Show links in ${label}`
-                              }
-                              aria-expanded={isExpanded}
-                              onClick={() => toggleTagContents(tag.id)}
-                              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                            >
-                              <LuChevronRight
-                                className={`size-4 transition-transform motion-reduce:transition-none ${isExpanded ? "rotate-90" : ""}`}
-                              />
-                            </button>
                             <button
                               type="button"
                               aria-label={`Restore ${label}`}
@@ -315,7 +316,7 @@ export function ArchiveView() {
                           tagStashes.length > 0 ? (
                             <ul className="border-border/40 bg-background/20 divide-border/30 divide-y border-t">
                               {tagStashes.map((stash) => (
-                                <li key={stash.id} className="min-w-0 px-3 py-2 sm:pl-8">
+                                <li key={stash.id} className="min-w-0 py-2 pr-3 pl-15">
                                   <a
                                     href={stash.url}
                                     target="_blank"
@@ -345,7 +346,7 @@ export function ArchiveView() {
                               ))}
                             </ul>
                           ) : (
-                            <p className="border-border/40 text-muted-foreground border-t px-3 py-2 text-xs sm:pl-8">
+                            <p className="border-border/40 text-muted-foreground border-t py-2 pr-3 pl-15 text-xs">
                               Empty tag
                             </p>
                           )
