@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryStatus } from "@/components/shared/QueryStatus";
+import { Input } from "@/components/ui/input";
 import { getStashTitle } from "@/components/stashClient/helpers";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
@@ -13,12 +14,24 @@ import {
   LuExternalLink,
   LuLoaderCircle,
   LuRotateCcw,
-  LuTrash2
+  LuSearch,
+  LuTrash2,
+  LuX
 } from "react-icons/lu";
 
 interface ArchivedLinkGroup {
   tag: Tag;
   stashes: Stash[];
+}
+
+interface ArchivedTagGroup extends ArchivedLinkGroup {
+  totalCount: number;
+}
+
+function stashMatchesSearch(stash: Stash, query: string) {
+  return [getStashTitle(stash), stash.url, stash.hostname, stash.description].some((value) =>
+    value?.toLowerCase().includes(query)
+  );
 }
 
 export function ArchiveView() {
@@ -31,6 +44,7 @@ export function ArchiveView() {
     openDeleteConfirmation
   } = useStashActions();
   const [expandedTagIds, setExpandedTagIds] = useState<Set<string>>(() => new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
   function toggleTagContents(tagId: string) {
     setExpandedTagIds((current) => {
@@ -54,6 +68,12 @@ export function ArchiveView() {
   );
 
   const archivedTagIds = useMemo(() => new Set(archivedTags.map((tag) => tag.id)), [archivedTags]);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  function updateSearchQuery(value: string) {
+    setSearchQuery(value);
+    setExpandedTagIds(value.trim() ? new Set(archivedTags.map((tag) => tag.id)) : new Set());
+  }
 
   const stashesByTag = useMemo(() => {
     const grouped = new Map<string, Stash[]>();
@@ -70,6 +90,27 @@ export function ArchiveView() {
     return grouped;
   }, [rawStashes]);
 
+  const archivedTagGroups = useMemo<ArchivedTagGroup[]>(
+    () =>
+      archivedTags.flatMap((tag) => {
+        const allStashes = stashesByTag.get(tag.id) ?? [];
+
+        if (!normalizedQuery) {
+          return [{ tag, stashes: allStashes, totalCount: allStashes.length }];
+        }
+
+        const tagMatches = getTagLabel(tag).toLowerCase().includes(normalizedQuery);
+        const matchingStashes = tagMatches
+          ? allStashes
+          : allStashes.filter((stash) => stashMatchesSearch(stash, normalizedQuery));
+
+        return tagMatches || matchingStashes.length
+          ? [{ tag, stashes: matchingStashes, totalCount: allStashes.length }]
+          : [];
+      }),
+    [archivedTags, normalizedQuery, stashesByTag]
+  );
+
   const archivedLinkGroups = useMemo<ArchivedLinkGroup[]>(() => {
     const activeTagsById = new Map(
       rawTags.filter((tag) => !tag.archivedAt).map((tag) => [tag.id, tag])
@@ -85,19 +126,30 @@ export function ArchiveView() {
     }
 
     return Array.from(groups.entries())
-      .map(([tagId, stashes]) => ({
-        tag: activeTagsById.get(tagId)!,
-        stashes: stashes
+      .flatMap(([tagId, stashes]) => {
+        const tag = activeTagsById.get(tagId)!;
+        const sortedStashes = stashes
           .slice()
           .sort(
             (left, right) =>
               new Date(right.archivedAt!).getTime() - new Date(left.archivedAt!).getTime()
-          )
-      }))
-      .sort((left, right) => getTagLabel(left.tag).localeCompare(getTagLabel(right.tag)));
-  }, [archivedTagIds, rawStashes, rawTags]);
+          );
 
-  const hasArchivedRecords = archivedTags.length > 0 || archivedLinkGroups.length > 0;
+        if (!normalizedQuery || getTagLabel(tag).toLowerCase().includes(normalizedQuery)) {
+          return [{ tag, stashes: sortedStashes }];
+        }
+
+        const matchingStashes = sortedStashes.filter((stash) =>
+          stashMatchesSearch(stash, normalizedQuery)
+        );
+        return matchingStashes.length ? [{ tag, stashes: matchingStashes }] : [];
+      })
+      .sort((left, right) => getTagLabel(left.tag).localeCompare(getTagLabel(right.tag)));
+  }, [archivedTagIds, normalizedQuery, rawStashes, rawTags]);
+
+  const hasArchivedRecords =
+    archivedTags.length > 0 || rawStashes.some((stash) => stash.archivedAt);
+  const hasSearchResults = archivedTagGroups.length > 0 || archivedLinkGroups.length > 0;
   const isLoading =
     (tagsQuery.isPending && !rawTags.length) || (stashesQuery.isPending && !rawStashes.length);
   const hasBlockingError =
@@ -112,7 +164,37 @@ export function ArchiveView() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl space-y-6 px-3 pt-4 pb-20 sm:px-5 md:pb-6">
+      <div className="mx-auto w-full max-w-2xl space-y-5 px-3 pt-4 pb-20 sm:px-5 md:pb-6">
+        <div className="relative">
+          <label htmlFor="archive-search" className="sr-only">
+            Search archive
+          </label>
+          <LuSearch
+            aria-hidden="true"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          />
+          <Input
+            id="archive-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => updateSearchQuery(event.target.value)}
+            placeholder="Search archive"
+            autoComplete="off"
+            disabled={isLoading || hasBlockingError}
+            className="bg-card/20 h-9 pr-9 pl-9"
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              aria-label="Clear archive search"
+              onClick={() => updateSearchQuery("")}
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 flex size-8 -translate-y-1/2 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <LuX className="size-3.5" />
+            </button>
+          ) : null}
+        </div>
+
         {hasBlockingError ? (
           <QueryStatus tone="error">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -137,18 +219,19 @@ export function ArchiveView() {
             </span>
           </QueryStatus>
         ) : !hasArchivedRecords ? (
-          <div className="border-border/50 bg-card/40 flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center">
-            <div className="bg-muted mb-3 flex size-10 items-center justify-center rounded-full">
-              <LuArchive className="text-muted-foreground size-5" />
+          <div className="border-border/50 bg-card/40 flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center">
+            <div className="bg-muted mb-3 flex size-9 items-center justify-center rounded-full">
+              <LuArchive className="text-muted-foreground size-4" />
             </div>
             <p className="text-foreground text-sm font-medium">Your archive is empty</p>
-            <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
-              Archived links and tags stay here until you restore or permanently delete them.
-            </p>
+          </div>
+        ) : normalizedQuery && !hasSearchResults ? (
+          <div className="border-border/50 text-muted-foreground flex min-h-24 items-center justify-center rounded-xl border border-dashed px-4 text-sm">
+            No archive matches “{searchQuery.trim()}”
           </div>
         ) : (
           <>
-            {archivedTags.length > 0 ? (
+            {archivedTagGroups.length > 0 ? (
               <section aria-labelledby="archived-tags-heading">
                 <div className="mb-2 flex items-center justify-between gap-3 px-1">
                   <h2
@@ -158,14 +241,13 @@ export function ArchiveView() {
                     Archived tags
                   </h2>
                   <span className="text-muted-foreground/60 text-xs tabular-nums">
-                    {archivedTags.length}
+                    {archivedTagGroups.length}
                   </span>
                 </div>
 
                 <ul className="border-border/50 bg-card/30 divide-border/50 divide-y overflow-hidden rounded-xl border">
-                  {archivedTags.map((tag) => {
-                    const tagStashes = stashesByTag.get(tag.id) ?? [];
-                    const count = tagStashes.length;
+                  {archivedTagGroups.map(({ tag, stashes: tagStashes, totalCount }) => {
+                    const count = totalCount;
                     const label = getTagLabel(tag);
                     const isExpanded = expandedTagIds.has(tag.id);
                     return (
@@ -177,7 +259,9 @@ export function ArchiveView() {
                               {label}
                             </p>
                             <p className="text-muted-foreground mt-0.5 text-xs">
-                              {count} {count === 1 ? "link" : "links"}
+                              {normalizedQuery && tagStashes.length !== count
+                                ? `${tagStashes.length} of ${count} links`
+                                : `${count} ${count === 1 ? "link" : "links"}`}
                             </p>
                           </div>
                           <div className="flex shrink-0 items-center gap-0.5">
