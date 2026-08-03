@@ -4,10 +4,15 @@
   "private": true,
   "scripts": {
     "format": "prettier --write .",
+    "predev": "pnpm db:migrate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:setup": "pnpm db:migrate && pnpm db:seed"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",

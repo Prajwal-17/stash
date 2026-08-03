@@ -4,7 +4,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const isProd = process.env.NODE_ENV === "production";
-const localDbFile = process.env.DB_FILE_NAME || "./db/local.sqlite";
+const localDbFile = process.env.DB_FILE_NAME || "./.data/stash.sqlite";
 const localDbUrl = localDbFile.startsWith("file:") ? localDbFile : `file:${localDbFile}`;
 
 if (!isProd) {
