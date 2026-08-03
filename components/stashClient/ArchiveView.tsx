@@ -38,12 +38,19 @@ export function ArchiveView() {
 
   const archivedTagIds = useMemo(() => new Set(archivedTags.map((tag) => tag.id)), [archivedTags]);
 
-  const stashCountByTag = useMemo(() => {
-    const counts = new Map<string, number>();
+  const stashesByTag = useMemo(() => {
+    const grouped = new Map<string, Stash[]>();
     for (const stash of rawStashes) {
-      counts.set(stash.tagId, (counts.get(stash.tagId) ?? 0) + 1);
+      const current = grouped.get(stash.tagId) ?? [];
+      current.push(stash);
+      grouped.set(stash.tagId, current);
     }
-    return counts;
+
+    for (const stashes of grouped.values()) {
+      stashes.sort((left, right) => getStashTitle(left).localeCompare(getStashTitle(right)));
+    }
+
+    return grouped;
   }, [rawStashes]);
 
   const archivedLinkGroups = useMemo<ArchivedLinkGroup[]>(() => {
@@ -135,7 +142,7 @@ export function ArchiveView() {
                       Archived tags
                     </h2>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      Restoring a tag brings back its links, except links archived individually.
+                      Links stay grouped under their original tag until you restore or delete it.
                     </p>
                   </div>
                   <span className="text-muted-foreground/60 text-xs tabular-nums">
@@ -145,57 +152,89 @@ export function ArchiveView() {
 
                 <ul className="border-border/50 bg-card/30 divide-border/50 divide-y overflow-hidden rounded-xl border">
                   {archivedTags.map((tag) => {
-                    const count = stashCountByTag.get(tag.id) ?? 0;
+                    const tagStashes = stashesByTag.get(tag.id) ?? [];
+                    const count = tagStashes.length;
                     const label = getTagLabel(tag);
                     return (
-                      <li
-                        key={tag.id}
-                        className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-foreground truncate text-sm font-medium">
-                            <span className="text-muted-foreground/50 mr-1.5">#</span>
-                            {label}
-                          </p>
-                          <p className="text-muted-foreground mt-1 text-xs">
-                            Archived {formatRelativeDate(tag.archivedAt!)}
-                            <span className="text-muted-foreground/35 mx-1.5">·</span>
-                            {count} {count === 1 ? "link" : "links"}
-                          </p>
+                      <li key={tag.id}>
+                        <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground truncate text-sm font-medium">
+                              <span className="text-muted-foreground/50 mr-1.5">#</span>
+                              {label}
+                            </p>
+                            <p className="text-muted-foreground mt-1 text-xs">
+                              Archived {formatRelativeDate(tag.archivedAt!)}
+                              <span className="text-muted-foreground/35 mx-1.5">·</span>
+                              {count} {count === 1 ? "link" : "links"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Restore ${label}`}
+                              title="Restore"
+                              disabled={isSetTagArchivedPending}
+                              onClick={() => void handleTagArchiveAction(tag.id, "restore")}
+                              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:min-h-9 sm:min-w-9"
+                            >
+                              <LuRotateCcw className="size-4" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Permanently delete ${label}`}
+                              onClick={() =>
+                                openDeleteConfirmation({
+                                  kind: "tag",
+                                  id: tag.id,
+                                  title: `Delete "${label}" permanently?`,
+                                  description:
+                                    count === 0
+                                      ? "This permanently deletes the empty tag."
+                                      : count === 1
+                                        ? "This permanently deletes the tag and its link, including archived content."
+                                        : `This permanently deletes the tag and all ${count} links inside it, including archived content.`,
+                                  confirmLabel: "Delete permanently"
+                                })
+                              }
+                              className="text-muted-foreground flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:outline-none sm:min-h-9 sm:min-w-9"
+                            >
+                              <LuTrash2 className="size-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            aria-label={`Restore ${label}`}
-                            title="Restore"
-                            disabled={isSetTagArchivedPending}
-                            onClick={() => void handleTagArchiveAction(tag.id, "restore")}
-                            className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:min-h-9 sm:min-w-9"
-                          >
-                            <LuRotateCcw className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Permanently delete ${label}`}
-                            onClick={() =>
-                              openDeleteConfirmation({
-                                kind: "tag",
-                                id: tag.id,
-                                title: `Delete "${label}" permanently?`,
-                                description:
-                                  count === 0
-                                    ? "This permanently deletes the empty tag."
-                                    : count === 1
-                                      ? "This permanently deletes the tag and its link, including archived content."
-                                      : `This permanently deletes the tag and all ${count} links inside it, including archived content.`,
-                                confirmLabel: "Delete permanently"
-                              })
-                            }
-                            className="text-muted-foreground flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:outline-none sm:min-h-9 sm:min-w-9"
-                          >
-                            <LuTrash2 className="size-4" />
-                          </button>
-                        </div>
+                        {tagStashes.length > 0 ? (
+                          <ul className="border-border/40 bg-background/20 divide-border/30 divide-y border-t">
+                            {tagStashes.map((stash) => (
+                              <li key={stash.id} className="min-w-0 px-4 py-2.5 sm:pl-8">
+                                <a
+                                  href={stash.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-foreground focus-visible:ring-ring/50 group inline-flex max-w-full items-center gap-1.5 rounded-sm text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                                >
+                                  <span className="truncate">{getStashTitle(stash)}</span>
+                                  <LuExternalLink className="text-muted-foreground/50 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+                                </a>
+                                <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
+                                  <span>{stash.hostname || getHostname(stash.url)}</span>
+                                  {stash.archivedAt ? (
+                                    <>
+                                      <span aria-hidden="true" className="text-muted-foreground/35">
+                                        ·
+                                      </span>
+                                      <span>Remains archived after tag restore</span>
+                                    </>
+                                  ) : null}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="border-border/40 text-muted-foreground border-t px-4 py-3 text-xs sm:pl-8">
+                            No links in this tag.
+                          </p>
+                        )}
                       </li>
                     );
                   })}
