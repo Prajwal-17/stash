@@ -13,14 +13,20 @@ import { useStashQueries } from "@/hooks/useStashQueries";
 import { getTagLabel } from "@/lib/stash-client";
 import { formatRelativeDate, getHostname } from "@/lib/link-utils";
 import { useStashStore } from "@/store/stashStore";
-import { LuCheck, LuCopy, LuPencil, LuTrash2 } from "react-icons/lu";
+import { LuArchive, LuCheck, LuCopy, LuPencil, LuTrash2 } from "react-icons/lu";
 
 export function StashActionDrawer() {
   const drawerStash = useStashStore((s) => s.drawerStash);
   const setDrawerStash = useStashStore((s) => s.setDrawerStash);
   const copiedStashId = useStashStore((s) => s.copiedStashId);
 
-  const { copyText, openStashEditor, openDeleteConfirmation } = useStashActions();
+  const {
+    copyText,
+    handleStashArchiveAction,
+    isSetStashArchivedPending,
+    openStashEditor,
+    openDeleteConfirmation
+  } = useStashActions();
   const { tags } = useStashQueries();
 
   const isOpen = drawerStash !== null;
@@ -109,7 +115,7 @@ export function StashActionDrawer() {
               </div>
             ) : null}
 
-            <div className="border-border/50 flex items-center gap-2 border-t pt-4">
+            <div className="border-border/50 grid grid-cols-2 gap-2 border-t pt-4">
               <button
                 type="button"
                 aria-label={copiedStashId === drawerStash.id ? "Copied" : "Copy URL"}
@@ -131,6 +137,16 @@ export function StashActionDrawer() {
               >
                 <LuPencil size={14} />
                 Edit
+              </button>
+              <button
+                type="button"
+                aria-label="Archive stash"
+                disabled={isSetStashArchivedPending}
+                className="bg-muted text-foreground focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                onClick={() => void handleStashArchiveAction(drawerStash.id, "archive")}
+              >
+                <LuArchive size={14} />
+                Archive
               </button>
               <button
                 type="button"

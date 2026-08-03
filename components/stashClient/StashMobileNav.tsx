@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useStashStore } from "@/store/stashStore";
 import {
   LuBookOpen,
+  LuArchive,
   LuInbox,
   LuLayoutGrid,
   LuLoaderCircle,
@@ -51,7 +52,7 @@ export function StashMobileNav({
   const userEmail = storeEmail !== "" ? storeEmail : propEmail;
 
   const { tags: queriedTags } = useStashQueries();
-  const tags = queriedTags.length ? queriedTags : initialTags;
+  const tags = queriedTags.length ? queriedTags : initialTags.filter((tag) => !tag.archivedAt);
   const defaultTagId = getDefaultTagId(tags);
   const resolvedActiveTagId =
     activeTagId && tags.some((tag) => tag.id === activeTagId) ? activeTagId : defaultTagId;
@@ -121,6 +122,18 @@ export function StashMobileNav({
       >
         <LuBookOpen size={20} />
         <span className="text-[10px] font-medium">Read</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setActiveView("archive")}
+        aria-current={activeView === "archive" ? "page" : undefined}
+        className={cn(
+          "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
+          activeView === "archive" ? "text-active" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <LuArchive size={20} />
+        <span className="text-[10px] font-medium">Archive</span>
       </button>
 
       <DropdownMenu>

@@ -6,6 +6,7 @@ export interface Stash {
   url: string;
   title: string | null;
   description: string | null;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
   hostname: string | null;
@@ -15,6 +16,7 @@ export interface Tag {
   id: string;
   name: string | null;
   userId: string;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -114,6 +116,13 @@ export function updateStash(payload: {
   });
 }
 
+export function setStashArchived(stashId: string, action: "archive" | "restore") {
+  return requestJson<Stash>("/api/stashes", {
+    method: "PATCH",
+    body: JSON.stringify({ stashId, action })
+  });
+}
+
 export function deleteStash(stashId: string) {
   return requestJson<Stash>("/api/stashes", {
     method: "DELETE",
@@ -132,6 +141,13 @@ export function updateTag(payload: { tagId: string; name: string }) {
   return requestJson<Tag>("/api/tags", {
     method: "PATCH",
     body: JSON.stringify(payload)
+  });
+}
+
+export function setTagArchived(tagId: string, action: "archive" | "restore") {
+  return requestJson<Tag>("/api/tags", {
+    method: "PATCH",
+    body: JSON.stringify({ tagId, action })
   });
 }
 
@@ -202,7 +218,12 @@ export function validateTagName(value: string): TagValidationResult {
 }
 
 export function getDefaultTagId(tags: Tag[]) {
-  return tags.find((tag) => tag.name?.trim().toLowerCase() === "inbox")?.id ?? tags[0]?.id ?? null;
+  const activeTags = tags.filter((tag) => !tag.archivedAt);
+  return (
+    activeTags.find((tag) => tag.name?.trim().toLowerCase() === "inbox")?.id ??
+    activeTags[0]?.id ??
+    null
+  );
 }
 
 export function getTagLabel(tag: Tag | null | undefined) {

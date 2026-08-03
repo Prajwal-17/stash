@@ -2,7 +2,7 @@ import { ShareHandler } from "@/components/ShareHandler";
 import { db } from "@/db/db";
 import { tags } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -24,7 +24,7 @@ export default async function SharePage({
   const tagRows = await db
     .select()
     .from(tags)
-    .where(eq(tags.userId, user.id))
+    .where(and(eq(tags.userId, user.id), isNull(tags.archivedAt)))
     .orderBy(tags.createdAt);
 
   const initialTags = tagRows.map((tag) => ({

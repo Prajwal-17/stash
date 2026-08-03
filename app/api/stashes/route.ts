@@ -1,7 +1,7 @@
 import { db } from "@/db/db";
-import { stashes } from "@/db/schema";
+import { stashes, tags } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/stashes — fetch all stashes for the authenticated user
@@ -54,7 +54,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ msg: "tagId and url are required" }, { status: 400 });
     }
 
-    const parsedUrl = new URL(url);
+    const [targetTag] = await db
+      .select({ id: tags.id })
+      .from(tags)
+      .where(and(eq(tags.id, tagId), eq(tags.userId, user.id), isNull(tags.archivedAt)));
+
+    if (!targetTag) {
+      return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
+    }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+        throw new Error("Unsupported protocol");
+      }
+    } catch {
+      return NextResponse.json({ msg: "A valid http or https URL is required" }, { status: 400 });
+    }
 
     const [stash] = await db
       .insert(stashes)
@@ -90,13 +107,58 @@ export async function PATCH(req: NextRequest) {
     const user = session.user;
 
     const body = await req.json();
-    const { stashId, tagId, url, title, description } = body;
+    const { stashId, tagId, url, title, description, action } = body;
+
+    if (action !== undefined) {
+      if (!stashId || (action !== "archive" && action !== "restore")) {
+        return NextResponse.json(
+          { msg: "stashId and a valid action are required" },
+          { status: 400 }
+        );
+      }
+
+      const now = new Date().toISOString();
+      const [updated] = await db
+        .update(stashes)
+        .set({
+          archivedAt: action === "archive" ? now : null,
+          updatedAt: now
+        })
+        .where(and(eq(stashes.id, stashId), eq(stashes.userId, user.id)))
+        .returning();
+
+      if (!updated) {
+        return NextResponse.json({ msg: "Stash not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(
+        { msg: action === "archive" ? "Stash archived" : "Stash restored", data: updated },
+        { status: 200 }
+      );
+    }
 
     if (!stashId || !tagId || !url) {
       return NextResponse.json({ msg: "stashId, tagId, and url are required" }, { status: 400 });
     }
 
-    const parsedUrl = new URL(url);
+    const [targetTag] = await db
+      .select({ id: tags.id })
+      .from(tags)
+      .where(and(eq(tags.id, tagId), eq(tags.userId, user.id), isNull(tags.archivedAt)));
+
+    if (!targetTag) {
+      return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
+    }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+        throw new Error("Unsupported protocol");
+      }
+    } catch {
+      return NextResponse.json({ msg: "A valid http or https URL is required" }, { status: 400 });
+    }
 
     const [updated] = await db
       .update(stashes)
@@ -108,7 +170,7 @@ export async function PATCH(req: NextRequest) {
         description: description || null,
         updatedAt: new Date().toISOString()
       })
-      .where(and(eq(stashes.id, stashId), eq(stashes.userId, user.id)))
+      .where(and(eq(stashes.id, stashId), eq(stashes.userId, user.id), isNull(stashes.archivedAt)))
       .returning();
 
     if (!updated) {

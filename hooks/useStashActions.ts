@@ -17,9 +17,11 @@ export function useStashActions() {
   const {
     createTagMutation,
     updateTagMutation,
+    setTagArchivedMutation,
     deleteTagMutation,
     createStashMutation,
     updateStashMutation,
+    setStashArchivedMutation,
     deleteStashMutation
   } = useStashMutations();
 
@@ -167,6 +169,21 @@ export function useStashActions() {
       // The mutation surfaces its error with a toast.
     }
   }
+  async function handleStashArchiveAction(stashId: string, action: "archive" | "restore") {
+    try {
+      await setStashArchivedMutation.mutateAsync({ stashId, action });
+    } catch {
+      // The mutation surfaces its error with a toast.
+    }
+  }
+
+  async function handleTagArchiveAction(tagId: string, action: "archive" | "restore") {
+    try {
+      await setTagArchivedMutation.mutateAsync({ tagId, action });
+    } catch {
+      // The mutation surfaces its error with a toast.
+    }
+  }
 
   async function handleDeleteConfirmation() {
     const conf = store.confirmation;
@@ -193,19 +210,27 @@ export function useStashActions() {
     submitStashEditor,
     submitTagEditor,
     handleDeleteConfirmation,
+    handleStashArchiveAction,
+    handleTagArchiveAction,
     isFetchingMetadata,
     // Expose mutation states for loading indicators
     isCreateStashPending: createStashMutation.isPending,
     isUpdateStashPending: updateStashMutation.isPending,
     isDeleteStashPending: deleteStashMutation.isPending,
+    isSetStashArchivedPending: setStashArchivedMutation.isPending,
     isCreateTagPending: createTagMutation.isPending,
     isUpdateTagPending: updateTagMutation.isPending,
     isDeleteTagPending: deleteTagMutation.isPending,
+    isSetTagArchivedPending: setTagArchivedMutation.isPending,
     isTagMutationPending:
-      createTagMutation.isPending || updateTagMutation.isPending || deleteTagMutation.isPending,
+      createTagMutation.isPending ||
+      updateTagMutation.isPending ||
+      setTagArchivedMutation.isPending ||
+      deleteTagMutation.isPending,
     isStashMutationPending:
       createStashMutation.isPending ||
       updateStashMutation.isPending ||
+      setStashArchivedMutation.isPending ||
       deleteStashMutation.isPending
   };
 }

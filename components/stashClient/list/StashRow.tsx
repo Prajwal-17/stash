@@ -19,7 +19,7 @@ import {
   useRef
 } from "react";
 import Highlighter from "react-highlight-words";
-import { LuCheck, LuCopy, LuInfo, LuPencil, LuTrash2 } from "react-icons/lu";
+import { LuArchive, LuCheck, LuCopy, LuInfo, LuPencil, LuTrash2 } from "react-icons/lu";
 
 export interface StashRowProps {
   stash: Stash;
@@ -46,7 +46,13 @@ export function StashRow({
   const previewStash = useStashStore((s) => s.previewStash);
   const setPreviewStash = useStashStore((s) => s.setPreviewStash);
 
-  const { copyText, openStashEditor, openDeleteConfirmation } = useStashActions();
+  const {
+    copyText,
+    handleStashArchiveAction,
+    isSetStashArchivedPending,
+    openStashEditor,
+    openDeleteConfirmation
+  } = useStashActions();
 
   const isFocused = index === focusedStashIndex;
   const isPreviewOpen = previewStash?.id === stash.id;
@@ -259,6 +265,23 @@ export function StashRow({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Edit</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Archive stash"
+                  disabled={isSetStashArchivedPending}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition disabled:opacity-40"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleStashArchiveAction(stash.id, "archive");
+                  }}
+                >
+                  <LuArchive size={15} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Archive</TooltipContent>
             </Tooltip>
 
             <Tooltip>

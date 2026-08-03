@@ -3,7 +3,10 @@ import {
   createTag,
   deleteStash,
   deleteTag,
+  getDefaultTagId,
   MutationError,
+  setStashArchived,
+  setTagArchived,
   Stash,
   stashQueryKeys,
   Tag,
@@ -47,6 +50,32 @@ export function useStashMutations() {
       toast.error(error.message);
     }
   });
+  const setTagArchivedMutation = useMutation({
+    mutationFn: ({ tagId, action }: { tagId: string; action: "archive" | "restore" }) =>
+      setTagArchived(tagId, action),
+    onSuccess: (updatedTag, { action }) => {
+      const currentTags = queryClient.getQueryData<Tag[]>(stashQueryKeys.tags) ?? [];
+      const nextTags = currentTags.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag));
+      queryClient.setQueryData<Tag[]>(stashQueryKeys.tags, nextTags);
+
+      if (action === "archive") {
+        const store = useStashStore.getState();
+        const fallbackTagId = getDefaultTagId(nextTags);
+        if (store.activeTagId === updatedTag.id) store.setActiveTagId(fallbackTagId);
+        if (store.composerTagId === updatedTag.id) store.setComposerTagId(fallbackTagId);
+        store.setPreviewStash(null);
+        store.setDrawerStash(null);
+        store.setStashEditor(null);
+        store.setTagEditor(null);
+        store.setFocusedStashIndex(-1);
+      }
+
+      toast.success(action === "archive" ? "Tag archived." : "Tag restored.");
+    },
+    onError: (error: MutationError) => {
+      toast.error(error.message);
+    }
+  });
 
   const deleteTagMutation = useMutation({
     mutationFn: (tagId: string) => deleteTag(tagId),
@@ -61,6 +90,11 @@ export function useStashMutations() {
       const store = useStashStore.getState();
       if (store.activeTagId === tagId) setActiveTagId(null);
       if (store.composerTagId === tagId) setComposerTagId(null);
+      if (store.previewStash?.tagId === tagId) store.setPreviewStash(null);
+      if (store.drawerStash?.tagId === tagId) store.setDrawerStash(null);
+      if (store.stashEditor?.tagId === tagId) store.setStashEditor(null);
+      if (store.tagEditor?.tagId === tagId) store.setTagEditor(null);
+      store.setFocusedStashIndex(-1);
       toast.success("Tag deleted.");
     },
     onError: (error: MutationError) => {
@@ -104,6 +138,28 @@ export function useStashMutations() {
       toast.error(error.message);
     }
   });
+  const setStashArchivedMutation = useMutation({
+    mutationFn: ({ stashId, action }: { stashId: string; action: "archive" | "restore" }) =>
+      setStashArchived(stashId, action),
+    onSuccess: (updatedStash, { action }) => {
+      queryClient.setQueryData<Stash[]>(stashQueryKeys.stashes, (current = []) =>
+        current.map((stash) => (stash.id === updatedStash.id ? updatedStash : stash))
+      );
+
+      if (action === "archive") {
+        const store = useStashStore.getState();
+        if (store.previewStash?.id === updatedStash.id) store.setPreviewStash(null);
+        if (store.drawerStash?.id === updatedStash.id) store.setDrawerStash(null);
+        if (store.stashEditor?.stashId === updatedStash.id) store.setStashEditor(null);
+        store.setFocusedStashIndex(-1);
+      }
+
+      toast.success(action === "archive" ? "Stash archived." : "Stash restored.");
+    },
+    onError: (error: MutationError) => {
+      toast.error(error.message);
+    }
+  });
 
   const deleteStashMutation = useMutation({
     mutationFn: (stashId: string) => deleteStash(stashId),
@@ -111,7 +167,11 @@ export function useStashMutations() {
       queryClient.setQueryData<Stash[]>(stashQueryKeys.stashes, (current = []) =>
         current.filter((stash) => stash.id !== stashId)
       );
-      setDrawerStash(null);
+      const store = useStashStore.getState();
+      if (store.previewStash?.id === stashId) store.setPreviewStash(null);
+      if (store.drawerStash?.id === stashId) store.setDrawerStash(null);
+      if (store.stashEditor?.stashId === stashId) store.setStashEditor(null);
+      store.setFocusedStashIndex(-1);
       toast.success("Stash removed.");
     },
     onError: (error: MutationError) => {
@@ -122,9 +182,11 @@ export function useStashMutations() {
   return {
     createTagMutation,
     updateTagMutation,
+    setTagArchivedMutation,
     deleteTagMutation,
     createStashMutation,
     updateStashMutation,
+    setStashArchivedMutation,
     deleteStashMutation
   };
 }

@@ -2,7 +2,7 @@ import { Stash, Tag } from "@/lib/stash-client";
 import type { ConfirmationState, EditStashState, TagEditorState } from "@/store/stash-types";
 import { create } from "zustand";
 
-export type ActiveView = "stash" | "search" | "tags" | "reading-list";
+export type ActiveView = "stash" | "search" | "tags" | "reading-list" | "archive";
 
 interface StashStore {
   activeView: ActiveView;

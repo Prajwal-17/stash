@@ -65,7 +65,8 @@ export function ShareHandler({
     initialData: initialTags
   });
 
-  const tags = tagsQuery.data ?? initialTags;
+  const rawTags = tagsQuery.data ?? initialTags;
+  const tags = rawTags.filter((tag) => !tag.archivedAt);
   const resolvedTagId =
     tagId && tags.some((tag) => tag.id === tagId) ? tagId : getDefaultTagId(tags);
 

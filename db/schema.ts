@@ -98,6 +98,7 @@ export const stashes = sqliteTable("stashes", {
   title: text("title"),
   hostname: text("hostname"),
   description: text("description"),
+  archivedAt: text("archived_at"),
   createdAt: text("created_at")
     .default(sql`(STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
     .notNull(),
@@ -113,6 +114,7 @@ export const tags = sqliteTable("tags", {
     .$defaultFn(() => uuidv4()),
   name: text("name", { length: 50 }),
   userId: text("user_id").notNull(),
+  archivedAt: text("archived_at"),
   createdAt: text("created_at")
     .default(sql`(STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
     .notNull(),

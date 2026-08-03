@@ -15,7 +15,14 @@ import { useStashQueries } from "@/hooks/useStashQueries";
 import { getDefaultTagId, getTagLabel, Stash } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { LuEllipsis, LuLoaderCircle, LuPencil, LuRefreshCw, LuTrash2 } from "react-icons/lu";
+import {
+  LuArchive,
+  LuEllipsis,
+  LuLoaderCircle,
+  LuPencil,
+  LuRefreshCw,
+  LuTrash2
+} from "react-icons/lu";
 
 export function StashList() {
   const listRef = useRef<HTMLDivElement>(null);
@@ -27,7 +34,8 @@ export function StashList() {
   const previewStash = useStashStore((s) => s.previewStash);
   const setPreviewStash = useStashStore((s) => s.setPreviewStash);
 
-  const { openDeleteConfirmation } = useStashActions();
+  const { handleTagArchiveAction, isSetTagArchivedPending, openDeleteConfirmation } =
+    useStashActions();
 
   const { tagsQuery, stashesQuery, tags, stashes } = useStashQueries();
 
@@ -203,6 +211,13 @@ export function StashList() {
                 >
                   <LuPencil className="mr-2 h-4 w-4" />
                   Edit tag
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isSetTagArchivedPending}
+                  onClick={() => void handleTagArchiveAction(activeTag.id, "archive")}
+                >
+                  <LuArchive className="mr-2 h-4 w-4" />
+                  Archive tag
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

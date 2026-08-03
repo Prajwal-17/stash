@@ -18,6 +18,7 @@ import { useStashStore } from "@/store/stashStore";
 import { useMemo, useState } from "react";
 import {
   LuBookOpen,
+  LuArchive,
   LuChevronDown,
   LuChevronRight,
   LuInbox,
@@ -61,7 +62,7 @@ export function StashSidebar({
   const userEmail = storeEmail !== "" ? storeEmail : propEmail;
 
   const { tags: queriedTags, stashes } = useStashQueries();
-  const tags = queriedTags.length > 0 ? queriedTags : initialTags;
+  const tags = queriedTags.length > 0 ? queriedTags : initialTags.filter((tag) => !tag.archivedAt);
 
   const { handleLogout } = useStashActions();
 
@@ -135,6 +136,17 @@ export function StashSidebar({
         >
           <LuBookOpen size={16} />
           <span className="flex-1 text-left">Reading List</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveView("archive")}
+          className={cn(
+            "hover:bg-muted/50 focus-visible:ring-ring/50 flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+            activeView === "archive" ? "bg-active-bg text-active-fg" : "text-muted-foreground"
+          )}
+        >
+          <LuArchive size={16} />
+          <span className="flex-1 text-left">Archive</span>
         </button>
       </div>
 

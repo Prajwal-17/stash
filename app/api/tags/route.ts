@@ -1,7 +1,7 @@
 import { db } from "@/db/db";
 import { stashes, tags } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -94,6 +94,50 @@ export async function PATCH(req: NextRequest) {
     const user = session.user;
     const userId = user.id;
     const body = await req.json();
+    const { tagId, action } = body;
+
+    if (action !== undefined) {
+      if (!tagId || (action !== "archive" && action !== "restore")) {
+        return NextResponse.json({ msg: "tagId and a valid action are required" }, { status: 400 });
+      }
+
+      const userTags = await db
+        .select()
+        .from(tags)
+        .where(eq(tags.userId, userId))
+        .orderBy(tags.createdAt);
+      const targetTag = userTags.find((tag) => tag.id === tagId);
+
+      if (!targetTag) {
+        return NextResponse.json({ msg: "Tag not found" }, { status: 404 });
+      }
+
+      const activeTags = userTags.filter((tag) => !tag.archivedAt);
+      const defaultTag =
+        activeTags.find((tag) => tag.name?.trim().toLowerCase() === "inbox") ?? activeTags[0];
+
+      if (
+        action === "archive" &&
+        (targetTag.id === defaultTag?.id || targetTag.name?.trim().toLowerCase() === "inbox")
+      ) {
+        return NextResponse.json({ msg: "Inbox cannot be archived" }, { status: 400 });
+      }
+
+      const now = new Date().toISOString();
+      const [updatedTag] = await db
+        .update(tags)
+        .set({
+          archivedAt: action === "archive" ? now : null,
+          updatedAt: now
+        })
+        .where(and(eq(tags.id, tagId), eq(tags.userId, userId)))
+        .returning();
+
+      return NextResponse.json(
+        { msg: action === "archive" ? "Tag archived" : "Tag restored", data: updatedTag },
+        { status: 200 }
+      );
+    }
 
     const name = typeof body.name === "string" ? body.name.trim() : "";
 
@@ -107,7 +151,7 @@ export async function PATCH(req: NextRequest) {
         name,
         updatedAt: new Date().toISOString()
       })
-      .where(and(eq(tags.id, body.tagId), eq(tags.userId, userId)))
+      .where(and(eq(tags.id, body.tagId), eq(tags.userId, userId), isNull(tags.archivedAt)))
       .returning();
 
     if (updatedTag && updatedTag.id) {

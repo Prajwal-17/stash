@@ -1,5 +1,6 @@
 "use client";
 
+import { ArchiveView } from "@/components/stashClient/ArchiveView";
 import { EditStashDialog } from "@/components/stashClient/EditStashDialog";
 import { StashActionDrawer } from "@/components/stashClient/StashActionDrawer";
 import { StashComposer } from "@/components/stashClient/StashComposer";
@@ -81,12 +82,13 @@ export function StashShell({
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {activeView === "archive" && <ArchiveView />}
           {activeView === "search" && <StashSearchResults />}
           {activeView === "tags" && <TagsPage />}
           {activeView === "reading-list" && <ReadingListView />}
           {activeView === "stash" && <StashList />}
 
-          {activeView !== "reading-list" && (
+          {activeView !== "reading-list" && activeView !== "archive" && (
             <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3">
               <StashComposer />
             </div>
