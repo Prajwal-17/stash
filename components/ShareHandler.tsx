@@ -202,59 +202,76 @@ export function ShareHandler({
             ) : (
               <>
                 <div className="relative mt-1">
-                  <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        aria-labelledby="shared-tag-label"
-                        className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
+                  <select
+                    aria-labelledby="shared-tag-label"
+                    value={resolvedTagId ?? ""}
+                    onChange={(event) => setTagId(event.target.value)}
+                    className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 h-11 w-full rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none sm:hidden"
+                  >
+                    <option value="" disabled>
+                      Select a tag
+                    </option>
+                    {tags.map((tag) => (
+                      <option key={tag.id} value={tag.id}>
+                        {getTagLabel(tag)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="hidden sm:block">
+                    <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-labelledby="shared-tag-label"
+                          className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          <span className="truncate">
+                            {resolvedTagId
+                              ? getTagLabel(tags.find((t) => t.id === resolvedTagId)!)
+                              : "Select a Tag"}
+                          </span>
+                          <LuChevronsUpDown
+                            size={16}
+                            className="text-muted-foreground shrink-0 opacity-50"
+                          />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        collisionPadding={8}
+                        className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0"
+                        align="start"
                       >
-                        <span className="truncate">
-                          {resolvedTagId
-                            ? getTagLabel(tags.find((t) => t.id === resolvedTagId)!)
-                            : "Select a Tag"}
-                        </span>
-                        <LuChevronsUpDown
-                          size={16}
-                          className="text-muted-foreground shrink-0 opacity-50"
-                        />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      collisionPadding={8}
-                      className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0"
-                      align="start"
-                    >
-                      <Command>
-                        <CommandInput placeholder="Search tags..." />
-                        <CommandList className="max-h-48 overflow-y-auto">
-                          <CommandEmpty>No tags found.</CommandEmpty>
-                          <CommandGroup>
-                            {tags.map((tag) => {
-                              const label = getTagLabel(tag);
-                              const isSelected = tag.id === resolvedTagId;
-                              return (
-                                <CommandItem
-                                  key={tag.id}
-                                  value={label}
-                                  onSelect={() => {
-                                    setTagId(tag.id);
-                                    setTagPopoverOpen(false);
-                                  }}
-                                  className="flex justify-between"
-                                >
-                                  <span className="truncate">{label}</span>
-                                  {isSelected ? (
-                                    <LuCheck size={14} className="text-foreground shrink-0" />
-                                  ) : null}
-                                </CommandItem>
-                              );
-                            })}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                        <Command>
+                          <CommandInput placeholder="Search tags..." />
+                          <CommandList className="max-h-48 overflow-y-auto">
+                            <CommandEmpty>No tags found.</CommandEmpty>
+                            <CommandGroup>
+                              {tags.map((tag) => {
+                                const label = getTagLabel(tag);
+                                const isSelected = tag.id === resolvedTagId;
+                                return (
+                                  <CommandItem
+                                    key={tag.id}
+                                    value={label}
+                                    onSelect={() => {
+                                      setTagId(tag.id);
+                                      setTagPopoverOpen(false);
+                                    }}
+                                    className="flex justify-between"
+                                  >
+                                    <span className="truncate">{label}</span>
+                                    {isSelected ? (
+                                      <LuCheck size={14} className="text-foreground shrink-0" />
+                                    ) : null}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
 
                 {tagsQuery.isFetching ? (

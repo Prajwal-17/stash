@@ -89,60 +89,81 @@ export function EditStashDialog() {
 
               <div className="space-y-2">
                 <FieldLabel id="stash-tag-label">Tag</FieldLabel>
-                <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      aria-labelledby="stash-tag-label"
-                      className={cn(
-                        "border-border bg-muted text-foreground flex h-12 w-full items-center justify-between rounded-lg border px-4 text-sm",
-                        !selectedTag && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="truncate">
-                        {selectedTag ? getTagLabel(selectedTag) : "Select a tag"}
-                      </span>
-                      <LuChevronsUpDown size={14} className="text-muted-foreground shrink-0" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0">
-                    <Command>
-                      <CommandInput placeholder="Search tags..." />
-                      <CommandList className="max-h-48 overflow-y-auto">
-                        <CommandEmpty>No tags found.</CommandEmpty>
-                        <CommandGroup>
-                          {tags.map((tag) => {
-                            const label = getTagLabel(tag);
-                            const isSelected = tag.id === stashEditor?.tagId;
-                            return (
-                              <CommandItem
-                                key={tag.id}
-                                value={label}
-                                onSelect={() => {
-                                  setStashEditor(
-                                    stashEditor
-                                      ? {
-                                          ...stashEditor,
-                                          tagId: tag.id
-                                        }
-                                      : null
-                                  );
-                                  setTagPopoverOpen(false);
-                                }}
-                                className="flex justify-between"
-                              >
-                                <span className="truncate">{label}</span>
-                                {isSelected ? (
-                                  <LuCheck size={14} className="text-foreground shrink-0" />
-                                ) : null}
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <select
+                  aria-labelledby="stash-tag-label"
+                  value={stashEditor?.tagId ?? ""}
+                  onChange={(event) =>
+                    setStashEditor(
+                      stashEditor ? { ...stashEditor, tagId: event.target.value } : null
+                    )
+                  }
+                  className="border-border bg-muted text-foreground h-12 w-full rounded-lg border px-4 text-sm sm:hidden"
+                >
+                  <option value="" disabled>
+                    Select a tag
+                  </option>
+                  {tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {getTagLabel(tag)}
+                    </option>
+                  ))}
+                </select>
+                <div className="hidden sm:block">
+                  <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        aria-labelledby="stash-tag-label"
+                        className={cn(
+                          "border-border bg-muted text-foreground flex h-12 w-full items-center justify-between rounded-lg border px-4 text-sm",
+                          !selectedTag && "text-muted-foreground"
+                        )}
+                      >
+                        <span className="truncate">
+                          {selectedTag ? getTagLabel(selectedTag) : "Select a tag"}
+                        </span>
+                        <LuChevronsUpDown size={14} className="text-muted-foreground shrink-0" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0">
+                      <Command>
+                        <CommandInput placeholder="Search tags..." />
+                        <CommandList className="max-h-48 overflow-y-auto">
+                          <CommandEmpty>No tags found.</CommandEmpty>
+                          <CommandGroup>
+                            {tags.map((tag) => {
+                              const label = getTagLabel(tag);
+                              const isSelected = tag.id === stashEditor?.tagId;
+                              return (
+                                <CommandItem
+                                  key={tag.id}
+                                  value={label}
+                                  onSelect={() => {
+                                    setStashEditor(
+                                      stashEditor
+                                        ? {
+                                            ...stashEditor,
+                                            tagId: tag.id
+                                          }
+                                        : null
+                                    );
+                                    setTagPopoverOpen(false);
+                                  }}
+                                  className="flex justify-between"
+                                >
+                                  <span className="truncate">{label}</span>
+                                  {isSelected ? (
+                                    <LuCheck size={14} className="text-foreground shrink-0" />
+                                  ) : null}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
 

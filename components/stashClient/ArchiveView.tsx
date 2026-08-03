@@ -1,13 +1,20 @@
 "use client";
 
-import { getStashTitle } from "@/components/stashClient/helpers";
 import { QueryStatus } from "@/components/shared/QueryStatus";
+import { getStashTitle } from "@/components/stashClient/helpers";
 import { useStashActions } from "@/hooks/useStashActions";
 import { useStashQueries } from "@/hooks/useStashQueries";
+import { getHostname } from "@/lib/link-utils";
 import { getTagLabel, Stash, Tag } from "@/lib/stash-client";
-import { formatRelativeDate, getHostname } from "@/lib/link-utils";
-import { useMemo } from "react";
-import { LuArchive, LuExternalLink, LuLoaderCircle, LuRotateCcw, LuTrash2 } from "react-icons/lu";
+import { useMemo, useState } from "react";
+import {
+  LuArchive,
+  LuChevronRight,
+  LuExternalLink,
+  LuLoaderCircle,
+  LuRotateCcw,
+  LuTrash2
+} from "react-icons/lu";
 
 interface ArchivedLinkGroup {
   tag: Tag;
@@ -23,6 +30,16 @@ export function ArchiveView() {
     isSetTagArchivedPending,
     openDeleteConfirmation
   } = useStashActions();
+  const [expandedTagIds, setExpandedTagIds] = useState<Set<string>>(() => new Set());
+
+  function toggleTagContents(tagId: string) {
+    setExpandedTagIds((current) => {
+      const next = new Set(current);
+      if (next.has(tagId)) next.delete(tagId);
+      else next.add(tagId);
+      return next;
+    });
+  }
 
   const archivedTags = useMemo(
     () =>
@@ -88,14 +105,14 @@ export function ArchiveView() {
 
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6">
+      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b px-4 py-2.5 backdrop-blur-md sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <LuArchive className="text-muted-foreground size-4 shrink-0" />
           <h1 className="text-foreground truncate text-base font-medium tracking-tight">Archive</h1>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl space-y-8 px-3 pt-5 pb-24 sm:px-6 md:pb-8">
+      <div className="mx-auto w-full max-w-2xl space-y-6 px-3 pt-4 pb-20 sm:px-5 md:pb-6">
         {hasBlockingError ? (
           <QueryStatus tone="error">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -133,18 +150,13 @@ export function ArchiveView() {
           <>
             {archivedTags.length > 0 ? (
               <section aria-labelledby="archived-tags-heading">
-                <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
-                  <div>
-                    <h2
-                      id="archived-tags-heading"
-                      className="text-foreground text-sm font-semibold tracking-tight"
-                    >
-                      Archived tags
-                    </h2>
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      Links stay grouped under their original tag until you restore or delete it.
-                    </p>
-                  </div>
+                <div className="mb-2 flex items-center justify-between gap-3 px-1">
+                  <h2
+                    id="archived-tags-heading"
+                    className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+                  >
+                    Archived tags
+                  </h2>
                   <span className="text-muted-foreground/60 text-xs tabular-nums">
                     {archivedTags.length}
                   </span>
@@ -155,21 +167,33 @@ export function ArchiveView() {
                     const tagStashes = stashesByTag.get(tag.id) ?? [];
                     const count = tagStashes.length;
                     const label = getTagLabel(tag);
+                    const isExpanded = expandedTagIds.has(tag.id);
                     return (
                       <li key={tag.id}>
-                        <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
+                        <div className="flex items-center gap-2 px-3 py-2">
                           <div className="min-w-0 flex-1">
                             <p className="text-foreground truncate text-sm font-medium">
                               <span className="text-muted-foreground/50 mr-1.5">#</span>
                               {label}
                             </p>
-                            <p className="text-muted-foreground mt-1 text-xs">
-                              Archived {formatRelativeDate(tag.archivedAt!)}
-                              <span className="text-muted-foreground/35 mx-1.5">·</span>
+                            <p className="text-muted-foreground mt-0.5 text-xs">
                               {count} {count === 1 ? "link" : "links"}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            <button
+                              type="button"
+                              aria-label={
+                                isExpanded ? `Hide links in ${label}` : `Show links in ${label}`
+                              }
+                              aria-expanded={isExpanded}
+                              onClick={() => toggleTagContents(tag.id)}
+                              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            >
+                              <LuChevronRight
+                                className={`size-4 transition-transform motion-reduce:transition-none ${isExpanded ? "rotate-90" : ""}`}
+                              />
+                            </button>
                             <button
                               type="button"
                               aria-label={`Restore ${label}`}
@@ -203,38 +227,45 @@ export function ArchiveView() {
                             </button>
                           </div>
                         </div>
-                        {tagStashes.length > 0 ? (
-                          <ul className="border-border/40 bg-background/20 divide-border/30 divide-y border-t">
-                            {tagStashes.map((stash) => (
-                              <li key={stash.id} className="min-w-0 px-4 py-2.5 sm:pl-8">
-                                <a
-                                  href={stash.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-foreground focus-visible:ring-ring/50 group inline-flex max-w-full items-center gap-1.5 rounded-sm text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
-                                >
-                                  <span className="truncate">{getStashTitle(stash)}</span>
-                                  <LuExternalLink className="text-muted-foreground/50 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
-                                </a>
-                                <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
-                                  <span>{stash.hostname || getHostname(stash.url)}</span>
-                                  {stash.archivedAt ? (
-                                    <>
-                                      <span aria-hidden="true" className="text-muted-foreground/35">
-                                        ·
-                                      </span>
-                                      <span>Remains archived after tag restore</span>
-                                    </>
-                                  ) : null}
-                                </p>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="border-border/40 text-muted-foreground border-t px-4 py-3 text-xs sm:pl-8">
-                            No links in this tag.
-                          </p>
-                        )}
+                        {isExpanded ? (
+                          tagStashes.length > 0 ? (
+                            <ul className="border-border/40 bg-background/20 divide-border/30 divide-y border-t">
+                              {tagStashes.map((stash) => (
+                                <li key={stash.id} className="min-w-0 px-3 py-2 sm:pl-8">
+                                  <a
+                                    href={stash.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-foreground focus-visible:ring-ring/50 group inline-flex max-w-full items-center gap-1.5 rounded-sm text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                                  >
+                                    <span className="truncate">{getStashTitle(stash)}</span>
+                                    <LuExternalLink className="text-muted-foreground/50 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+                                  </a>
+                                  <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
+                                    <span>{stash.hostname || getHostname(stash.url)}</span>
+                                    {stash.archivedAt ? (
+                                      <>
+                                        <span
+                                          aria-hidden="true"
+                                          className="text-muted-foreground/35"
+                                        >
+                                          ·
+                                        </span>
+                                        <span className="text-[10px] font-medium tracking-wide uppercase">
+                                          Kept archived
+                                        </span>
+                                      </>
+                                    ) : null}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="border-border/40 text-muted-foreground border-t px-3 py-2 text-xs sm:pl-8">
+                              Empty tag
+                            </p>
+                          )
+                        ) : null}
                       </li>
                     );
                   })}
@@ -244,22 +275,19 @@ export function ArchiveView() {
 
             {archivedLinkGroups.length > 0 ? (
               <section aria-labelledby="archived-links-heading">
-                <div className="mb-3 px-1">
+                <div className="mb-2 px-1">
                   <h2
                     id="archived-links-heading"
-                    className="text-foreground text-sm font-semibold tracking-tight"
+                    className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
                   >
                     Archived links
                   </h2>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
-                    Individually archived links grouped by their original tag.
-                  </p>
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-3">
                   {archivedLinkGroups.map(({ tag, stashes }) => (
                     <div key={tag.id}>
-                      <div className="text-muted-foreground/70 mb-1.5 flex items-center justify-between gap-3 px-2 text-xs font-semibold">
+                      <div className="text-muted-foreground/70 mb-1 flex items-center justify-between gap-3 px-2 text-xs font-medium">
                         <span className="truncate"># {getTagLabel(tag)}</span>
                         <span className="text-muted-foreground/45 tabular-nums">
                           {stashes.length}
@@ -267,10 +295,7 @@ export function ArchiveView() {
                       </div>
                       <ul className="border-border/50 bg-card/20 divide-border/40 divide-y overflow-hidden rounded-xl border">
                         {stashes.map((stash) => (
-                          <li
-                            key={stash.id}
-                            className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4"
-                          >
+                          <li key={stash.id} className="flex items-center gap-2 px-3 py-2">
                             <div className="min-w-0 flex-1">
                               <a
                                 href={stash.url}
@@ -283,11 +308,9 @@ export function ArchiveView() {
                               </a>
                               <p className="text-muted-foreground mt-0.5 truncate text-xs">
                                 {stash.hostname || getHostname(stash.url)}
-                                <span className="text-muted-foreground/35 mx-1.5">·</span>
-                                Archived {formatRelativeDate(stash.archivedAt!)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex shrink-0 items-center gap-0.5">
                               <button
                                 type="button"
                                 aria-label={`Restore ${getStashTitle(stash)}`}

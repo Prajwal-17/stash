@@ -123,26 +123,19 @@ export function StashMobileNav({
         <LuBookOpen size={20} />
         <span className="text-[10px] font-medium">Read</span>
       </button>
-      <button
-        type="button"
-        onClick={() => setActiveView("archive")}
-        aria-current={activeView === "archive" ? "page" : undefined}
-        className={cn(
-          "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
-          activeView === "archive" ? "text-active" : "text-muted-foreground hover:text-foreground"
-        )}
-      >
-        <LuArchive size={20} />
-        <span className="text-[10px] font-medium">Archive</span>
-      </button>
-
       <DropdownMenu>
         <DropdownMenuTrigger id="mobile-profile-dropdown-trigger" asChild>
           <button
             id="mobile-profile-dropdown-trigger"
             type="button"
             disabled={isLoggingOut}
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+            aria-current={activeView === "archive" ? "page" : undefined}
+            className={cn(
+              "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50",
+              activeView === "archive"
+                ? "text-active"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             <div className="border-border/50 bg-muted text-foreground flex size-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold">
               {userInitial}
@@ -161,6 +154,17 @@ export function StashMobileNav({
               </p>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className={cn(
+              "text-muted-foreground focus:bg-accent focus:text-foreground",
+              activeView === "archive" && "bg-accent text-foreground"
+            )}
+            onSelect={() => setActiveView("archive")}
+          >
+            Archive
+            <LuArchive size={16} className="ml-auto" />
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-muted-foreground focus:bg-accent focus:text-foreground"
