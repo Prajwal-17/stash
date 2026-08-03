@@ -166,12 +166,13 @@ export function ArchiveView() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
+                            aria-label={`Restore ${label}`}
+                            title="Restore"
                             disabled={isSetTagArchivedPending}
                             onClick={() => void handleTagArchiveAction(tag.id, "restore")}
-                            className="bg-muted text-foreground hover:bg-accent focus-visible:ring-ring/50 flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:min-h-9 sm:flex-none"
+                            className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:min-h-9 sm:min-w-9"
                           >
-                            <LuRotateCcw className="size-3.5" />
-                            Restore
+                            <LuRotateCcw className="size-4" />
                           </button>
                           <button
                             type="button"
@@ -250,12 +251,13 @@ export function ArchiveView() {
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
+                                aria-label={`Restore ${getStashTitle(stash)}`}
+                                title="Restore"
                                 disabled={isSetStashArchivedPending}
                                 onClick={() => void handleStashArchiveAction(stash.id, "restore")}
-                                className="bg-muted text-foreground hover:bg-accent focus-visible:ring-ring/50 flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:min-h-9 sm:flex-none"
+                                className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:min-h-9 sm:min-w-9"
                               >
-                                <LuRotateCcw className="size-3.5" />
-                                Restore
+                                <LuRotateCcw className="size-4" />
                               </button>
                               <button
                                 type="button"

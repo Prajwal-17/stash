@@ -150,7 +150,7 @@ async function main() {
   }
 
   console.log(
-    `Seed complete: ${createdTagCount} tag(s) and ${createdStashCount} bookmark(s) added.`
+    `Seed ready for ${seedUserEmail}: ${tagDefinitions.length} tags and ${samples.length} bookmarks (${createdTagCount} tags and ${createdStashCount} bookmarks added).`
   );
 }
 
