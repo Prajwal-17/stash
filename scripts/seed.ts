@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 import { db } from "@/db/db";
@@ -8,34 +8,12 @@ import { stashes, tags, user } from "@/db/schema";
 
 type SeedTag = typeof tags.$inferSelect;
 
-const seedUserEmail = process.env.SEED_USER_EMAIL?.trim().toLowerCase();
-const seedUserName = process.env.SEED_USER_NAME?.trim() || "Development User";
+const seedUserEmail = "prajwalk1702@gmail.com";
+const seedUserName = "Prajwal";
 const seededAt = "2026-01-15T12:00:00.000Z";
 
 async function getSeedUser() {
-  if (seedUserEmail) {
-    const [existingUser] = await db
-      .select()
-      .from(user)
-      .where(eq(user.email, seedUserEmail))
-      .limit(1);
-
-    if (existingUser) return existingUser;
-
-    const [createdUser] = await db
-      .insert(user)
-      .values({
-        id: uuidv4(),
-        name: seedUserName,
-        email: seedUserEmail,
-        emailVerified: false
-      })
-      .returning();
-
-    return createdUser;
-  }
-
-  const [existingUser] = await db.select().from(user).orderBy(asc(user.createdAt)).limit(1);
+  const [existingUser] = await db.select().from(user).where(eq(user.email, seedUserEmail)).limit(1);
 
   if (existingUser) return existingUser;
 
@@ -44,7 +22,7 @@ async function getSeedUser() {
     .values({
       id: uuidv4(),
       name: seedUserName,
-      email: "dev@stash.local",
+      email: seedUserEmail,
       emailVerified: false
     })
     .returning();
