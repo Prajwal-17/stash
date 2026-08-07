@@ -46,9 +46,8 @@ The repository follows standard Next.js App Router conventions:
 ### 4.2. Database & ORM (Drizzle & Turso)
 
 - All schema definitions live in `db/schema.ts`.
-- When making schema changes, always instruct the user to run migrations:
-  - `pnpm drizzle-kit generate`
-  - `pnpm drizzle-kit push` (for dev)
+- Synchronize schema changes locally with `pnpm db:dev`.
+- Synchronize schema changes to production Turso with `pnpm db:prod`.
 - The database is instantiated in `db/db.ts` using `@libsql/client`.
 - Always use Drizzle's typed querying APIs (e.g., `db.select()`, `db.insert()`, `db.query`). Avoid raw SQL strings unless absolutely necessary for complex SQLite operations.
 

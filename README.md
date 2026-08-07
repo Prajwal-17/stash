@@ -18,8 +18,8 @@ Built with Next.js 16, TypeScript, Tailwind CSS, shadcn, Turso (SQLite), better-
 ```bash
 pnpm install
 cp .env.example .env
-pnpm db:setup                  # migrate and add sample data
-pnpm dev                       # migrates, then starts http://localhost:3000
+pnpm db:setup                  # sync local schema and add sample data
+pnpm dev                       # start http://localhost:3000
 ```
 
 ## .env
@@ -40,18 +40,32 @@ TURSO_AUTH_TOKEN=
 ```
 
 - Dev uses a gitignored local SQLite file (`.data/stash.sqlite` by default).
-- `pnpm dev` applies committed migrations automatically. `pnpm db:seed` is idempotent and adds active and archived sample records for `prajwalk1702@gmail.com`, creating that development user when needed.
-- Production uses Turso; set `NODE_ENV=production` and `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`.
+- `pnpm db:dev` synchronizes the schema to the development database. `pnpm db:seed` is idempotent and adds active and archived sample records for `prajwalk1702@gmail.com`, creating that development user when needed.
+- Production uses Turso; set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
 - Google OAuth is the only auth provider. Without it you cannot log in.
+
+## Database workflow
+
+Synchronize schema changes to development, then production:
+
+```bash
+pnpm db:dev
+pnpm db:prod
+```
+
+`db:dev` uses `drizzle.dev.config.ts` and the local `DB_FILE_NAME`. `db:prod` uses
+`drizzle.prod.config.ts` and requires `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
+Drizzle asks for confirmation before applying data-loss statements.
 
 ## Scripts
 
-| cmd                | desc                                  |
-| ------------------ | ------------------------------------- |
-| `pnpm dev`         | Migrate and start the dev server      |
-| `pnpm build`       | Production build                      |
-| `pnpm start`       | Start production server               |
-| `pnpm db:setup`    | Apply migrations and seed sample data |
-| `pnpm db:migrate`  | Apply committed migrations            |
-| `pnpm db:generate` | Generate a migration                  |
-| `pnpm db:seed`     | Add idempotent development seed data  |
+| cmd                | desc                                       |
+| ------------------ | ------------------------------------------ |
+| `pnpm dev`         | Start the development server               |
+| `pnpm build`       | Production build                           |
+| `pnpm start`       | Start production server                    |
+| `pnpm db:setup`    | Sync and seed the development database     |
+| `pnpm db:dev`      | Synchronize the schema to development      |
+| `pnpm db:prod`     | Synchronize the schema to production Turso |
+| `pnpm db:generate` | Generate a migration snapshot              |
+| `pnpm db:seed`     | Add idempotent development seed data       |
