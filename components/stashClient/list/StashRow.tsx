@@ -2,6 +2,13 @@
 
 import { getStashTitle } from "@/components/stashClient/helpers";
 import { StashInfoPanel } from "@/components/stashClient/list/StashInfoPanel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStashActions } from "@/hooks/useStashActions";
@@ -19,7 +26,7 @@ import {
   useRef
 } from "react";
 import Highlighter from "react-highlight-words";
-import { LuArchive, LuCheck, LuCopy, LuInfo, LuPencil, LuTrash2 } from "react-icons/lu";
+import { LuArchive, LuCheck, LuCopy, LuEllipsis, LuInfo, LuPencil, LuTrash2 } from "react-icons/lu";
 
 export interface StashRowProps {
   stash: Stash;
@@ -266,46 +273,52 @@ export function StashRow({
               </TooltipTrigger>
               <TooltipContent side="bottom">Edit</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Archive stash"
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="More options"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground flex size-8 items-center justify-center rounded-lg transition"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <LuEllipsis size={16} />
+                    </button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">More options</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent
+                align="end"
+                className="w-40 max-w-[calc(100vw-1rem)]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <DropdownMenuItem
                   disabled={isSetStashArchivedPending}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition disabled:opacity-40"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void handleStashArchiveAction(stash.id, "archive");
-                  }}
+                  onClick={() => void handleStashArchiveAction(stash.id, "archive")}
                 >
-                  <LuArchive size={15} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Archive</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Delete stash"
-                  className="text-muted-foreground flex size-8 items-center justify-center rounded-lg transition hover:bg-red-500/10 hover:text-red-300"
-                  onClick={(event) => {
-                    event.stopPropagation();
+                  <LuArchive />
+                  Archive
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() =>
                     openDeleteConfirmation({
                       kind: "stash",
                       id: stash.id,
                       title: "Remove stash?",
                       description: "This removes the link from your stash permanently.",
                       confirmLabel: "Remove stash"
-                    });
-                  }}
+                    })
+                  }
                 >
-                  <LuTrash2 size={15} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Delete</TooltipContent>
-            </Tooltip>
+                  <LuTrash2 />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
