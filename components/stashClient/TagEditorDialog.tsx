@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle
@@ -36,39 +37,41 @@ export function TagEditorDialog({
         if (!isPending) onOpenChange(open);
       }}
     >
-      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-md">
+      <DialogContent className="gap-0 p-0 sm:max-w-md">
         <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
           <DialogTitle className="text-xl font-semibold tracking-tight">
             {editorState?.mode === "create" ? "Create tag" : "Edit tag"}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Choose a name to organize your stashes.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="px-5 pt-2 pb-6 sm:px-6">
           <div className="space-y-5">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <label htmlFor="tag-name" className="text-muted-foreground text-sm font-medium">
                   Name
                 </label>
                 {editorState?.name && editorState.name.length >= 80 && (
-                  <span className="text-destructive animate-in fade-in zoom-in slide-in-from-top-1 text-xs">
+                  <span className="text-muted-foreground text-xs" role="status">
                     Length limit reached
                   </span>
                 )}
               </div>
               <Input
                 id="tag-name"
-                autoFocus
                 value={editorState?.name ?? ""}
                 onChange={(e) => onChangeName(e.target.value)}
                 placeholder="e.g. Reading"
                 maxLength={80}
-                className="my-2 h-10 w-full"
+                className="h-11 w-full"
               />
             </div>
             <DialogFooter className="gap-2 pt-2 sm:justify-end">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
                 className="h-11 sm:h-9"

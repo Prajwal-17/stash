@@ -156,15 +156,15 @@ export function ArchiveView() {
     (tagsQuery.isError && !rawTags.length) || (stashesQuery.isError && !rawStashes.length);
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b px-4 py-2.5 backdrop-blur-md sm:px-6">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <header className="border-border bg-background/95 sticky top-0 z-10 flex min-h-20 shrink-0 items-center gap-3 border-b px-4 py-2.5 backdrop-blur-md sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <LuArchive className="text-muted-foreground size-4 shrink-0" />
-          <h1 className="text-foreground truncate text-base font-medium tracking-tight">Archive</h1>
+          <h1 className="text-foreground truncate text-xl font-semibold tracking-tight">Archive</h1>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl space-y-5 px-3 pt-4 pb-20 sm:px-5 md:pb-6">
+      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-6 pb-6 sm:px-6 lg:px-8">
         <div className="relative">
           <label htmlFor="archive-search" className="sr-only">
             Search archive
@@ -181,14 +181,14 @@ export function ArchiveView() {
             placeholder="Search archive"
             autoComplete="off"
             disabled={isLoading || hasBlockingError}
-            className="bg-card/20 h-9 pr-9 pl-9"
+            className="border-border bg-card h-11 pr-11 pl-9"
           />
           {searchQuery ? (
             <button
               type="button"
               aria-label="Clear archive search"
               onClick={() => updateSearchQuery("")}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 flex size-8 -translate-y-1/2 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none"
             >
               <LuX className="size-3.5" />
             </button>
@@ -201,7 +201,7 @@ export function ArchiveView() {
               <span>Could not load the archive.</span>
               <button
                 type="button"
-                className="hover:bg-muted min-h-9 rounded-lg px-3 text-sm font-medium"
+                className="hover:bg-muted focus-visible:ring-ring/50 min-h-10 rounded-lg px-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() => {
                   void tagsQuery.refetch();
                   void stashesQuery.refetch();
@@ -219,14 +219,14 @@ export function ArchiveView() {
             </span>
           </QueryStatus>
         ) : !hasArchivedRecords ? (
-          <div className="border-border/50 bg-card/40 flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center">
+          <div className="border-border bg-card flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center">
             <div className="bg-muted mb-3 flex size-9 items-center justify-center rounded-full">
               <LuArchive className="text-muted-foreground size-4" />
             </div>
             <p className="text-foreground text-sm font-medium">Your archive is empty</p>
           </div>
         ) : normalizedQuery && !hasSearchResults ? (
-          <div className="border-border/50 text-muted-foreground flex min-h-24 items-center justify-center rounded-xl border border-dashed px-4 text-sm">
+          <div className="border-border text-muted-foreground flex min-h-24 items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center text-sm wrap-anywhere">
             No archive matches “{searchQuery.trim()}”
           </div>
         ) : (
@@ -236,16 +236,16 @@ export function ArchiveView() {
                 <div className="mb-2 flex items-center justify-between gap-3 px-1">
                   <h2
                     id="archived-tags-heading"
-                    className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+                    className="text-muted-foreground text-sm font-semibold tracking-tight"
                   >
                     Archived tags
                   </h2>
-                  <span className="text-muted-foreground/60 text-xs tabular-nums">
+                  <span className="text-muted-foreground text-xs tabular-nums">
                     {archivedTagGroups.length}
                   </span>
                 </div>
 
-                <ul className="border-border/50 bg-card/30 divide-border/50 divide-y overflow-hidden rounded-xl border">
+                <ul className="border-border bg-card divide-border divide-y overflow-hidden rounded-xl border">
                   {archivedTagGroups.map(({ tag, stashes: tagStashes, totalCount }) => {
                     const count = totalCount;
                     const label = getTagLabel(tag);
@@ -269,7 +269,7 @@ export function ArchiveView() {
                           </button>
                           <div className="min-w-0 flex-1">
                             <p className="text-foreground truncate text-sm font-medium">
-                              <span className="text-muted-foreground/50 mr-1.5">#</span>
+                              <span className="text-muted-foreground mr-1.5">#</span>
                               {label}
                             </p>
                             <p className="text-muted-foreground mt-0.5 text-xs">
@@ -306,7 +306,7 @@ export function ArchiveView() {
                                   confirmLabel: "Delete permanently"
                                 })
                               }
-                              className="text-muted-foreground flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:outline-none sm:min-h-9 sm:min-w-9"
+                              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none sm:min-h-9 sm:min-w-9"
                             >
                               <LuTrash2 className="size-4" />
                             </button>
@@ -314,9 +314,9 @@ export function ArchiveView() {
                         </div>
                         {isExpanded ? (
                           tagStashes.length > 0 ? (
-                            <ul className="border-border/40 bg-background/20 divide-border/30 divide-y border-t">
+                            <ul className="border-border bg-background/50 divide-border divide-y border-t">
                               {tagStashes.map((stash) => (
-                                <li key={stash.id} className="min-w-0 py-2 pr-3 pl-15">
+                                <li key={stash.id} className="min-w-0 py-3 pr-3 pl-5 sm:pl-15">
                                   <a
                                     href={stash.url}
                                     target="_blank"
@@ -324,21 +324,18 @@ export function ArchiveView() {
                                     className="text-foreground focus-visible:ring-ring/50 group inline-flex max-w-full items-center gap-1.5 rounded-sm text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
                                   >
                                     <span className="truncate">{getStashTitle(stash)}</span>
-                                    <LuExternalLink className="text-muted-foreground/50 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+                                    <LuExternalLink className="text-muted-foreground size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
                                   </a>
                                   <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
-                                    <span>{stash.hostname || getHostname(stash.url)}</span>
+                                    <span className="min-w-0 truncate">
+                                      {stash.hostname || getHostname(stash.url)}
+                                    </span>
                                     {stash.archivedAt ? (
                                       <>
-                                        <span
-                                          aria-hidden="true"
-                                          className="text-muted-foreground/35"
-                                        >
+                                        <span aria-hidden="true" className="text-muted-foreground">
                                           ·
                                         </span>
-                                        <span className="text-[10px] font-medium tracking-wide uppercase">
-                                          Kept archived
-                                        </span>
+                                        <span className="text-xs font-medium">Kept archived</span>
                                       </>
                                     ) : null}
                                   </p>
@@ -346,7 +343,7 @@ export function ArchiveView() {
                               ))}
                             </ul>
                           ) : (
-                            <p className="border-border/40 text-muted-foreground border-t py-2 pr-3 pl-15 text-xs">
+                            <p className="border-border text-muted-foreground border-t py-3 pr-3 pl-5 text-xs sm:pl-15">
                               Empty tag
                             </p>
                           )
@@ -363,7 +360,7 @@ export function ArchiveView() {
                 <div className="mb-2 px-1">
                   <h2
                     id="archived-links-heading"
-                    className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+                    className="text-muted-foreground text-sm font-semibold tracking-tight"
                   >
                     Archived links
                   </h2>
@@ -372,13 +369,11 @@ export function ArchiveView() {
                 <div className="space-y-3">
                   {archivedLinkGroups.map(({ tag, stashes }) => (
                     <div key={tag.id}>
-                      <div className="text-muted-foreground/70 mb-1 flex items-center justify-between gap-3 px-2 text-xs font-medium">
+                      <div className="text-muted-foreground mb-2 flex items-center justify-between gap-3 px-2 text-sm font-medium">
                         <span className="truncate"># {getTagLabel(tag)}</span>
-                        <span className="text-muted-foreground/45 tabular-nums">
-                          {stashes.length}
-                        </span>
+                        <span className="text-muted-foreground tabular-nums">{stashes.length}</span>
                       </div>
-                      <ul className="border-border/50 bg-card/20 divide-border/40 divide-y overflow-hidden rounded-xl border">
+                      <ul className="border-border bg-card divide-border divide-y overflow-hidden rounded-xl border">
                         {stashes.map((stash) => (
                           <li key={stash.id} className="flex items-center gap-2 px-3 py-2">
                             <div className="min-w-0 flex-1">
@@ -389,7 +384,7 @@ export function ArchiveView() {
                                 className="text-foreground focus-visible:ring-ring/50 group inline-flex max-w-full items-center gap-1.5 rounded-sm text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
                               >
                                 <span className="truncate">{getStashTitle(stash)}</span>
-                                <LuExternalLink className="text-muted-foreground/50 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+                                <LuExternalLink className="text-muted-foreground size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
                               </a>
                               <p className="text-muted-foreground mt-0.5 truncate text-xs">
                                 {stash.hostname || getHostname(stash.url)}
@@ -419,7 +414,7 @@ export function ArchiveView() {
                                     confirmLabel: "Delete permanently"
                                   })
                                 }
-                                className="text-muted-foreground flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:outline-none sm:min-h-9 sm:min-w-9"
+                                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-ring/50 flex min-h-10 min-w-10 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none sm:min-h-9 sm:min-w-9"
                               >
                                 <LuTrash2 className="size-4" />
                               </button>

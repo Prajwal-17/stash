@@ -16,28 +16,26 @@ export function StashInfoPanel({
   return (
     <div className="space-y-3 p-4">
       <div className="space-y-1">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">URL</p>
-        <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
+        <p className="text-muted-foreground text-xs font-medium">URL</p>
+        <p className="text-foreground/80 text-sm leading-relaxed break-all">
           <Highlighter
             searchWords={searchWords}
             autoEscape={true}
             textToHighlight={stash.url}
-            highlightClassName="bg-white/15 text-foreground font-medium p-0"
+            highlightClassName="bg-primary/20 text-foreground font-medium p-0"
           />
         </p>
       </div>
 
       {stash.title?.trim() && stash.title.trim() !== getHostname(stash.url) ? (
         <div className="space-y-1">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Title
-          </p>
-          <p className="text-foreground/80 text-xs">
+          <p className="text-muted-foreground text-xs font-medium">Title</p>
+          <p className="text-foreground text-sm wrap-anywhere">
             <Highlighter
               searchWords={searchWords}
               autoEscape={true}
               textToHighlight={stash.title.trim()}
-              highlightClassName="bg-white/15 text-foreground font-medium p-0"
+              highlightClassName="bg-primary/20 text-foreground font-medium p-0"
             />
           </p>
         </div>
@@ -45,41 +43,37 @@ export function StashInfoPanel({
 
       {stash.description?.trim() ? (
         <div className="space-y-1">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Description
-          </p>
-          <p className="text-foreground/70 text-xs leading-relaxed">
+          <p className="text-muted-foreground text-xs font-medium">Description</p>
+          <p className="text-muted-foreground text-sm leading-relaxed wrap-anywhere">
             <Highlighter
               searchWords={searchWords}
               autoEscape={true}
               textToHighlight={stash.description.trim()}
-              highlightClassName="bg-white/15 text-foreground font-medium p-0"
+              highlightClassName="bg-primary/20 text-foreground font-medium p-0"
             />
           </p>
         </div>
       ) : null}
 
-      <div className="border-border/50 grid grid-cols-2 gap-3 border-t pt-3">
+      <div className="border-border grid grid-cols-2 gap-3 border-t pt-3">
         {tag ? (
           <div className="space-y-1">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Tag
-            </p>
-            <p className="text-foreground/80 text-xs">{getTagLabel(tag)}</p>
+            <p className="text-muted-foreground text-xs font-medium">Tag</p>
+            <p className="text-foreground text-sm wrap-anywhere">{getTagLabel(tag)}</p>
           </div>
         ) : null}
         <div className="space-y-1">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Added
+          <p className="text-muted-foreground text-xs font-medium">Added</p>
+          <p className="text-foreground text-sm wrap-anywhere">
+            {formatRelativeDate(stash.createdAt)}
           </p>
-          <p className="text-foreground/80 text-xs">{formatRelativeDate(stash.createdAt)}</p>
         </div>
         {stash.updatedAt !== stash.createdAt ? (
           <div className="space-y-1">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Updated
+            <p className="text-muted-foreground text-xs font-medium">Updated</p>
+            <p className="text-foreground text-sm wrap-anywhere">
+              {formatRelativeDate(stash.updatedAt)}
             </p>
-            <p className="text-foreground/80 text-xs">{formatRelativeDate(stash.updatedAt)}</p>
           </div>
         ) : null}
       </div>

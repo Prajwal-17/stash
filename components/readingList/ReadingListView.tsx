@@ -144,8 +144,8 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-        <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-3 backdrop-blur-md sm:px-6">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        <header className="border-border bg-background/95 sticky top-0 z-10 flex min-h-20 shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-3 backdrop-blur-md sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             {standalone && (
               <Button
@@ -159,11 +159,11 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                 </Link>
               </Button>
             )}
-            <h1 className="truncate text-base font-medium tracking-tight">Reading List</h1>
+            <h1 className="truncate text-xl font-semibold tracking-tight">Reading List</h1>
             {isLoading && items.length === 0 ? (
-              <LuLoaderCircle size={14} className="text-muted-foreground/50 animate-spin" />
+              <LuLoaderCircle size={14} className="text-muted-foreground animate-spin" />
             ) : (
-              <span className="text-muted-foreground/40 font-mono text-xs">{stats.total}</span>
+              <span className="text-muted-foreground text-xs tabular-nums">{stats.total}</span>
             )}
           </div>
           <div className="bg-muted/30 order-last grid w-full grid-cols-3 items-center gap-0.5 rounded-lg p-0.5 sm:order-0 sm:flex sm:w-auto md:hidden">
@@ -171,12 +171,17 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  if (tab === "queue") setShowList(true);
+                  if (tab === "scheduled") setShowUpcoming(true);
+                  if (tab === "completed") setShowCompleted(true);
+                }}
                 aria-pressed={activeTab === tab}
                 className={cn(
-                  "focus-visible:ring-ring/50 flex min-h-8 items-center justify-center rounded-md px-2 py-1 text-xs font-medium capitalize transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                  "focus-visible:ring-ring/50 flex min-h-10 items-center justify-center rounded-md px-2 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                   activeTab === tab
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-accent text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -202,22 +207,34 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
             ))}
           </div>
           <div className="hidden items-center gap-3 md:flex">
-            <span className="text-muted-foreground/50 flex items-center gap-1 text-xs">
+            <span
+              className="text-muted-foreground flex items-center gap-1.5 text-xs"
+              title="In list"
+              aria-label={`${stats.queue} in list`}
+            >
               <LuInbox size={11} />
               {stats.queue}
             </span>
-            <span className="text-muted-foreground/50 flex items-center gap-1 text-xs">
+            <span
+              className="text-muted-foreground flex items-center gap-1.5 text-xs"
+              title="Scheduled"
+              aria-label={`${stats.scheduled} scheduled`}
+            >
               <LuCalendar size={11} />
               {stats.scheduled}
             </span>
-            <span className="text-muted-foreground/50 flex items-center gap-1 text-xs">
+            <span
+              className="text-muted-foreground flex items-center gap-1.5 text-xs"
+              title="Completed"
+              aria-label={`${stats.completed} completed`}
+            >
               <LuCheckCheck size={11} />
               {stats.completed}
             </span>
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-3xl px-3 pt-4 pb-16 sm:px-6">
+        <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-6 sm:px-6 lg:px-8">
           {isError && items.length > 0 ? (
             <div className="mb-4">
               <QueryStatus tone="error">
@@ -252,8 +269,8 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
             </QueryStatus>
           ) : isLoading && items.length === 0 ? (
             <div className="py-16 text-center">
-              <LuLoaderCircle size={20} className="text-muted-foreground/40 mx-auto animate-spin" />
-              <p className="text-muted-foreground/40 mt-3 text-sm">Loading reading list...</p>
+              <LuLoaderCircle size={20} className="text-muted-foreground mx-auto animate-spin" />
+              <p className="text-muted-foreground mt-3 text-sm">Loading reading list...</p>
             </div>
           ) : items.length === 0 ? (
             <div className="py-16 text-center">
@@ -261,7 +278,7 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                 <LuClock size={28} />
               </div>
               <p className="text-muted-foreground text-sm font-medium">Nothing added yet</p>
-              <p className="text-muted-foreground/40 mt-1 text-xs">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Paste an article URL below to start your reading list
               </p>
             </div>
@@ -273,9 +290,9 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                     <h3 className="text-foreground/80 text-sm font-semibold tracking-tight">
                       Today
                     </h3>
-                    <span className="text-muted-foreground/40 font-mono text-xs">
+                    <span className="text-muted-foreground text-xs tabular-nums">
                       {stats.overdue > 0 && (
-                        <span className="mr-1.5 text-red-400/70">{stats.overdue} overdue</span>
+                        <span className="text-destructive mr-1.5">{stats.overdue} overdue</span>
                       )}
                       {todayItems.length}
                     </span>
@@ -302,30 +319,30 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                   <button
                     type="button"
                     onClick={() => setShowUpcoming(!showUpcoming)}
-                    aria-expanded={showUpcoming || activeTab === "scheduled"}
-                    className="hover:bg-muted/30 focus-visible:ring-ring/50 mb-2 flex min-h-8 w-full items-center justify-between rounded-md px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    aria-expanded={showUpcoming}
+                    className="hover:bg-muted focus-visible:ring-ring/50 mb-2 flex min-h-10 w-full items-center justify-between rounded-lg px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
-                    <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
+                    <h3 className="text-muted-foreground text-sm font-semibold tracking-tight">
                       Upcoming
                     </h3>
                     <span className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground/40 font-mono text-xs">
+                      <span className="text-muted-foreground text-xs tabular-nums">
                         {upcomingItems.length}
                       </span>
                       <LuChevronDown
                         size={14}
                         className={cn(
-                          "text-muted-foreground/40 transition-transform",
-                          (showUpcoming || activeTab === "scheduled") && "rotate-180"
+                          "text-muted-foreground transition-transform",
+                          showUpcoming && "rotate-180"
                         )}
                       />
                     </span>
                   </button>
-                  {(showUpcoming || activeTab === "scheduled") && (
+                  {showUpcoming && (
                     <div className="space-y-4">
                       {Object.entries(groupedUpcoming).map(([date, dateItems]) => (
                         <div key={date}>
-                          <h4 className="text-muted-foreground/70 mb-1.5 px-2 text-xs font-medium tracking-wider uppercase">
+                          <h4 className="text-muted-foreground mb-1.5 px-2 text-xs font-medium">
                             {date}
                           </h4>
                           <ul className="flex flex-col gap-1">
@@ -357,19 +374,19 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                     type="button"
                     onClick={() => setShowList(!showList)}
                     aria-expanded={showList}
-                    className="hover:bg-muted/30 focus-visible:ring-ring/50 mb-2 flex min-h-8 w-full items-center justify-between rounded-md px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="hover:bg-muted focus-visible:ring-ring/50 mb-2 flex min-h-10 w-full items-center justify-between rounded-lg px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
-                    <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
+                    <h3 className="text-muted-foreground text-sm font-semibold tracking-tight">
                       List
                     </h3>
                     <span className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground/40 font-mono text-xs">
+                      <span className="text-muted-foreground text-xs tabular-nums">
                         {grouped.queue.length}
                       </span>
                       <LuChevronDown
                         size={14}
                         className={cn(
-                          "text-muted-foreground/40 transition-transform",
+                          "text-muted-foreground transition-transform",
                           showList && "rotate-180"
                         )}
                       />
@@ -397,7 +414,7 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
               {activeTab === "queue" && grouped.queue.length === 0 && (
                 <section className="md:hidden">
                   <div className="py-12 text-center">
-                    <p className="text-muted-foreground/40 text-sm">No items added yet</p>
+                    <p className="text-muted-foreground text-sm">No items added yet</p>
                   </div>
                 </section>
               )}
@@ -407,7 +424,7 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                 upcomingItems.length === 0 && (
                   <section className="md:hidden">
                     <div className="py-12 text-center">
-                      <p className="text-muted-foreground/40 text-sm">No scheduled items</p>
+                      <p className="text-muted-foreground text-sm">No scheduled items</p>
                     </div>
                   </section>
                 )}
@@ -415,7 +432,7 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
               {activeTab === "completed" && grouped.completed.length === 0 && (
                 <section className="md:hidden">
                   <div className="py-12 text-center">
-                    <p className="text-muted-foreground/40 text-sm">No completed items yet</p>
+                    <p className="text-muted-foreground text-sm">No completed items yet</p>
                   </div>
                 </section>
               )}
@@ -425,26 +442,26 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
                   <button
                     type="button"
                     onClick={() => setShowCompleted(!showCompleted)}
-                    aria-expanded={showCompleted || activeTab === "completed"}
-                    className="hover:bg-muted/30 focus-visible:ring-ring/50 mb-2 flex min-h-8 w-full items-center justify-between rounded-md px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    aria-expanded={showCompleted}
+                    className="hover:bg-muted focus-visible:ring-ring/50 mb-2 flex min-h-10 w-full items-center justify-between rounded-lg px-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
-                    <h3 className="text-muted-foreground/60 text-sm font-semibold tracking-tight">
+                    <h3 className="text-muted-foreground text-sm font-semibold tracking-tight">
                       Completed
                     </h3>
                     <span className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground/40 font-mono text-xs">
+                      <span className="text-muted-foreground text-xs tabular-nums">
                         {grouped.completed.length}
                       </span>
                       <LuChevronDown
                         size={14}
                         className={cn(
-                          "text-muted-foreground/40 transition-transform",
-                          (showCompleted || activeTab === "completed") && "rotate-180"
+                          "text-muted-foreground transition-transform",
+                          showCompleted && "rotate-180"
                         )}
                       />
                     </span>
                   </button>
-                  {(showCompleted || activeTab === "completed") && (
+                  {showCompleted && (
                     <ul className="flex flex-col gap-1">
                       {completedItems.map((item) => (
                         <ReadingListRow
@@ -470,35 +487,34 @@ export function ReadingListView({ standalone = false }: ReadingListViewProps) {
 
       <div
         className={cn(
-          "mx-auto w-full max-w-2xl shrink-0 px-3 pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3",
+          "border-border bg-background mx-auto w-full max-w-3xl shrink-0 border-t px-4 py-3 sm:px-6 lg:px-8",
           standalone && "pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
         )}
       >
         <div className="w-full">
-          <div className="border-border/30 bg-muted/15 focus-within:border-primary/50 focus-within:ring-primary/15 flex w-full items-center gap-2 rounded-xl border p-1.5 transition-all focus-within:ring-4">
+          <form
+            onSubmit={handleAdd}
+            className="border-border bg-card focus-within:border-primary/50 focus-within:ring-primary/15 flex w-full items-center gap-2 rounded-xl border p-1.5 transition-colors focus-within:ring-4"
+          >
             <Input
               ref={inputRef}
               aria-label="Article URL"
+              inputMode="url"
+              autoComplete="url"
               value={urlInput}
               onChange={(event) => setUrlInput(event.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAdd();
-                }
-              }}
-              placeholder="Paste article URL to add..."
+              placeholder="Paste article URL..."
               disabled={createMutation.isPending}
-              className="text-foreground placeholder:text-muted-foreground/40 h-10 min-w-0 flex-1 border-0 bg-transparent px-3 py-1.5 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="text-foreground placeholder:text-muted-foreground h-10 min-w-0 flex-1 border-0 bg-transparent px-3 py-1.5 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <Button
+              type="submit"
               className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 shrink-0 rounded-lg px-4 font-semibold shadow-sm transition-all"
               disabled={createMutation.isPending || !urlInput.trim()}
-              onClick={() => handleAdd()}
             >
               {createMutation.isPending ? "Adding..." : "Add"}
             </Button>
-          </div>
+          </form>
         </div>
       </div>
 

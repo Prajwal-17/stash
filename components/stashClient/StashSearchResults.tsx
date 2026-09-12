@@ -94,8 +94,20 @@ export function StashSearchResults() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
       if (e.target instanceof HTMLElement) {
+        if (
+          e.target.closest(
+            "[role='dialog'], [role='alertdialog'], [role='menu'], [role='listbox'], [data-slot='popover-content']"
+          )
+        )
+          return;
         if (e.target.closest("button, [contenteditable='true']")) return;
+        if (
+          e.target.closest("input, textarea, select") &&
+          !e.target.matches("[data-stash-search-input]")
+        )
+          return;
         if (e.key === "Enter" && e.target.closest("a")) return;
       }
 
@@ -147,11 +159,12 @@ export function StashSearchResults() {
   const searchWords = searchQuery.trim() ? [searchQuery.trim()] : [];
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6">
-        <div className="group relative flex-1 shadow-sm">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <header className="border-border bg-background/95 sticky top-0 z-10 flex min-h-20 shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6 lg:px-8">
+        <div className="group relative min-w-0 flex-1">
           <LuSearch
-            className="text-muted-foreground group-focus-within:text-foreground absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
+            aria-hidden="true"
+            className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
             size={18}
           />
           <input
@@ -159,15 +172,16 @@ export function StashSearchResults() {
             data-stash-search-input
             type="text"
             aria-label="Search stashes"
-            placeholder="Search stashes, titles, or descriptions..."
+            placeholder="Search your stashes..."
+            autoComplete="off"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="border-border/50 bg-muted/40 focus:bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-ring/20 w-full min-w-0 rounded-full border py-2.5 pr-12 pl-10 text-sm shadow-inner transition-all outline-none focus:ring-4 sm:text-base"
+            className="border-border bg-card focus:bg-background text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-ring/20 h-11 w-full min-w-0 rounded-lg border pr-12 pl-10 text-base transition-colors outline-none focus:ring-2 sm:text-sm"
           />
           <button
             type="button"
             aria-label="Close search"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
             onClick={closeSearch}
           >
             <LuX size={16} />
@@ -175,7 +189,7 @@ export function StashSearchResults() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl px-3 pt-4 pb-16 sm:px-6">
+      <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-6 sm:px-6 lg:px-8">
         {stashesQuery.isError && !stashes.length ? (
           <QueryStatus tone="error">
             Could not load stashes. Try again when you’re online.
@@ -193,12 +207,12 @@ export function StashSearchResults() {
           <QueryStatus>No stashes found matching your query.</QueryStatus>
         ) : (
           <>
-            <div ref={listRef} className="mt-3 space-y-5">
+            <div ref={listRef} className="space-y-6">
               {(() => {
                 let globalIndex = 0;
                 return groupedStashes.map(({ tag, stashes }) => (
                   <div key={tag?.id || "unknown"}>
-                    <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
+                    <h3 className="text-muted-foreground mb-2 px-2 text-sm font-semibold tracking-tight">
                       {getTagLabel(tag)}
                     </h3>
                     <ul className="flex flex-col gap-1">

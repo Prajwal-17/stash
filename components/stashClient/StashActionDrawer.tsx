@@ -1,6 +1,7 @@
 "use client";
 
 import { getStashTitle } from "@/components/stashClient/helpers";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetClose,
@@ -43,23 +44,27 @@ export function StashActionDrawer() {
     >
       <SheetContent
         side="bottom"
-        className="border-border bg-card max-h-[88dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-[28px] border-t px-4 pt-1 pb-[calc(env(safe-area-inset-bottom)+16px)] shadow-[0_-18px_60px_rgba(0,0,0,0.4)] outline-none sm:px-5"
+        className="border-border bg-background mx-auto max-h-[88dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border-t px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+20px)] outline-none sm:px-6"
+        onCloseAutoFocus={(event) => {
+          const { stashEditor, confirmation } = useStashStore.getState();
+          if (stashEditor || confirmation) event.preventDefault();
+        }}
       >
         <SheetClose asChild>
           <button
             type="button"
             aria-label="Close drawer"
-            className="focus-visible:ring-ring/50 mx-auto mb-2 flex h-8 w-16 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
+            className="focus-visible:ring-ring/50 mx-auto mb-2 flex h-10 w-16 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
           >
-            <span className="h-1.5 w-12 rounded-full bg-neutral-700" />
+            <span className="bg-muted-foreground/40 h-1 w-10 rounded-full" />
           </button>
         </SheetClose>
 
         <div className="mb-5">
-          <SheetTitle className="text-foreground pr-2 text-base leading-tight font-semibold wrap-break-word">
+          <SheetTitle className="text-foreground pr-2 text-lg leading-snug font-semibold wrap-anywhere">
             {title}
           </SheetTitle>
-          <SheetDescription className="text-muted-foreground mt-1 truncate text-xs">
+          <SheetDescription className="text-muted-foreground mt-1 truncate text-sm">
             {hostname}
           </SheetDescription>
         </div>
@@ -67,37 +72,29 @@ export function StashActionDrawer() {
         {drawerStash ? (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                URL
-              </p>
-              <p className="text-foreground/80 font-mono text-xs leading-relaxed break-all">
+              <p className="text-muted-foreground text-xs font-medium">URL</p>
+              <p className="text-foreground/80 text-sm leading-relaxed break-all">
                 {drawerStash.url}
               </p>
             </div>
 
-            <div className="border-border/50 grid grid-cols-2 gap-3 border-t pt-3">
+            <div className="border-border grid grid-cols-2 gap-3 border-t pt-3">
               {tag ? (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Tag
-                  </p>
-                  <p className="text-foreground/80 text-xs wrap-break-word">{getTagLabel(tag)}</p>
+                  <p className="text-muted-foreground text-xs font-medium">Tag</p>
+                  <p className="text-foreground text-sm wrap-anywhere">{getTagLabel(tag)}</p>
                 </div>
               ) : null}
               <div className="space-y-1">
-                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  Added
-                </p>
-                <p className="text-foreground/80 text-xs">
+                <p className="text-muted-foreground text-xs font-medium">Added</p>
+                <p className="text-foreground text-sm wrap-anywhere">
                   {formatRelativeDate(drawerStash.createdAt)}
                 </p>
               </div>
               {drawerStash.updatedAt !== drawerStash.createdAt ? (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Updated
-                  </p>
-                  <p className="text-foreground/80 text-xs">
+                  <p className="text-muted-foreground text-xs font-medium">Updated</p>
+                  <p className="text-foreground text-sm wrap-anywhere">
                     {formatRelativeDate(drawerStash.updatedAt)}
                   </p>
                 </div>
@@ -105,53 +102,55 @@ export function StashActionDrawer() {
             </div>
 
             {drawerStash.description?.trim() ? (
-              <div className="border-border/50 space-y-1 border-t pt-3">
-                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  Description
-                </p>
-                <p className="text-foreground/70 text-xs leading-relaxed">
+              <div className="border-border space-y-1 border-t pt-3">
+                <p className="text-muted-foreground text-xs font-medium">Description</p>
+                <p className="text-muted-foreground text-sm leading-relaxed wrap-anywhere">
                   {drawerStash.description.trim()}
                 </p>
               </div>
             ) : null}
 
-            <div className="border-border/50 grid grid-cols-2 gap-2 border-t pt-4">
-              <button
+            <div className="border-border grid grid-cols-2 gap-2 border-t pt-4">
+              <Button
                 type="button"
+                variant="secondary"
                 aria-label={copiedStashId === drawerStash.id ? "Copied" : "Copy URL"}
-                className="bg-muted text-foreground focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="h-11 min-w-0 gap-2"
                 onClick={() => void copyText(drawerStash.url, drawerStash.id)}
               >
                 {copiedStashId === drawerStash.id ? (
-                  <LuCheck size={14} className="text-emerald-400" />
+                  <LuCheck size={16} className="text-primary" />
                 ) : (
                   <LuCopy size={14} />
                 )}
                 {copiedStashId === drawerStash.id ? "Copied" : "Copy"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
                 aria-label="Edit stash"
-                className="bg-muted text-foreground focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="h-11 min-w-0 gap-2"
                 onClick={() => openStashEditor(drawerStash)}
               >
                 <LuPencil size={14} />
                 Edit
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
                 aria-label="Archive stash"
                 disabled={isSetStashArchivedPending}
-                className="bg-muted text-foreground focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                className="h-11 min-w-0 gap-2"
                 onClick={() => void handleStashArchiveAction(drawerStash.id, "archive")}
               >
                 <LuArchive size={14} />
                 Archive
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
                 aria-label="Delete stash"
-                className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-red-500/10 px-2 text-xs font-medium text-red-300 focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:outline-none"
+                className="border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10 hover:text-destructive h-11 min-w-0 gap-2"
                 onClick={() =>
                   openDeleteConfirmation({
                     kind: "stash",
@@ -164,7 +163,7 @@ export function StashActionDrawer() {
               >
                 <LuTrash2 size={14} />
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}

@@ -28,13 +28,13 @@ export function DeleteConfirmationDialog() {
         if (!open && !isDeleting) setConfirmation(null);
       }}
     >
-      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-md">
+      <DialogContent className="gap-0 p-0 sm:max-w-md">
         <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
-          <DialogTitle className="pr-5 text-xl font-semibold tracking-tight wrap-break-word">
+          <DialogTitle className="pr-5 text-xl font-semibold tracking-tight wrap-anywhere">
             {confirmation?.title ?? "Confirm"}
           </DialogTitle>
           {confirmation?.description ? (
-            <DialogDescription className="text-muted-foreground text-sm wrap-break-word">
+            <DialogDescription className="text-muted-foreground text-sm leading-relaxed wrap-anywhere">
               {confirmation.description}
             </DialogDescription>
           ) : (
@@ -46,7 +46,7 @@ export function DeleteConfirmationDialog() {
           <DialogFooter className="gap-2 sm:justify-end">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={() => setConfirmation(null)}
               disabled={isDeleting}
               className="h-11 sm:h-9"

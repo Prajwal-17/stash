@@ -107,14 +107,23 @@ export function StashList() {
     const item = items[index] as HTMLElement | undefined;
     if (item) {
       item.querySelector<HTMLAnchorElement>("[data-row-link]")?.focus({ preventScroll: true });
-      item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      item.scrollIntoView({
+        block: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+      });
     }
   }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.target instanceof HTMLElement) {
-        if (e.target.closest("input, textarea, button, [contenteditable='true']")) return;
+        if (
+          e.target.closest(
+            "input, textarea, button, select, [contenteditable='true'], [role='dialog'], [role='menu'], [role='listbox'], [data-slot='popover-content']"
+          )
+        )
+          return;
         if (e.key === "Enter" && e.target.closest("a")) return;
       }
 
@@ -170,15 +179,15 @@ export function StashList() {
   let globalIndex = 0;
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-      <header className="border-border/40 bg-background/90 sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6">
-        <h1 className="min-w-0 truncate text-base font-medium tracking-tight">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+      <header className="border-border bg-background/95 sticky top-0 z-10 flex min-h-20 shrink-0 items-center justify-between gap-3 border-b px-4 py-4 backdrop-blur-md sm:px-6 lg:px-8">
+        <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight">
           {isDefaultTag ? (
             <span className="text-foreground">Inbox</span>
           ) : (
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="text-muted-foreground/60">Tags</span>
-              <span className="text-muted-foreground/30 font-normal">/</span>
+              <span className="text-muted-foreground shrink-0 font-normal">Tags</span>
+              <span className="text-muted-foreground shrink-0 font-normal">/</span>
               <span className="text-foreground truncate font-semibold">
                 {activeTag ? getTagLabel(activeTag) : "unknown"}
               </span>
@@ -194,14 +203,22 @@ export function StashList() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 rounded-full"
+                  aria-label="Tag options"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground size-10 rounded-lg"
                 >
                   <LuEllipsis size={18} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 max-w-[calc(100vw-1rem)]">
+              <DropdownMenuContent
+                align="end"
+                className="w-44"
+                onCloseAutoFocus={(event) => {
+                  const { tagEditor, confirmation } = useStashStore.getState();
+                  if (tagEditor || confirmation) event.preventDefault();
+                }}
+              >
                 <DropdownMenuItem
-                  onClick={() =>
+                  onSelect={() =>
                     setTagEditor({
                       mode: "edit",
                       tagId: activeTag.id,
@@ -214,15 +231,15 @@ export function StashList() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={isSetTagArchivedPending}
-                  onClick={() => void handleTagArchiveAction(activeTag.id, "archive")}
+                  onSelect={() => void handleTagArchiveAction(activeTag.id, "archive")}
                 >
                   <LuArchive className="mr-2 h-4 w-4" />
                   Archive tag
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
-                  onClick={() =>
+                  variant="destructive"
+                  onSelect={() =>
                     openDeleteConfirmation({
                       kind: "tag",
                       id: activeTag.id,
@@ -241,8 +258,8 @@ export function StashList() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl px-3 pt-2 pb-16 sm:px-6">
-        <div className="mb-4 space-y-3">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-4 space-y-3 empty:hidden">
           {tagsQuery.isError ? (
             <QueryStatus tone="error">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -250,7 +267,7 @@ export function StashList() {
                 <Button
                   type="button"
                   variant="ghost"
-                  className="hover:text-foreground h-8 px-2 text-red-100 hover:bg-red-500/10"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-3"
                   onClick={() => void tagsQuery.refetch()}
                 >
                   Retry
@@ -294,7 +311,7 @@ export function StashList() {
               <Button
                 type="button"
                 variant="ghost"
-                className="hover:text-foreground h-8 px-2 text-red-100 hover:bg-red-500/10"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-3"
                 onClick={() => void stashesQuery.refetch()}
               >
                 Retry
@@ -316,9 +333,7 @@ export function StashList() {
           <div ref={listRef} className="flex flex-col gap-6">
             {groupedStashes.today.length > 0 && (
               <section>
-                <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
-                  Today
-                </h3>
+                <h3 className="text-muted-foreground mb-2 px-2 text-xs font-medium">Today</h3>
                 <ul className="flex flex-col gap-1">
                   {groupedStashes.today.map((stash) => {
                     const currentIndex = globalIndex++;
@@ -330,9 +345,7 @@ export function StashList() {
 
             {groupedStashes.thisWeek.length > 0 && (
               <section>
-                <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
-                  This week
-                </h3>
+                <h3 className="text-muted-foreground mb-2 px-2 text-xs font-medium">This week</h3>
                 <ul className="flex flex-col gap-1">
                   {groupedStashes.thisWeek.map((stash) => {
                     const currentIndex = globalIndex++;
@@ -344,9 +357,7 @@ export function StashList() {
 
             {groupedStashes.older.length > 0 && (
               <section>
-                <h3 className="text-muted-foreground/60 mb-2 px-2 text-sm font-semibold tracking-tight">
-                  Older
-                </h3>
+                <h3 className="text-muted-foreground mb-2 px-2 text-xs font-medium">Older</h3>
                 <ul className="flex flex-col gap-1">
                   {groupedStashes.older.map((stash) => {
                     const currentIndex = globalIndex++;
