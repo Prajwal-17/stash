@@ -14,7 +14,7 @@ export function StashInfoPanel({
   const tag = tags.find((t) => t.id === stash.tagId);
 
   return (
-    <div className="space-y-3 p-4">
+    <div className="space-y-3 p-3">
       <div className="space-y-1">
         <p className="text-muted-foreground text-xs font-medium">URL</p>
         <p className="text-foreground/80 text-sm leading-relaxed break-all">
@@ -55,7 +55,7 @@ export function StashInfoPanel({
         </div>
       ) : null}
 
-      <div className="border-border grid grid-cols-2 gap-3 border-t pt-3">
+      <div className="grid grid-cols-2 gap-3 pt-1">
         {tag ? (
           <div className="space-y-1">
             <p className="text-muted-foreground text-xs font-medium">Tag</p>

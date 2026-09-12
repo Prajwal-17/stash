@@ -62,7 +62,7 @@ export function StashMobileNav({
   return (
     <nav
       aria-label="Main navigation"
-      className="border-border bg-card flex h-[calc(4rem+env(safe-area-inset-bottom))] items-start justify-around gap-1 border-t px-2 pt-1 pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="bg-background flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-start justify-around px-2 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <button
         type="button"
@@ -77,12 +77,12 @@ export function StashMobileNav({
         className={cn(
           "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
           activeView === "stash" && resolvedActiveTagId === defaultTagId
-            ? "bg-active-bg text-active"
+            ? "text-active"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuInbox size={20} />
-        <span className="text-[11px] font-medium">Inbox</span>
+        <span className="text-[10px] font-medium">Inbox</span>
       </button>
 
       <button
@@ -92,13 +92,11 @@ export function StashMobileNav({
         aria-current={activeView === "search" ? "page" : undefined}
         className={cn(
           "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
-          activeView === "search"
-            ? "bg-active-bg text-active"
-            : "text-muted-foreground hover:text-foreground"
+          activeView === "search" ? "text-active" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuSearch size={20} />
-        <span className="text-[11px] font-medium">Search</span>
+        <span className="text-[10px] font-medium">Search</span>
       </button>
 
       <button
@@ -107,13 +105,11 @@ export function StashMobileNav({
         aria-current={activeView === "tags" ? "page" : undefined}
         className={cn(
           "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
-          activeView === "tags"
-            ? "bg-active-bg text-active"
-            : "text-muted-foreground hover:text-foreground"
+          activeView === "tags" ? "text-active" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuLayoutGrid size={20} />
-        <span className="text-[11px] font-medium">Tags</span>
+        <span className="text-[10px] font-medium">Tags</span>
       </button>
 
       <button
@@ -123,12 +119,12 @@ export function StashMobileNav({
         className={cn(
           "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
           activeView === "reading-list"
-            ? "bg-active-bg text-active"
+            ? "text-active"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
         <LuBookOpen size={20} />
-        <span className="text-[11px] font-medium">Read</span>
+        <span className="text-[10px] font-medium">Read</span>
       </button>
       <DropdownMenu>
         <DropdownMenuTrigger id="mobile-profile-dropdown-trigger" asChild>
@@ -140,17 +136,17 @@ export function StashMobileNav({
             className={cn(
               "focus-visible:ring-ring/50 flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50",
               activeView === "archive"
-                ? "bg-active-bg text-active"
+                ? "text-active"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <div className="border-border/50 bg-muted text-foreground flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold">
               {userInitial}
             </div>
-            <span className="text-[11px] font-medium">Profile</span>
+            <span className="text-[10px] font-medium">Profile</span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-64" align="end" side="top">
+        <DropdownMenuContent className="w-56" align="end" side="top">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-foreground text-sm leading-tight font-medium wrap-break-word">

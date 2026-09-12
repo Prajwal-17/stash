@@ -179,16 +179,16 @@ export function StashList() {
   let globalIndex = 0;
 
   return (
-    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-      <header className="border-border bg-background/95 sticky top-0 z-10 flex min-h-20 shrink-0 items-center justify-between gap-3 border-b px-4 py-4 backdrop-blur-md sm:px-6 lg:px-8">
-        <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <header className="mx-auto flex h-13 w-full max-w-2xl shrink-0 items-center justify-between gap-3 px-3 sm:px-5">
+        <h1 className="min-w-0 truncate text-base font-medium tracking-tight">
           {isDefaultTag ? (
             <span className="text-foreground">Inbox</span>
           ) : (
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="text-muted-foreground shrink-0 font-normal">Tags</span>
               <span className="text-muted-foreground shrink-0 font-normal">/</span>
-              <span className="text-foreground truncate font-semibold">
+              <span className="text-foreground truncate font-medium">
                 {activeTag ? getTagLabel(activeTag) : "unknown"}
               </span>
             </span>
@@ -204,7 +204,7 @@ export function StashList() {
                   variant="ghost"
                   size="icon"
                   aria-label="Tag options"
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground size-10 rounded-lg"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground size-8 rounded-md"
                 >
                   <LuEllipsis size={18} />
                 </Button>
@@ -258,127 +258,131 @@ export function StashList() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-4 space-y-3 empty:hidden">
-          {tagsQuery.isError ? (
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-2xl px-3 pt-2 pb-4 sm:px-5">
+          <div className="mb-3 space-y-2 empty:hidden">
+            {tagsQuery.isError ? (
+              <QueryStatus tone="error">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span>{tags.length ? "Could not refresh tags." : "Could not load tags."}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-3"
+                    onClick={() => void tagsQuery.refetch()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </QueryStatus>
+            ) : null}
+
+            {!showTagLoadState && !showTagErrorState && !tags.length ? (
+              <QueryStatus>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span>No tags yet. Create one with the `+` button.</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-foreground hover:bg-accent hover:text-foreground h-8 px-2"
+                    onClick={() => setTagEditor({ mode: "create", name: "" })}
+                  >
+                    New tag
+                  </Button>
+                </div>
+              </QueryStatus>
+            ) : null}
+
+            {tagsQuery.isFetching && !showTagLoadState ? (
+              <QueryStatus compact>
+                <span className="inline-flex items-center gap-2">
+                  <LuRefreshCw size={12} className="animate-spin" />
+                  Syncing tags...
+                </span>
+              </QueryStatus>
+            ) : null}
+          </div>
+
+          {stashesQuery.isError ? (
             <QueryStatus tone="error">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <span>{tags.length ? "Could not refresh tags." : "Could not load tags."}</span>
+                <span>
+                  {stashes.length ? "Could not refresh stashes." : "Could not load stashes."}
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-3"
-                  onClick={() => void tagsQuery.refetch()}
+                  onClick={() => void stashesQuery.refetch()}
                 >
                   Retry
                 </Button>
               </div>
             </QueryStatus>
-          ) : null}
-
-          {!showTagLoadState && !showTagErrorState && !tags.length ? (
+          ) : showStashLoadState ? (
             <QueryStatus>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span>No tags yet. Create one with the `+` button.</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-foreground hover:bg-accent hover:text-foreground h-8 px-2"
-                  onClick={() => setTagEditor({ mode: "create", name: "" })}
-                >
-                  New tag
-                </Button>
-              </div>
-            </QueryStatus>
-          ) : null}
-
-          {tagsQuery.isFetching && !showTagLoadState ? (
-            <QueryStatus compact>
               <span className="inline-flex items-center gap-2">
-                <LuRefreshCw size={12} className="animate-spin" />
-                Syncing tags...
+                <LuLoaderCircle size={14} className="animate-spin" />
+                Loading stashes...
               </span>
             </QueryStatus>
+          ) : !visibleStashes.length ? (
+            <QueryStatus>
+              {resolvedActiveTagId ? "No stashes in this tag yet." : "No stashes here yet."}
+            </QueryStatus>
+          ) : (
+            <div ref={listRef} className="flex flex-col gap-5">
+              {groupedStashes.today.length > 0 && (
+                <section>
+                  <h3 className="text-muted-foreground mb-1.5 px-2 text-xs font-medium">Today</h3>
+                  <ul className="flex flex-col">
+                    {groupedStashes.today.map((stash) => {
+                      const currentIndex = globalIndex++;
+                      return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
+                    })}
+                  </ul>
+                </section>
+              )}
+
+              {groupedStashes.thisWeek.length > 0 && (
+                <section>
+                  <h3 className="text-muted-foreground mb-1.5 px-2 text-xs font-medium">
+                    This week
+                  </h3>
+                  <ul className="flex flex-col">
+                    {groupedStashes.thisWeek.map((stash) => {
+                      const currentIndex = globalIndex++;
+                      return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
+                    })}
+                  </ul>
+                </section>
+              )}
+
+              {groupedStashes.older.length > 0 && (
+                <section>
+                  <h3 className="text-muted-foreground mb-1.5 px-2 text-xs font-medium">Older</h3>
+                  <ul className="flex flex-col">
+                    {groupedStashes.older.map((stash) => {
+                      const currentIndex = globalIndex++;
+                      return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
+                    })}
+                  </ul>
+                </section>
+              )}
+            </div>
+          )}
+
+          {stashesQuery.isFetching && !showStashLoadState ? (
+            <div className="mt-3">
+              <QueryStatus compact>
+                <span className="inline-flex items-center gap-2">
+                  <LuRefreshCw size={12} className="animate-spin" />
+                  Syncing stashes...
+                </span>
+              </QueryStatus>
+            </div>
           ) : null}
         </div>
-
-        {stashesQuery.isError ? (
-          <QueryStatus tone="error">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                {stashes.length ? "Could not refresh stashes." : "Could not load stashes."}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-3"
-                onClick={() => void stashesQuery.refetch()}
-              >
-                Retry
-              </Button>
-            </div>
-          </QueryStatus>
-        ) : showStashLoadState ? (
-          <QueryStatus>
-            <span className="inline-flex items-center gap-2">
-              <LuLoaderCircle size={14} className="animate-spin" />
-              Loading stashes...
-            </span>
-          </QueryStatus>
-        ) : !visibleStashes.length ? (
-          <QueryStatus>
-            {resolvedActiveTagId ? "No stashes in this tag yet." : "No stashes here yet."}
-          </QueryStatus>
-        ) : (
-          <div ref={listRef} className="flex flex-col gap-6">
-            {groupedStashes.today.length > 0 && (
-              <section>
-                <h3 className="text-muted-foreground mb-2 px-2 text-xs font-medium">Today</h3>
-                <ul className="flex flex-col gap-1">
-                  {groupedStashes.today.map((stash) => {
-                    const currentIndex = globalIndex++;
-                    return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {groupedStashes.thisWeek.length > 0 && (
-              <section>
-                <h3 className="text-muted-foreground mb-2 px-2 text-xs font-medium">This week</h3>
-                <ul className="flex flex-col gap-1">
-                  {groupedStashes.thisWeek.map((stash) => {
-                    const currentIndex = globalIndex++;
-                    return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {groupedStashes.older.length > 0 && (
-              <section>
-                <h3 className="text-muted-foreground mb-2 px-2 text-xs font-medium">Older</h3>
-                <ul className="flex flex-col gap-1">
-                  {groupedStashes.older.map((stash) => {
-                    const currentIndex = globalIndex++;
-                    return <StashRow key={stash.id} stash={stash} index={currentIndex} />;
-                  })}
-                </ul>
-              </section>
-            )}
-          </div>
-        )}
-
-        {stashesQuery.isFetching && !showStashLoadState ? (
-          <div className="mt-3">
-            <QueryStatus compact>
-              <span className="inline-flex items-center gap-2">
-                <LuRefreshCw size={12} className="animate-spin" />
-                Syncing stashes...
-              </span>
-            </QueryStatus>
-          </div>
-        ) : null}
       </div>
     </main>
   );

@@ -159,13 +159,13 @@ export function StashSearchResults() {
   const searchWords = searchQuery.trim() ? [searchQuery.trim()] : [];
 
   return (
-    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-      <header className="border-border bg-background/95 sticky top-0 z-10 flex min-h-20 shrink-0 items-center gap-3 border-b px-4 py-3 backdrop-blur-md sm:px-6 lg:px-8">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <header className="mx-auto flex h-13 w-full max-w-2xl shrink-0 items-center gap-3 px-3 sm:px-5">
         <div className="group relative min-w-0 flex-1">
           <LuSearch
             aria-hidden="true"
-            className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 transition-colors"
-            size={18}
+            className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 transition-colors"
+            size={16}
           />
           <input
             autoFocus
@@ -176,12 +176,12 @@ export function StashSearchResults() {
             autoComplete="off"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="border-border bg-card focus:bg-background text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-ring/20 h-11 w-full min-w-0 rounded-lg border pr-12 pl-10 text-base transition-colors outline-none focus:ring-2 sm:text-sm"
+            className="border-border bg-card focus:bg-background text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-ring/20 h-10 w-full min-w-0 rounded-md border pr-10 pl-9 text-base transition-colors outline-none focus:ring-2 sm:h-9 sm:text-sm"
           />
           <button
             type="button"
             aria-label="Close search"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 flex size-8 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
             onClick={closeSearch}
           >
             <LuX size={16} />
@@ -189,52 +189,54 @@ export function StashSearchResults() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-6 sm:px-6 lg:px-8">
-        {stashesQuery.isError && !stashes.length ? (
-          <QueryStatus tone="error">
-            Could not load stashes. Try again when you’re online.
-          </QueryStatus>
-        ) : stashesQuery.isFetching && !stashes.length ? (
-          <QueryStatus>
-            <span className="inline-flex items-center gap-2">
-              <LuLoaderCircle size={14} className="animate-spin" />
-              Searching...
-            </span>
-          </QueryStatus>
-        ) : !searchQuery.trim() ? (
-          <QueryStatus>Type to search stashes.</QueryStatus>
-        ) : !visibleStashes.length ? (
-          <QueryStatus>No stashes found matching your query.</QueryStatus>
-        ) : (
-          <>
-            <div ref={listRef} className="space-y-6">
-              {(() => {
-                let globalIndex = 0;
-                return groupedStashes.map(({ tag, stashes }) => (
-                  <div key={tag?.id || "unknown"}>
-                    <h3 className="text-muted-foreground mb-2 px-2 text-sm font-semibold tracking-tight">
-                      {getTagLabel(tag)}
-                    </h3>
-                    <ul className="flex flex-col gap-1">
-                      {stashes.map((stash) => {
-                        const currentIndex = globalIndex++;
-                        return (
-                          <StashRow
-                            key={stash.id}
-                            stash={stash}
-                            index={currentIndex}
-                            searchWords={searchWords}
-                            expandedLayout={true}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ));
-              })()}
-            </div>
-          </>
-        )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-2xl px-3 pt-2 pb-4 sm:px-5">
+          {stashesQuery.isError && !stashes.length ? (
+            <QueryStatus tone="error">
+              Could not load stashes. Try again when you’re online.
+            </QueryStatus>
+          ) : stashesQuery.isFetching && !stashes.length ? (
+            <QueryStatus>
+              <span className="inline-flex items-center gap-2">
+                <LuLoaderCircle size={14} className="animate-spin" />
+                Searching...
+              </span>
+            </QueryStatus>
+          ) : !searchQuery.trim() ? (
+            <QueryStatus>Type to search stashes.</QueryStatus>
+          ) : !visibleStashes.length ? (
+            <QueryStatus>No stashes found matching your query.</QueryStatus>
+          ) : (
+            <>
+              <div ref={listRef} className="space-y-5">
+                {(() => {
+                  let globalIndex = 0;
+                  return groupedStashes.map(({ tag, stashes }) => (
+                    <div key={tag?.id || "unknown"}>
+                      <h3 className="text-muted-foreground mb-1.5 px-2 text-xs font-medium">
+                        {getTagLabel(tag)}
+                      </h3>
+                      <ul className="flex flex-col">
+                        {stashes.map((stash) => {
+                          const currentIndex = globalIndex++;
+                          return (
+                            <StashRow
+                              key={stash.id}
+                              stash={stash}
+                              index={currentIndex}
+                              searchWords={searchWords}
+                              expandedLayout={true}
+                            />
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </main>
   );

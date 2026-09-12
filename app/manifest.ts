@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "A simple stash tool",
     start_url: "/",
     display: "standalone",
-    background_color: "hsl(35 8% 9%)",
-    theme_color: "hsl(35 8% 9%)",
+    background_color: "hsl(35 10% 8%)",
+    theme_color: "hsl(35 10% 8%)",
     orientation: "portrait",
     icons: [
       {

@@ -157,9 +157,9 @@ export function ShareHandler({
       <form
         onSubmit={handleSubmit}
         aria-busy={isMutationPending}
-        className="border-border bg-card w-full max-w-sm rounded-xl border p-5 shadow-lg sm:p-6"
+        className="bg-background w-full max-w-sm p-5 sm:p-6"
       >
-        <h1 className="text-foreground mb-2 text-xl font-semibold tracking-tight">Stash link</h1>
+        <h1 className="text-foreground mb-2 text-base font-semibold tracking-tight">Stash link</h1>
         <p className="text-muted-foreground mb-6 text-sm">Review and stash the shared link.</p>
 
         <div className="space-y-4">
@@ -167,7 +167,7 @@ export function ShareHandler({
             <FieldLabel htmlFor="shared-url">URL</FieldLabel>
             <Input
               id="shared-url"
-              className="mt-1"
+              className="mt-1 h-10 sm:h-9"
               value={url}
               onChange={(event) => setUrl(event.target.value)}
               placeholder="https://..."
@@ -206,7 +206,7 @@ export function ShareHandler({
                     aria-labelledby="shared-tag-label"
                     value={resolvedTagId ?? ""}
                     onChange={(event) => setTagId(event.target.value)}
-                    className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 h-11 w-full rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none sm:hidden"
+                    className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 h-10 w-full rounded-lg border px-3 text-sm focus-visible:ring-1 focus-visible:outline-none sm:hidden sm:h-9"
                   >
                     <option value="" disabled>
                       Select a tag
@@ -227,7 +227,7 @@ export function ShareHandler({
                           aria-haspopup="dialog"
                           aria-expanded={tagPopoverOpen}
                           aria-labelledby="shared-tag-label"
-                          className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
+                          className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full items-center justify-between rounded-lg border px-3 text-sm focus-visible:ring-1 focus-visible:outline-none sm:h-9"
                         >
                           <span className="truncate">
                             {resolvedTagId
@@ -293,18 +293,18 @@ export function ShareHandler({
           </div>
         </div>
 
-        <div className="mt-8 flex min-w-0 gap-3">
+        <div className="mt-6 flex min-w-0 gap-3">
           <Button
             type="button"
             variant="outline"
-            className="border-border bg-background text-muted-foreground hover:bg-card hover:text-foreground min-h-11 min-w-0 flex-1 rounded-lg"
+            className="border-border bg-background text-muted-foreground hover:bg-card hover:text-foreground min-h-10 min-w-0 flex-1 rounded-lg sm:min-h-9"
             onClick={() => router.push("/")}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 min-h-11 min-w-0 flex-1 rounded-lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 min-h-10 min-w-0 flex-1 rounded-lg sm:min-h-9"
             disabled={isMutationPending || !url.trim() || showTagsError}
           >
             {isMutationPending ? "Stashing..." : "Stash link"}

@@ -44,7 +44,7 @@ export function StashActionDrawer() {
     >
       <SheetContent
         side="bottom"
-        className="border-border bg-background mx-auto max-h-[88dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border-t px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+20px)] outline-none sm:px-6"
+        className="border-border bg-background mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-xl px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+20px)] outline-none sm:px-6"
         onCloseAutoFocus={(event) => {
           const { stashEditor, confirmation } = useStashStore.getState();
           if (stashEditor || confirmation) event.preventDefault();
@@ -54,14 +54,14 @@ export function StashActionDrawer() {
           <button
             type="button"
             aria-label="Close drawer"
-            className="focus-visible:ring-ring/50 mx-auto mb-2 flex h-10 w-16 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
+            className="focus-visible:ring-ring/50 mx-auto mb-2 flex h-7 w-16 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
           >
             <span className="bg-muted-foreground/40 h-1 w-10 rounded-full" />
           </button>
         </SheetClose>
 
-        <div className="mb-5">
-          <SheetTitle className="text-foreground pr-2 text-lg leading-snug font-semibold wrap-anywhere">
+        <div className="mb-4">
+          <SheetTitle className="text-foreground pr-2 text-base leading-snug font-semibold wrap-anywhere">
             {title}
           </SheetTitle>
           <SheetDescription className="text-muted-foreground mt-1 truncate text-sm">
@@ -70,15 +70,15 @@ export function StashActionDrawer() {
         </div>
 
         {drawerStash ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-1.5">
               <p className="text-muted-foreground text-xs font-medium">URL</p>
-              <p className="text-foreground/80 text-sm leading-relaxed break-all">
+              <p className="text-foreground/80 text-[13px] leading-relaxed break-all">
                 {drawerStash.url}
               </p>
             </div>
 
-            <div className="border-border grid grid-cols-2 gap-3 border-t pt-3">
+            <div className="grid grid-cols-2 gap-3 pt-1">
               {tag ? (
                 <div className="space-y-1">
                   <p className="text-muted-foreground text-xs font-medium">Tag</p>
@@ -102,20 +102,20 @@ export function StashActionDrawer() {
             </div>
 
             {drawerStash.description?.trim() ? (
-              <div className="border-border space-y-1 border-t pt-3">
+              <div className="space-y-1 pt-1">
                 <p className="text-muted-foreground text-xs font-medium">Description</p>
-                <p className="text-muted-foreground text-sm leading-relaxed wrap-anywhere">
+                <p className="text-muted-foreground text-[13px] leading-relaxed wrap-anywhere">
                   {drawerStash.description.trim()}
                 </p>
               </div>
             ) : null}
 
-            <div className="border-border grid grid-cols-2 gap-2 border-t pt-4">
+            <div className="grid grid-cols-2 gap-2 pt-2">
               <Button
                 type="button"
                 variant="secondary"
                 aria-label={copiedStashId === drawerStash.id ? "Copied" : "Copy URL"}
-                className="h-11 min-w-0 gap-2"
+                className="h-10 min-w-0 gap-2"
                 onClick={() => void copyText(drawerStash.url, drawerStash.id)}
               >
                 {copiedStashId === drawerStash.id ? (
@@ -129,7 +129,7 @@ export function StashActionDrawer() {
                 type="button"
                 variant="secondary"
                 aria-label="Edit stash"
-                className="h-11 min-w-0 gap-2"
+                className="h-10 min-w-0 gap-2"
                 onClick={() => openStashEditor(drawerStash)}
               >
                 <LuPencil size={14} />
@@ -140,7 +140,7 @@ export function StashActionDrawer() {
                 variant="secondary"
                 aria-label="Archive stash"
                 disabled={isSetStashArchivedPending}
-                className="h-11 min-w-0 gap-2"
+                className="h-10 min-w-0 gap-2"
                 onClick={() => void handleStashArchiveAction(drawerStash.id, "archive")}
               >
                 <LuArchive size={14} />
@@ -150,7 +150,7 @@ export function StashActionDrawer() {
                 type="button"
                 variant="outline"
                 aria-label="Delete stash"
-                className="border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10 hover:text-destructive h-11 min-w-0 gap-2"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-10 min-w-0 gap-2 border-transparent bg-transparent"
                 onClick={() =>
                   openDeleteConfirmation({
                     kind: "stash",

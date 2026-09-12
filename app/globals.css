@@ -38,13 +38,13 @@
 }
 
 :root {
-  --background: 35 8% 9%;
+  --background: 35 10% 8%;
   --foreground: 35 15% 94%;
 
-  --card: 35 8% 12%;
+  --card: 35 10% 11%;
   --card-foreground: 35 15% 94%;
 
-  --popover: 35 7% 14%;
+  --popover: 35 10% 11%;
   --popover-foreground: 35 15% 94%;
 
   --primary: 24 95% 53%;
@@ -62,16 +62,16 @@
   --destructive: 0 80% 69%;
   --destructive-foreground: 0 50% 10%;
 
-  --border: 35 7% 23%;
-  --input: 35 7% 26%;
+  --border: 35 10% 18%;
+  --input: 35 10% 20%;
 
   --ring: 24 95% 53%;
 
   --radius: 0.5rem;
 
   --active: 24 95% 53%;
-  --active-bg: 24 30% 16%;
-  --active-fg: 28 100% 76%;
+  --active-bg: 35 10% 13%;
+  --active-fg: 35 15% 94%;
 }
 
 @layer base {
@@ -100,8 +100,8 @@
   }
 
   :where(button, a, input, textarea, select, [tabindex]):focus-visible {
-    outline: 2px solid hsl(var(--ring));
-    outline-offset: 3px;
+    outline: 1px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   ::selection {
@@ -218,6 +218,6 @@
 .rdp-day_button:focus-visible,
 .rdp-button_next:focus-visible,
 .rdp-button_previous:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 1px solid hsl(var(--ring));
   outline-offset: 2px;
 }

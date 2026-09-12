@@ -55,15 +55,12 @@ export function EditStashDialog() {
         className="gap-0 p-0 sm:max-w-lg"
         onCloseAutoFocus={() => setTagPopoverOpen(false)}
       >
-        <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
-          <DialogTitle className="text-xl font-semibold tracking-tight">Edit stash</DialogTitle>
+        <DialogHeader className="px-5 pt-5 pb-2">
+          <DialogTitle className="text-base font-semibold tracking-tight">Edit stash</DialogTitle>
           <DialogDescription className="sr-only">Edit the details of this stash.</DialogDescription>
         </DialogHeader>
 
-        <form
-          className="px-5 pt-2 pb-6 sm:px-6"
-          onSubmit={(event) => void submitStashEditor(event)}
-        >
+        <form className="px-5 pt-2 pb-5" onSubmit={(event) => void submitStashEditor(event)}>
           <div className="space-y-4">
             <div className="space-y-2">
               <FieldLabel htmlFor="stash-url">URL</FieldLabel>
@@ -77,7 +74,7 @@ export function EditStashDialog() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="h-11 w-full"
+                className="h-10 w-full sm:h-9"
               />
             </div>
 
@@ -92,7 +89,7 @@ export function EditStashDialog() {
                       stashEditor ? { ...stashEditor, title: event.target.value } : null
                     )
                   }
-                  className="h-11 w-full"
+                  className="h-10 w-full sm:h-9"
                 />
               </div>
 
@@ -106,7 +103,7 @@ export function EditStashDialog() {
                       stashEditor ? { ...stashEditor, tagId: event.target.value } : null
                     )
                   }
-                  className="border-input bg-card text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full min-w-0 rounded-md border px-3 text-base outline-none focus-visible:ring-2 sm:hidden"
+                  className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-10 w-full min-w-0 rounded-md border px-3 text-base outline-none focus-visible:ring-1 sm:hidden sm:h-9"
                 >
                   <option value="" disabled>
                     Select a tag
@@ -128,7 +125,7 @@ export function EditStashDialog() {
                         aria-haspopup="dialog"
                         aria-labelledby="stash-tag-label stash-tag-value"
                         className={cn(
-                          "border-input bg-card text-foreground hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 flex h-11 w-full min-w-0 items-center justify-between gap-2 rounded-md border px-3 text-sm outline-none focus-visible:ring-2",
+                          "border-border bg-background text-foreground hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-md border px-3 text-sm outline-none focus-visible:ring-1 sm:h-9",
                           !selectedTag && "text-muted-foreground"
                         )}
                       >
@@ -195,7 +192,7 @@ export function EditStashDialog() {
                     stashEditor ? { ...stashEditor, description: event.target.value } : null
                   )
                 }
-                className="min-h-28 w-full resize-y"
+                className="min-h-20 w-full resize-y"
               />
             </div>
 
@@ -208,11 +205,11 @@ export function EditStashDialog() {
                   setStashEditor(null);
                 }}
                 disabled={isUpdateStashPending}
-                className="h-11 sm:h-9"
+                className="h-10 sm:h-9"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdateStashPending} className="h-11 sm:h-9">
+              <Button type="submit" disabled={isUpdateStashPending} className="h-10 sm:h-9">
                 {isUpdateStashPending ? "Updating..." : "Update stash"}
               </Button>
             </DialogFooter>
