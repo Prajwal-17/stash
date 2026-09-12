@@ -138,7 +138,7 @@ export function ReadingListRow({
   return (
     <li className="group min-w-0 py-0.5" data-reading-list-row>
       <div
-        className="hover:bg-muted/70 has-focus-visible:ring-ring/50 relative touch-pan-y rounded-xl px-2 py-2.5 transition-colors select-none has-focus-visible:ring-2 sm:select-auto"
+        className="hover:bg-muted/50 has-focus-visible:ring-ring/50 relative touch-pan-y rounded-md px-2 py-1 transition-colors select-none has-focus-visible:ring-2 sm:select-auto"
         onPointerDown={queueLongPress}
         onPointerMove={handlePointerMove}
         onPointerUp={clearLongPress}
@@ -154,37 +154,39 @@ export function ReadingListRow({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${title}, ${hostname}. Open in a new tab`}
-          className="absolute inset-0 z-0 rounded-xl focus:outline-none"
+          className="absolute inset-0 z-0 rounded-md focus:outline-none"
           onClick={handleLinkClick}
         />
-        <div className="pointer-events-none relative z-10 flex items-center gap-2 sm:gap-2.5">
+        <div className="pointer-events-none relative z-10 flex items-center gap-1.5 sm:gap-2">
           <button
             data-row-action
             type="button"
             aria-label={isCompleted ? "Mark as unread" : "Mark as read"}
             aria-pressed={isCompleted}
             disabled={isPending}
-            className={cn(
-              "pointer-events-auto",
-              "focus-visible:ring-ring/50 flex size-8 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:ring-2 focus-visible:outline-none",
-              isCompleted
-                ? "border-primary/40 bg-primary/15 text-primary"
-                : "border-border hover:border-primary/50 hover:bg-primary/10 hover:text-primary text-transparent",
-              "disabled:cursor-wait disabled:opacity-50"
-            )}
+            className="focus-visible:ring-ring/50 pointer-events-auto flex size-8 shrink-0 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
             onClick={(e) => {
               e.stopPropagation();
               onMarkRead(item.id, !item.isRead);
             }}
           >
-            {isPending ? (
-              <LuLoaderCircle size={12} className="text-muted-foreground animate-spin" />
-            ) : (
-              <LuCheck size={12} strokeWidth={3} />
-            )}
+            <span
+              className={cn(
+                "flex size-4 items-center justify-center rounded-[3px] border transition-colors",
+                isCompleted
+                  ? "border-primary/40 bg-primary/15 text-primary"
+                  : "border-muted-foreground/30 group-hover:border-muted-foreground/50 text-transparent"
+              )}
+            >
+              {isPending ? (
+                <LuLoaderCircle size={11} className="text-muted-foreground animate-spin" />
+              ) : (
+                <LuCheck size={11} strokeWidth={2.5} />
+              )}
+            </span>
           </button>
 
-          <div className="bg-muted hidden size-7 shrink-0 items-center justify-center rounded-lg border sm:flex">
+          <div className="hidden size-4 shrink-0 items-center justify-center sm:flex">
             <Image
               src={getFaviconUrl(hostname)}
               alt=""
@@ -198,13 +200,13 @@ export function ReadingListRow({
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <p
               className={cn(
-                "line-clamp-2 text-sm leading-snug font-medium sm:line-clamp-1",
+                "line-clamp-2 text-sm leading-tight font-medium sm:line-clamp-1",
                 isCompleted ? "text-muted-foreground line-through" : "text-foreground"
               )}
             >
               {title}
             </p>
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
               <p className="text-muted-foreground min-w-0 truncate text-xs">{hostname}</p>
               {isCompleted && (
                 <span className="text-muted-foreground text-xs">
@@ -214,10 +216,8 @@ export function ReadingListRow({
               {!isCompleted && scheduleLabel && (
                 <span
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium",
-                    isPastScheduled
-                      ? "bg-destructive/10 text-destructive"
-                      : "bg-primary/10 text-primary"
+                    "inline-flex shrink-0 items-center gap-1 text-[11px]",
+                    isPastScheduled ? "text-destructive" : "text-muted-foreground"
                   )}
                 >
                   <LuCalendar size={11} />
@@ -227,7 +227,13 @@ export function ReadingListRow({
             </div>
           </div>
 
-          <div data-row-action className="pointer-events-auto flex shrink-0 items-center gap-0.5">
+          <div
+            data-row-action
+            className={cn(
+              "pointer-events-auto flex shrink-0 items-center gap-0.5 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100",
+              isScheduleOpen && "[@media(hover:hover)_and_(pointer:fine)]:opacity-100"
+            )}
+          >
             {!isCompleted && (
               <>
                 <Popover open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
@@ -236,7 +242,7 @@ export function ReadingListRow({
                       type="button"
                       aria-label="Schedule item"
                       disabled={isPending}
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:size-7"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <LuCalendar size={14} />
@@ -250,7 +256,7 @@ export function ReadingListRow({
                     className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-auto p-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="p-3">
+                    <div className="p-2">
                       <DayPicker
                         autoFocus
                         mode="single"
@@ -269,7 +275,7 @@ export function ReadingListRow({
                       />
                     </div>
                     {selectedDate && (
-                      <div className="border-border flex items-center justify-between gap-3 border-t px-3 py-2">
+                      <div className="flex items-center justify-between gap-3 px-3 pb-2">
                         <span className="text-muted-foreground text-xs">
                           {format(selectedDate, "MMM d, yyyy")}
                         </span>
@@ -277,7 +283,7 @@ export function ReadingListRow({
                           variant="ghost"
                           size="sm"
                           disabled={isPending}
-                          className="text-muted-foreground hover:text-foreground h-9 px-3 text-xs"
+                          className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
                           onClick={handleClearSchedule}
                         >
                           Clear
@@ -296,7 +302,7 @@ export function ReadingListRow({
                     type="button"
                     aria-label="Edit reading item"
                     disabled={isPending}
-                    className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:size-7"
                     onClick={(event) => {
                       event.stopPropagation();
                       onEdit(item);
@@ -314,7 +320,7 @@ export function ReadingListRow({
                     type="button"
                     aria-label="Delete reading item"
                     disabled={isPending}
-                    className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                    className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:size-7"
                     onClick={(event) => {
                       event.stopPropagation();
                       onDelete(item);
@@ -330,13 +336,13 @@ export function ReadingListRow({
               type="button"
               aria-label={`More actions for ${title}`}
               disabled={isPending}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:hidden"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:hidden"
               onClick={(event) => {
                 event.stopPropagation();
                 onLongPress(item);
               }}
             >
-              <LuEllipsis size={18} />
+              <LuEllipsis size={16} />
             </button>
           </div>
         </div>

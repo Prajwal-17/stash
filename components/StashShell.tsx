@@ -71,8 +71,8 @@ export function StashShell({
 
   return (
     <div className="bg-background text-foreground flex h-dvh w-full flex-col items-center overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
-      <div className="border-border flex min-h-0 w-full max-w-6xl flex-1 md:border-x">
-        <div className="border-border hidden w-56 shrink-0 border-r md:block lg:w-64">
+      <div className="flex min-h-0 w-full max-w-230 flex-1">
+        <div className="hidden w-56 shrink-0 md:block">
           <StashSidebar
             initialTags={initialTags}
             userEmail={userEmail}
@@ -89,7 +89,7 @@ export function StashShell({
           {activeView === "stash" && <StashList />}
 
           {activeView !== "reading-list" && activeView !== "archive" && (
-            <div className="border-border bg-background mx-auto w-full max-w-3xl shrink-0 border-t px-4 py-3 sm:px-6 lg:px-8">
+            <div className="bg-background mx-auto w-full max-w-2xl shrink-0 px-3 pt-2 pb-3 sm:px-5">
               <StashComposer />
             </div>
           )}

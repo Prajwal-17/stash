@@ -29,23 +29,23 @@ export function DeleteReadingListDialog({
 
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-md">
-        <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
-          <DialogTitle className="pr-8 text-xl font-semibold tracking-tight">
+      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-lg p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-md">
+        <DialogHeader className="px-5 pt-5 pb-2">
+          <DialogTitle className="pr-8 text-base font-semibold tracking-tight">
             Remove from reading list
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm wrap-break-word">
             Are you sure you want to remove &ldquo;{title}&rdquo;?
           </DialogDescription>
         </DialogHeader>
-        <div className="px-5 pt-2 pb-6 sm:px-6">
+        <div className="px-5 pt-2 pb-5">
           <DialogFooter className="gap-2 sm:justify-end">
             <Button
               type="button"
               variant="ghost"
               disabled={isPending}
               onClick={() => onOpenChange(false)}
-              className="h-11 sm:h-9"
+              className="h-10 sm:h-9"
             >
               Cancel
             </Button>
@@ -54,7 +54,7 @@ export function DeleteReadingListDialog({
               variant="destructive"
               disabled={isPending}
               onClick={onConfirm}
-              className="h-11 sm:h-9"
+              className="h-10 sm:h-9"
             >
               {isPending ? "Deleting..." : "Delete"}
             </Button>

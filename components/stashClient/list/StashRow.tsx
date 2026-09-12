@@ -123,11 +123,11 @@ export function StashRow({
   }
 
   return (
-    <motion.li layout className="group min-w-0 py-0.5" data-stash-row>
+    <motion.li layout className="group min-w-0" data-stash-row>
       <div
         className={cn(
-          "has-focus-visible:ring-ring/50 relative touch-pan-y rounded-xl px-2 py-3 transition-colors duration-150 select-none has-focus-visible:ring-2 sm:select-auto",
-          isFocused ? "bg-accent ring-ring/30 ring-1" : "hover:bg-muted"
+          "has-focus-visible:ring-ring/50 relative touch-pan-y rounded-md px-2 py-1.5 transition-colors duration-150 select-none has-focus-visible:ring-2 sm:select-auto",
+          isFocused ? "bg-accent" : "hover:bg-muted"
         )}
         onPointerDown={queueLongPress}
         onPointerMove={handlePointerMove}
@@ -149,12 +149,12 @@ export function StashRow({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${title}, ${hostname}. Open in a new tab`}
-          className="absolute inset-0 z-0 rounded-lg focus:outline-none"
+          className="absolute inset-0 z-0 rounded-md focus:outline-none"
           onClick={handleLinkClick}
           onFocus={() => setFocusedStashIndex(index)}
         />
-        <div className="pointer-events-none relative z-10 flex items-start gap-3">
-          <div className="border-border bg-card mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border">
+        <div className="pointer-events-none relative z-10 flex items-start gap-2.5">
+          <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center">
             <Image
               src={getFaviconUrl(hostname)}
               alt=""
@@ -165,8 +165,8 @@ export function StashRow({
             />
           </div>
 
-          <div className="flex min-h-9 min-w-0 flex-1 flex-col justify-center gap-1">
-            <p className="text-foreground line-clamp-2 text-sm leading-snug font-medium wrap-anywhere sm:line-clamp-1">
+          <div className="flex min-h-8 min-w-0 flex-1 flex-col justify-center">
+            <p className="text-foreground truncate text-sm leading-tight font-medium">
               <Highlighter
                 searchWords={searchWords}
                 autoEscape={true}
@@ -200,7 +200,7 @@ export function StashRow({
             type="button"
             aria-label={`Actions for ${title}`}
             aria-haspopup="dialog"
-            className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 pointer-events-auto flex size-11 shrink-0 items-center justify-center self-center rounded-lg focus-visible:ring-2 focus-visible:outline-none sm:hidden"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 pointer-events-auto -my-1.5 flex size-11 shrink-0 items-center justify-center self-center rounded-md focus-visible:ring-2 focus-visible:outline-none sm:hidden"
             onClick={(event) => {
               event.stopPropagation();
               setDrawerStash(stash);
@@ -211,7 +211,7 @@ export function StashRow({
 
           <div
             data-row-action
-            className="pointer-events-auto mt-0.5 hidden shrink-0 items-center gap-0.5 sm:flex"
+            className="pointer-events-auto hidden shrink-0 items-center gap-0.5 self-center sm:flex [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:has-[[data-state=open]]:opacity-100"
           >
             <Popover
               open={isPreviewOpen}
@@ -227,7 +227,7 @@ export function StashRow({
                       type="button"
                       aria-label="View details"
                       className={cn(
-                        "text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                        "text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
                         isPreviewOpen && "bg-accent text-foreground"
                       )}
                       onClick={(e) => e.stopPropagation()}
@@ -255,7 +255,7 @@ export function StashRow({
                 <button
                   type="button"
                   aria-label={copiedStashId === stash.id ? "URL copied" : "Copy URL"}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   onClick={(event) => {
                     event.stopPropagation();
                     void copyText(stash.url, stash.id);
@@ -276,7 +276,7 @@ export function StashRow({
                 <button
                   type="button"
                   aria-label="Edit stash"
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   onClick={(event) => {
                     event.stopPropagation();
                     openStashEditor(stash);
@@ -294,7 +294,7 @@ export function StashRow({
                     <button
                       type="button"
                       aria-label="More options"
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-foreground flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-foreground flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <LuEllipsis size={16} />

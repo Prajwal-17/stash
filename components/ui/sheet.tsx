@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const sheetVariants = cva(
-  "fixed z-50 max-h-dvh gap-4 overflow-y-auto overscroll-contain bg-card text-card-foreground p-6 shadow-xl outline-none transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 max-h-dvh gap-4 overflow-y-auto overscroll-contain bg-card text-card-foreground p-6 shadow-lg outline-none transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
     variants: {
       side: {
@@ -49,7 +49,7 @@ function SheetContent({
     <SheetPortal>
       <DialogPrimitive.Overlay
         data-slot="sheet-overlay"
-        className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 fixed inset-0 z-50 bg-black/65 backdrop-blur-sm"
+        className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 fixed inset-0 z-50 bg-black/50"
       />
       <DialogPrimitive.Content
         data-slot="sheet-content"
@@ -100,7 +100,7 @@ function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 function SheetTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("text-lg leading-snug font-semibold tracking-tight", className)}
+      className={cn("text-base leading-snug font-semibold tracking-tight", className)}
       {...props}
     />
   );

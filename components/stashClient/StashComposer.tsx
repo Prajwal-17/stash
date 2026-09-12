@@ -96,10 +96,8 @@ export function StashComposer() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             className={cn(
-              "mb-3 rounded-lg border px-3 py-2 text-sm wrap-break-word",
-              notice.type === "error"
-                ? "border-destructive/25 bg-destructive/10 text-destructive"
-                : "border-primary/25 bg-primary/10 text-foreground"
+              "mb-2 px-1 py-1 text-xs wrap-break-word",
+              notice.type === "error" ? "text-destructive" : "text-muted-foreground"
             )}
           >
             {notice.message}
@@ -107,7 +105,7 @@ export function StashComposer() {
         ) : null}
       </AnimatePresence>
 
-      <div className="border-border bg-card focus-within:border-primary/60 focus-within:ring-primary/15 flex w-full items-center gap-1 rounded-xl border p-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-4 sm:gap-2">
+      <div className="bg-muted/50 focus-within:ring-ring/40 flex w-full items-center gap-1 rounded-lg p-1 transition-shadow focus-within:ring-1">
         <Input
           ref={inputRef}
           value={urlInput}
@@ -126,12 +124,12 @@ export function StashComposer() {
           spellCheck={false}
           placeholder="Paste a link to stash…"
           disabled={isCreateStashPending || isFetchingMetadata || showTagErrorState}
-          className="text-foreground placeholder:text-muted-foreground h-11 min-w-0 flex-1 border-0 bg-transparent px-2 py-1.5 text-base shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:px-3 sm:text-sm dark:bg-transparent"
+          className="text-foreground placeholder:text-muted-foreground h-9 min-w-0 flex-1 border-0 bg-transparent px-2 py-1 text-base shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:h-8 sm:px-2 sm:text-sm dark:bg-transparent"
         />
         <kbd className="text-muted-foreground hidden shrink-0 px-1 text-xs sm:inline">Ctrl/⌘ K</kbd>
         <Button
           type="button"
-          className="h-11 shrink-0 rounded-lg px-3 font-semibold sm:px-4"
+          className="h-9 shrink-0 rounded-md px-3 text-sm font-medium shadow-none sm:h-8"
           disabled={
             isCreateStashPending || isFetchingMetadata || !urlInput.trim() || showTagErrorState
           }
@@ -142,7 +140,7 @@ export function StashComposer() {
       </div>
 
       {isSyncing && !isCreateStashPending ? (
-        <div className="mt-3">
+        <div className="mt-2">
           <QueryStatus compact>
             <span className="inline-flex items-center gap-2">
               <LuLoaderCircle size={12} className="animate-spin" />

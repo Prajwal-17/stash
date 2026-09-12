@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { ComponentPropsWithoutRef, FormEvent, useEffect, useRef, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { LuBookmark, LuLoaderCircle } from "react-icons/lu";
+import { LuLoaderCircle } from "react-icons/lu";
 
 export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div">) {
   const [error, setError] = useState<string | null>(null);
@@ -40,15 +40,10 @@ export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-lg sm:p-8">
+      <div className="border-border bg-card text-card-foreground rounded-lg p-6 sm:p-8">
         <div className="relative">
-          <div className="text-foreground flex items-center gap-2.5 text-xl font-semibold tracking-tight">
-            <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
-              <LuBookmark size={20} />
-            </span>
-            Stash
-          </div>
-          <h1 className="text-foreground mt-8 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <p className="text-foreground text-lg font-semibold tracking-tight">Stash</p>
+          <h1 className="text-foreground mt-6 text-xl font-semibold tracking-tight">
             Welcome back
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -75,7 +70,7 @@ export function LoginForm({ className, ...props }: ComponentPropsWithoutRef<"div
 
           <Button
             type="submit"
-            className="h-12 w-full gap-3 rounded-lg px-4 text-sm font-semibold"
+            className="h-10 w-full gap-3 rounded-lg px-4 text-sm font-semibold"
             disabled={isLoading}
           >
             {isLoading ? (

@@ -38,15 +38,15 @@ export function TagEditorDialog({
       }}
     >
       <DialogContent className="gap-0 p-0 sm:max-w-md">
-        <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
-          <DialogTitle className="text-xl font-semibold tracking-tight">
+        <DialogHeader className="px-5 pt-5 pb-2">
+          <DialogTitle className="text-base font-semibold tracking-tight">
             {editorState?.mode === "create" ? "Create tag" : "Edit tag"}
           </DialogTitle>
           <DialogDescription className="sr-only">
             Choose a name to organize your stashes.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="px-5 pt-2 pb-6 sm:px-6">
+        <form onSubmit={onSubmit} className="px-5 pt-2 pb-5">
           <div className="space-y-5">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -65,7 +65,7 @@ export function TagEditorDialog({
                 onChange={(e) => onChangeName(e.target.value)}
                 placeholder="e.g. Reading"
                 maxLength={80}
-                className="h-11 w-full"
+                className="h-10 w-full sm:h-9"
               />
             </div>
             <DialogFooter className="gap-2 pt-2 sm:justify-end">
@@ -74,11 +74,11 @@ export function TagEditorDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
-                className="h-11 sm:h-9"
+                className="h-10 sm:h-9"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending} className="h-11 sm:h-9">
+              <Button type="submit" disabled={isPending} className="h-10 sm:h-9">
                 {isPending ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>

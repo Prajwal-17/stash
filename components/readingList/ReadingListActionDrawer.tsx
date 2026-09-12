@@ -57,7 +57,7 @@ export function ReadingListActionDrawer({
     <Sheet open={item !== null} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="border-border bg-background mx-auto max-h-[88dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border-t px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+20px)] outline-none sm:px-6"
+        className="bg-background mx-auto max-h-[88dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-xl px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+16px)] outline-none"
         onCloseAutoFocus={(event) => {
           if (transferringFocusRef.current) {
             event.preventDefault();
@@ -69,17 +69,17 @@ export function ReadingListActionDrawer({
           <button
             type="button"
             aria-label="Close drawer"
-            className="focus-visible:ring-ring/50 mx-auto mb-2 flex h-10 w-16 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
+            className="focus-visible:ring-ring/50 mx-auto mb-1 flex h-8 w-16 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
           >
             <span className="bg-muted-foreground/40 h-1 w-10 rounded-full" />
           </button>
         </SheetClose>
 
-        <div className="mb-5">
-          <SheetTitle className="text-foreground pr-2 text-lg leading-snug font-semibold wrap-anywhere">
+        <div className="mb-4">
+          <SheetTitle className="text-foreground pr-2 text-base leading-snug font-semibold wrap-anywhere">
             {title}
           </SheetTitle>
-          <SheetDescription className="text-muted-foreground mt-1 truncate text-sm">
+          <SheetDescription className="text-muted-foreground mt-1 truncate text-xs">
             {hostname}
           </SheetDescription>
         </div>
@@ -91,7 +91,7 @@ export function ReadingListActionDrawer({
               <p className="text-foreground/80 text-sm leading-relaxed break-all">{item.url}</p>
             </div>
 
-            <div className="border-border grid grid-cols-2 gap-3 border-t pt-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <p className="text-muted-foreground text-xs font-medium">Status</p>
                 <p className="text-foreground text-sm wrap-anywhere">
@@ -111,7 +111,7 @@ export function ReadingListActionDrawer({
             </div>
 
             {item.description?.trim() ? (
-              <div className="border-border space-y-1 border-t pt-3">
+              <div className="space-y-1">
                 <p className="text-muted-foreground text-xs font-medium">Description</p>
                 <p className="text-muted-foreground text-sm leading-relaxed wrap-anywhere">
                   {item.description.trim()}
@@ -119,12 +119,12 @@ export function ReadingListActionDrawer({
               </div>
             ) : null}
 
-            <div className="border-border grid grid-cols-3 gap-2 border-t pt-4">
+            <div className="grid grid-cols-3 gap-2 pt-1">
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 aria-label={copiedItemId === item.id ? "Copied" : "Copy URL"}
-                className="h-11 min-w-0 gap-2 px-2"
+                className="h-10 min-w-0 gap-2 px-2 text-sm"
                 onClick={() => void copyUrl()}
               >
                 {copiedItemId === item.id ? (
@@ -136,9 +136,9 @@ export function ReadingListActionDrawer({
               </Button>
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 aria-label="Edit reading item"
-                className="h-11 min-w-0 gap-2 px-2"
+                className="h-10 min-w-0 gap-2 px-2 text-sm"
                 onClick={() => {
                   transferringFocusRef.current = true;
                   onEdit(item);
@@ -149,9 +149,9 @@ export function ReadingListActionDrawer({
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 aria-label="Delete reading item"
-                className="border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10 hover:text-destructive h-11 min-w-0 gap-2 px-2"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-10 min-w-0 gap-2 px-2 text-sm"
                 onClick={() => {
                   transferringFocusRef.current = true;
                   onDelete(item);
