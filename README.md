@@ -41,7 +41,7 @@ TURSO_AUTH_TOKEN=
 
 - Dev uses a gitignored local SQLite file (`.data/stash.sqlite` by default).
 - `pnpm db:dev` synchronizes the schema to the development database. `pnpm db:seed` is idempotent and adds active and archived sample records for `prajwalk1702@gmail.com`, creating that development user when needed.
-- Production uses Turso; set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
+- Production uses Turso; set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in the deployment environment (including Preview when deploying a PR). Builds defer the database connection until a request needs it, so `pnpm build` can run without database credentials. Running the app still requires the production database settings; it never falls back to local SQLite in production.
 - Google OAuth is the only auth provider. Without it you cannot log in.
 
 ## Database workflow

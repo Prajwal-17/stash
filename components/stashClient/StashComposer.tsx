@@ -34,7 +34,11 @@ export function StashComposer() {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+      if (
+        e.key === "k" &&
+        (e.metaKey || e.ctrlKey) &&
+        !document.querySelector("[role='dialog'][data-state='open'], [role='menu']")
+      ) {
         e.preventDefault();
         inputRef.current?.focus();
       }
@@ -46,6 +50,7 @@ export function StashComposer() {
   useEffect(() => {
     const handleGlobalPaste = (e: ClipboardEvent) => {
       const activeEl = document.activeElement;
+      if (document.querySelector("[role='dialog'][data-state='open'], [role='menu']")) return;
       if (
         activeEl &&
         (activeEl.tagName === "INPUT" ||
@@ -69,7 +74,14 @@ export function StashComposer() {
   }, [setUrlInput, setNotice]);
 
   function handleComposerKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
+    if (
+      event.key === "Enter" &&
+      !event.nativeEvent.isComposing &&
+      !isCreateStashPending &&
+      !isFetchingMetadata &&
+      !showTagErrorState
+    ) {
+      event.preventDefault();
       void handleSave();
     }
   }
@@ -79,14 +91,15 @@ export function StashComposer() {
       <AnimatePresence>
         {notice ? (
           <motion.div
+            role={notice.type === "error" ? "alert" : "status"}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             className={cn(
               "mb-3 rounded-lg border px-3 py-2 text-sm wrap-break-word",
               notice.type === "error"
-                ? "border-red-500/20 bg-red-500/10 text-red-200"
-                : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+                ? "border-destructive/25 bg-destructive/10 text-destructive"
+                : "border-primary/25 bg-primary/10 text-foreground"
             )}
           >
             {notice.message}
@@ -94,7 +107,7 @@ export function StashComposer() {
         ) : null}
       </AnimatePresence>
 
-      <div className="border-border/30 bg-muted/15 focus-within:border-primary/50 focus-within:ring-primary/15 flex w-full items-center gap-2 rounded-xl border p-1.5 transition-all focus-within:ring-4">
+      <div className="border-border bg-card focus-within:border-primary/60 focus-within:ring-primary/15 flex w-full items-center gap-1 rounded-xl border p-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-4 sm:gap-2">
         <Input
           ref={inputRef}
           value={urlInput}
@@ -106,12 +119,19 @@ export function StashComposer() {
           }}
           onKeyDown={handleComposerKeyDown}
           aria-label="URL to stash"
-          placeholder="Paste link to stash... (Ctrl/⌘K)"
+          aria-keyshortcuts="Control+k Meta+k"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="Paste a link to stash…"
           disabled={isCreateStashPending || isFetchingMetadata || showTagErrorState}
-          className="text-foreground placeholder:text-muted-foreground/40 h-10 min-w-0 flex-1 border-0 bg-transparent px-3 py-1.5 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="text-foreground placeholder:text-muted-foreground h-11 min-w-0 flex-1 border-0 bg-transparent px-2 py-1.5 text-base shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:px-3 sm:text-sm dark:bg-transparent"
         />
+        <kbd className="text-muted-foreground hidden shrink-0 px-1 text-xs sm:inline">Ctrl/⌘ K</kbd>
         <Button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 shrink-0 rounded-lg px-4 font-semibold shadow-sm transition-all"
+          type="button"
+          className="h-11 shrink-0 rounded-lg px-3 font-semibold sm:px-4"
           disabled={
             isCreateStashPending || isFetchingMetadata || !urlInput.trim() || showTagErrorState
           }

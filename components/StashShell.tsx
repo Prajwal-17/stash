@@ -12,7 +12,6 @@ import { useStashActions } from "@/hooks/useStashActions";
 import { getDefaultTagId, Stash, Tag } from "@/lib/stash-client";
 import { useStashStore } from "@/store/stashStore";
 import { useEffect, useRef } from "react";
-import { Toaster } from "react-hot-toast";
 import { DeleteConfirmationDialog } from "./stashClient/DeleteConfirmationDialog";
 import { StashMobileNav } from "./stashClient/StashMobileNav";
 import { StashSidebar } from "./stashClient/StashSidebar";
@@ -40,6 +39,7 @@ export function StashShell({
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
+        if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
         e.preventDefault();
         setActiveView("search");
         window.requestAnimationFrame(() => {
@@ -70,9 +70,9 @@ export function StashShell({
   }
 
   return (
-    <div className="bg-background text-foreground flex h-dvh min-h-svh w-full justify-center overflow-hidden">
-      <div className="flex min-h-0 w-full max-w-230">
-        <div className="border-border/40 hidden w-60 shrink-0 border-r md:block">
+    <div className="bg-background text-foreground flex h-dvh w-full flex-col items-center overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
+      <div className="border-border flex min-h-0 w-full max-w-6xl flex-1 md:border-x">
+        <div className="border-border hidden w-56 shrink-0 border-r md:block lg:w-64">
           <StashSidebar
             initialTags={initialTags}
             userEmail={userEmail}
@@ -89,14 +89,14 @@ export function StashShell({
           {activeView === "stash" && <StashList />}
 
           {activeView !== "reading-list" && activeView !== "archive" && (
-            <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3">
+            <div className="border-border bg-background mx-auto w-full max-w-3xl shrink-0 border-t px-4 py-3 sm:px-6 lg:px-8">
               <StashComposer />
             </div>
           )}
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 md:hidden">
+      <div className="relative z-20 w-full shrink-0 md:hidden">
         <StashMobileNav
           initialTags={initialTags}
           userEmail={userEmail}
@@ -106,16 +106,6 @@ export function StashShell({
       </div>
 
       <StashDialogs />
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "hsl(35 10% 11%)",
-            color: "hsl(35 20% 93%)",
-            border: "1px solid hsl(35 10% 20%)"
-          }
-        }}
-      />
     </div>
   );
 }

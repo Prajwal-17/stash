@@ -14,11 +14,9 @@ export default async function Page({
     <main className="bg-background flex min-h-dvh w-full items-center justify-center px-4 py-8 sm:p-6 md:p-10">
       <div className="w-full max-w-md">
         <div className="flex flex-col gap-6">
-          <Card className="overflow-hidden shadow-2xl shadow-black/30">
+          <Card className="overflow-hidden rounded-xl shadow-lg">
             <CardHeader>
-              <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Authentication
-              </p>
+              <p className="text-muted-foreground text-sm font-medium">Authentication</p>
               <CardTitle className="text-2xl leading-tight">We couldn’t sign you in.</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">

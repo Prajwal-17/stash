@@ -38,46 +38,51 @@
 }
 
 :root {
-  --background: 35 10% 8%;
-  --foreground: 35 20% 93%;
+  --background: 35 8% 9%;
+  --foreground: 35 15% 94%;
 
-  --card: 35 10% 11%;
-  --card-foreground: 35 20% 93%;
+  --card: 35 8% 12%;
+  --card-foreground: 35 15% 94%;
 
-  --popover: 35 10% 11%;
-  --popover-foreground: 35 20% 93%;
+  --popover: 35 7% 14%;
+  --popover-foreground: 35 15% 94%;
 
   --primary: 24 95% 53%;
   --primary-foreground: 24 60% 10%;
 
   --secondary: 35 10% 15%;
-  --secondary-foreground: 35 20% 93%;
+  --secondary-foreground: 35 15% 94%;
 
   --muted: 35 10% 15%;
-  --muted-foreground: 35 12% 72%;
+  --muted-foreground: 35 8% 69%;
 
   --accent: 35 10% 19%;
-  --accent-foreground: 35 20% 93%;
+  --accent-foreground: 35 15% 94%;
 
-  --destructive: 0 70% 52%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 80% 69%;
+  --destructive-foreground: 0 50% 10%;
 
-  --border: 35 10% 18%;
-  --input: 35 10% 13%;
+  --border: 35 7% 23%;
+  --input: 35 7% 26%;
 
   --ring: 24 95% 53%;
 
   --radius: 0.5rem;
 
   --active: 24 95% 53%;
-  --active-bg: 24 35% 10%;
-  --active-fg: 24 100% 93%;
+  --active-bg: 24 30% 16%;
+  --active-fg: 28 100% 76%;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    background: hsl(var(--background));
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
@@ -86,6 +91,22 @@
     min-height: 100%;
     min-width: 0;
     color-scheme: dark;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  :where(button, a, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
   }
 }
 
@@ -109,6 +130,15 @@
   background: hsl(var(--muted-foreground) / 0.55);
 }
 
+/* Prevent input focus from zooming the entire layout on iOS. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 @media (hover: none) {
   [data-slot="tooltip-content"] {
     display: none;
@@ -126,10 +156,10 @@
   }
 }
 
-/* react-day-picker dark theme */
+/* Keep calendars on the same tokens as every other control. */
 .rdp-root {
-  --rdp-accent-color: hsl(24 95% 53%);
-  --rdp-accent-background-color: hsl(24 35% 10%);
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--active-bg));
   --rdp-day-height: 2.25rem;
   --rdp-day-width: 2.25rem;
   --rdp-day_button-height: 2rem;
@@ -138,7 +168,7 @@
   --rdp-nav_button-height: 2rem;
   --rdp-nav_button-width: 2rem;
   --rdp-nav-height: 2.25rem;
-  --rdp-today-color: hsl(24 95% 53%);
+  --rdp-today-color: hsl(var(--primary));
   --rdp-disabled-opacity: 0.3;
   --rdp-outside-opacity: 0;
 }
@@ -148,11 +178,11 @@
 }
 
 .rdp-weekdays {
-  @apply text-muted-foreground/60;
+  @apply text-muted-foreground;
 }
 
 .rdp-weekday {
-  @apply text-[10px] font-medium tracking-wider uppercase;
+  @apply text-xs font-medium;
 }
 
 .rdp-day_button {
@@ -167,7 +197,7 @@
   @apply bg-primary text-primary-foreground font-semibold;
 }
 
-.rdp-today .rdp-day_button {
+.rdp-today:not(.rdp-selected) .rdp-day_button {
   @apply font-bold;
   color: hsl(var(--primary));
 }
@@ -185,12 +215,9 @@
   fill: hsl(var(--muted-foreground));
 }
 
-.rdp-sm {
-  --rdp-day-height: 1.75rem;
-  --rdp-day-width: 1.75rem;
-  --rdp-day_button-height: 1.5rem;
-  --rdp-day_button-width: 1.5rem;
-  --rdp-nav_button-height: 1.5rem;
-  --rdp-nav_button-width: 1.5rem;
-  --rdp-nav-height: 1.75rem;
+.rdp-day_button:focus-visible,
+.rdp-button_next:focus-visible,
+.rdp-button_previous:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }

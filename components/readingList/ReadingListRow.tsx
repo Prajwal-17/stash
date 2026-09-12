@@ -17,7 +17,14 @@ import {
   useState
 } from "react";
 import { DayPicker } from "react-day-picker";
-import { LuCalendar, LuCheck, LuLoaderCircle, LuPencil, LuTrash2 } from "react-icons/lu";
+import {
+  LuCalendar,
+  LuCheck,
+  LuEllipsis,
+  LuLoaderCircle,
+  LuPencil,
+  LuTrash2
+} from "react-icons/lu";
 
 export interface ReadingListRowProps {
   item: ReadingListItem;
@@ -117,6 +124,7 @@ export function ReadingListRow({
   function handleClearSchedule(e: React.MouseEvent) {
     e.stopPropagation();
     onSchedule(item.id);
+    setIsScheduleOpen(false);
   }
 
   const scheduleLabel = item.scheduledFor ? format(new Date(item.scheduledFor), "MMM d") : null;
@@ -128,9 +136,9 @@ export function ReadingListRow({
       new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime();
 
   return (
-    <li className="group py-0.5" data-reading-list-row>
+    <li className="group min-w-0 py-0.5" data-reading-list-row>
       <div
-        className="hover:bg-muted has-focus-visible:ring-ring/50 relative cursor-pointer touch-pan-y rounded-lg px-2 py-1.5 transition duration-150 select-none has-focus-visible:ring-2 sm:select-auto"
+        className="hover:bg-muted/70 has-focus-visible:ring-ring/50 relative touch-pan-y rounded-xl px-2 py-2.5 transition-colors select-none has-focus-visible:ring-2 sm:select-auto"
         onPointerDown={queueLongPress}
         onPointerMove={handlePointerMove}
         onPointerUp={clearLongPress}
@@ -146,21 +154,22 @@ export function ReadingListRow({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${title}, ${hostname}. Open in a new tab`}
-          className="absolute inset-0 z-0 rounded-lg focus:outline-none"
+          className="absolute inset-0 z-0 rounded-xl focus:outline-none"
           onClick={handleLinkClick}
         />
-        <div className="pointer-events-none relative z-10 flex items-start gap-2.5">
+        <div className="pointer-events-none relative z-10 flex items-center gap-2 sm:gap-2.5">
           <button
             data-row-action
             type="button"
             aria-label={isCompleted ? "Mark as unread" : "Mark as read"}
+            aria-pressed={isCompleted}
             disabled={isPending}
             className={cn(
               "pointer-events-auto",
-              "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
+              "focus-visible:ring-ring/50 flex size-8 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:ring-2 focus-visible:outline-none",
               isCompleted
-                ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-400"
-                : "border-muted-foreground/30 text-transparent hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400",
+                ? "border-primary/40 bg-primary/15 text-primary"
+                : "border-border hover:border-primary/50 hover:bg-primary/10 hover:text-primary text-transparent",
               "disabled:cursor-wait disabled:opacity-50"
             )}
             onClick={(e) => {
@@ -169,13 +178,13 @@ export function ReadingListRow({
             }}
           >
             {isPending ? (
-              <LuLoaderCircle size={12} className="animate-spin text-current" />
+              <LuLoaderCircle size={12} className="text-muted-foreground animate-spin" />
             ) : (
               <LuCheck size={12} strokeWidth={3} />
             )}
           </button>
 
-          <div className="bg-muted mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border shadow-sm">
+          <div className="bg-muted hidden size-7 shrink-0 items-center justify-center rounded-lg border sm:flex">
             <Image
               src={getFaviconUrl(hostname)}
               alt=""
@@ -189,50 +198,45 @@ export function ReadingListRow({
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <p
               className={cn(
-                "line-clamp-1 text-sm leading-tight font-medium",
-                isCompleted ? "text-muted-foreground/60 line-through" : "text-foreground"
+                "line-clamp-2 text-sm leading-snug font-medium sm:line-clamp-1",
+                isCompleted ? "text-muted-foreground line-through" : "text-foreground"
               )}
             >
               {title}
             </p>
-            <div className="flex items-center gap-2">
-              <p className="text-muted-foreground/50 truncate text-xs">{hostname}</p>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-muted-foreground min-w-0 truncate text-xs">{hostname}</p>
               {isCompleted && (
-                <span className="text-muted-foreground/40 text-[10px]">
+                <span className="text-muted-foreground text-xs">
                   Read {format(new Date(item.updatedAt), "MMM d")}
+                </span>
+              )}
+              {!isCompleted && scheduleLabel && (
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium",
+                    isPastScheduled
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-primary/10 text-primary"
+                  )}
+                >
+                  <LuCalendar size={11} />
+                  {scheduleLabel}
                 </span>
               )}
             </div>
           </div>
 
-          <div
-            data-row-action
-            className="pointer-events-auto flex shrink-0 items-center gap-0.5 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:focus-within:opacity-100"
-          >
+          <div data-row-action className="pointer-events-auto flex shrink-0 items-center gap-0.5">
             {!isCompleted && (
               <>
-                {scheduleLabel && (
-                  <span
-                    className={cn(
-                      "mr-1 flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                      isPastScheduled
-                        ? "bg-red-500/10 text-red-400"
-                        : "bg-blue-500/10 text-blue-400"
-                    )}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <LuCalendar size={10} />
-                    {scheduleLabel}
-                  </span>
-                )}
-
                 <Popover open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
                   <PopoverTrigger asChild>
                     <button
                       type="button"
                       aria-label="Schedule item"
                       disabled={isPending}
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-7 items-center justify-center rounded-lg transition"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <LuCalendar size={14} />
@@ -242,12 +246,15 @@ export function ReadingListRow({
                     side="bottom"
                     align="end"
                     collisionPadding={8}
-                    className="max-h-[min(28rem,calc(100dvh-1rem))] w-auto max-w-[calc(100vw-1rem)] overflow-auto overscroll-contain p-0"
+                    aria-label={`Schedule ${title}`}
+                    className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-auto p-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="p-1">
+                    <div className="p-3">
                       <DayPicker
+                        autoFocus
                         mode="single"
+                        defaultMonth={selectedDate}
                         selected={selectedDate}
                         onSelect={handleDateSelect}
                         disabled={{
@@ -257,13 +264,12 @@ export function ReadingListRow({
                             new Date().getDate()
                           )
                         }}
-                        className="rdp-sm"
                         showOutsideDays={false}
                         captionLayout="label"
                       />
                     </div>
                     {selectedDate && (
-                      <div className="border-border/40 flex items-center justify-between border-t px-3 py-2">
+                      <div className="border-border flex items-center justify-between gap-3 border-t px-3 py-2">
                         <span className="text-muted-foreground text-xs">
                           {format(selectedDate, "MMM d, yyyy")}
                         </span>
@@ -271,7 +277,7 @@ export function ReadingListRow({
                           variant="ghost"
                           size="sm"
                           disabled={isPending}
-                          className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
+                          className="text-muted-foreground hover:text-foreground h-9 px-3 text-xs"
                           onClick={handleClearSchedule}
                         >
                           Clear
@@ -290,7 +296,7 @@ export function ReadingListRow({
                     type="button"
                     aria-label="Edit reading item"
                     disabled={isPending}
-                    className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-7 items-center justify-center rounded-lg transition"
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
                     onClick={(event) => {
                       event.stopPropagation();
                       onEdit(item);
@@ -308,7 +314,7 @@ export function ReadingListRow({
                     type="button"
                     aria-label="Delete reading item"
                     disabled={isPending}
-                    className="text-muted-foreground flex size-7 items-center justify-center rounded-lg transition hover:bg-red-500/10 hover:text-red-400"
+                    className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
                     onClick={(event) => {
                       event.stopPropagation();
                       onDelete(item);
@@ -320,6 +326,18 @@ export function ReadingListRow({
                 <TooltipContent side="bottom">Delete</TooltipContent>
               </Tooltip>
             </div>
+            <button
+              type="button"
+              aria-label={`More actions for ${title}`}
+              disabled={isPending}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 sm:hidden"
+              onClick={(event) => {
+                event.stopPropagation();
+                onLongPress(item);
+              }}
+            >
+              <LuEllipsis size={18} />
+            </button>
           </div>
         </div>
       </div>

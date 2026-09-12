@@ -123,10 +123,10 @@ export function StashRow({
   }
 
   return (
-    <motion.li layout className="group py-0.5" data-stash-row>
+    <motion.li layout className="group min-w-0 py-0.5" data-stash-row>
       <div
         className={cn(
-          "has-focus-visible:ring-ring/50 relative cursor-pointer touch-pan-y rounded-lg px-2 py-1.5 transition duration-150 select-none has-focus-visible:ring-2 sm:select-auto",
+          "has-focus-visible:ring-ring/50 relative touch-pan-y rounded-xl px-2 py-3 transition-colors duration-150 select-none has-focus-visible:ring-2 sm:select-auto",
           isFocused ? "bg-accent ring-ring/30 ring-1" : "hover:bg-muted"
         )}
         onPointerDown={queueLongPress}
@@ -154,7 +154,7 @@ export function StashRow({
           onFocus={() => setFocusedStashIndex(index)}
         />
         <div className="pointer-events-none relative z-10 flex items-start gap-3">
-          <div className="bg-muted mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border shadow-sm">
+          <div className="border-border bg-card mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border">
             <Image
               src={getFaviconUrl(hostname)}
               alt=""
@@ -165,13 +165,13 @@ export function StashRow({
             />
           </div>
 
-          <div className="flex min-h-8 min-w-0 flex-1 flex-col justify-center">
-            <p className="text-foreground line-clamp-1 text-sm leading-tight font-medium">
+          <div className="flex min-h-9 min-w-0 flex-1 flex-col justify-center gap-1">
+            <p className="text-foreground line-clamp-2 text-sm leading-snug font-medium wrap-anywhere sm:line-clamp-1">
               <Highlighter
                 searchWords={searchWords}
                 autoEscape={true}
                 textToHighlight={title}
-                highlightClassName="bg-white/15 text-foreground font-medium p-0"
+                highlightClassName="bg-primary/20 text-foreground font-medium p-0"
               />
             </p>
             <p className="text-muted-foreground truncate text-xs">
@@ -179,21 +179,35 @@ export function StashRow({
                 searchWords={searchWords}
                 autoEscape={true}
                 textToHighlight={stash.url}
-                highlightClassName="bg-white/15 text-foreground font-medium p-0"
+                highlightClassName="bg-primary/20 text-foreground font-medium p-0"
               />
             </p>
 
             {expandedLayout && stash.description && (
-              <p className="text-muted-foreground/80 mt-1 line-clamp-2 text-xs leading-relaxed">
+              <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed wrap-anywhere">
                 <Highlighter
                   searchWords={searchWords}
                   autoEscape={true}
                   textToHighlight={stash.description}
-                  highlightClassName="bg-white/15 text-foreground font-medium p-0"
+                  highlightClassName="bg-primary/20 text-foreground font-medium p-0"
                 />
               </p>
             )}
           </div>
+
+          <button
+            data-row-action
+            type="button"
+            aria-label={`Actions for ${title}`}
+            aria-haspopup="dialog"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 pointer-events-auto flex size-11 shrink-0 items-center justify-center self-center rounded-lg focus-visible:ring-2 focus-visible:outline-none sm:hidden"
+            onClick={(event) => {
+              event.stopPropagation();
+              setDrawerStash(stash);
+            }}
+          >
+            <LuEllipsis size={19} />
+          </button>
 
           <div
             data-row-action
@@ -213,7 +227,7 @@ export function StashRow({
                       type="button"
                       aria-label="View details"
                       className={cn(
-                        "text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition",
+                        "text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none",
                         isPreviewOpen && "bg-accent text-foreground"
                       )}
                       onClick={(e) => e.stopPropagation()}
@@ -225,7 +239,7 @@ export function StashRow({
                 <TooltipContent side="bottom">Details</TooltipContent>
               </Tooltip>
               <PopoverContent
-                className="max-h-[min(32rem,calc(100dvh-1rem))] w-80 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain p-0"
+                className="w-80 p-0"
                 align="end"
                 side="bottom"
                 sideOffset={6}
@@ -240,15 +254,15 @@ export function StashRow({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Copy URL"
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition"
+                  aria-label={copiedStashId === stash.id ? "URL copied" : "Copy URL"}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   onClick={(event) => {
                     event.stopPropagation();
                     void copyText(stash.url, stash.id);
                   }}
                 >
                   {copiedStashId === stash.id ? (
-                    <LuCheck size={15} className="text-emerald-400" />
+                    <LuCheck size={15} className="text-primary" />
                   ) : (
                     <LuCopy size={15} />
                   )}
@@ -262,7 +276,7 @@ export function StashRow({
                 <button
                   type="button"
                   aria-label="Edit stash"
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 items-center justify-center rounded-lg transition"
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   onClick={(event) => {
                     event.stopPropagation();
                     openStashEditor(stash);
@@ -280,7 +294,7 @@ export function StashRow({
                     <button
                       type="button"
                       aria-label="More options"
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground flex size-8 items-center justify-center rounded-lg transition"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-foreground flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <LuEllipsis size={16} />
@@ -291,12 +305,15 @@ export function StashRow({
               </Tooltip>
               <DropdownMenuContent
                 align="end"
-                className="w-40 max-w-[calc(100vw-1rem)]"
+                className="w-44"
                 onClick={(event) => event.stopPropagation()}
+                onCloseAutoFocus={(event) => {
+                  if (useStashStore.getState().confirmation) event.preventDefault();
+                }}
               >
                 <DropdownMenuItem
                   disabled={isSetStashArchivedPending}
-                  onClick={() => void handleStashArchiveAction(stash.id, "archive")}
+                  onSelect={() => void handleStashArchiveAction(stash.id, "archive")}
                 >
                   <LuArchive />
                   Archive
@@ -304,7 +321,7 @@ export function StashRow({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() =>
+                  onSelect={() =>
                     openDeleteConfirmation({
                       kind: "stash",
                       id: stash.id,

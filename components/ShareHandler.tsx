@@ -157,9 +157,9 @@ export function ShareHandler({
       <form
         onSubmit={handleSubmit}
         aria-busy={isMutationPending}
-        className="border-border bg-card w-full max-w-sm rounded-xl border p-5 shadow-2xl sm:p-6"
+        className="border-border bg-card w-full max-w-sm rounded-xl border p-5 shadow-lg sm:p-6"
       >
-        <h1 className="text-foreground mb-2 text-lg font-medium">Stash Link</h1>
+        <h1 className="text-foreground mb-2 text-xl font-semibold tracking-tight">Stash link</h1>
         <p className="text-muted-foreground mb-6 text-sm">Review and stash the shared link.</p>
 
         <div className="space-y-4">
@@ -192,7 +192,7 @@ export function ShareHandler({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="hover:text-foreground h-8 px-2 text-red-100 hover:bg-red-500/10"
+                    className="hover:text-foreground text-destructive hover:bg-destructive/10 h-8 px-2"
                     onClick={() => void tagsQuery.refetch()}
                   >
                     Retry
@@ -222,6 +222,10 @@ export function ShareHandler({
                       <PopoverTrigger asChild>
                         <button
                           type="button"
+                          role="combobox"
+                          aria-controls="shared-tag-options"
+                          aria-haspopup="dialog"
+                          aria-expanded={tagPopoverOpen}
                           aria-labelledby="shared-tag-label"
                           className="border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/30 flex h-11 w-full items-center justify-between rounded-lg border px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
                         >
@@ -237,11 +241,12 @@ export function ShareHandler({
                         </button>
                       </PopoverTrigger>
                       <PopoverContent
+                        id="shared-tag-options"
                         collisionPadding={8}
-                        className="max-h-[min(32rem,calc(100dvh-1rem))] w-[--radix-popover-trigger-width] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0"
+                        className="w-(--radix-popover-trigger-width) max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md p-0"
                         align="start"
                       >
-                        <Command>
+                        <Command label="Search tags">
                           <CommandInput placeholder="Search tags..." />
                           <CommandList className="max-h-48 overflow-y-auto">
                             <CommandEmpty>No tags found.</CommandEmpty>
@@ -252,7 +257,8 @@ export function ShareHandler({
                                 return (
                                   <CommandItem
                                     key={tag.id}
-                                    value={label}
+                                    value={tag.id}
+                                    keywords={[label]}
                                     onSelect={() => {
                                       setTagId(tag.id);
                                       setTagPopoverOpen(false);

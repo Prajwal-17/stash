@@ -63,7 +63,7 @@ export function EditReadingListDialog({
     >
       <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg">
         <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
-          <DialogTitle className="text-xl font-semibold tracking-tight">
+          <DialogTitle className="pr-8 text-xl font-semibold tracking-tight">
             Edit reading item
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -79,14 +79,13 @@ export function EditReadingListDialog({
                 id="reading-item-url"
                 inputMode="url"
                 autoComplete="url"
-                autoFocus
                 required
                 disabled={isPending}
                 value={editor?.url ?? ""}
                 onChange={(event) =>
                   onEditorChange(editor ? { ...editor, url: event.target.value } : null)
                 }
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-lg border px-4 text-sm"
+                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-lg border px-4 text-base sm:text-sm"
               />
             </div>
 
@@ -100,7 +99,7 @@ export function EditReadingListDialog({
                   onEditorChange(editor ? { ...editor, title: event.target.value } : null)
                 }
                 placeholder="Use the website title"
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-lg border px-4 text-sm"
+                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring h-12 w-full rounded-lg border px-4 text-base sm:text-sm"
               />
             </div>
 
@@ -114,7 +113,7 @@ export function EditReadingListDialog({
                   onEditorChange(editor ? { ...editor, description: event.target.value } : null)
                 }
                 placeholder="Add a note or summary"
-                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring min-h-28 w-full rounded-lg border px-4 py-3 text-sm"
+                className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus:border-ring min-h-28 w-full rounded-lg border px-4 py-3 text-base sm:text-sm"
               />
             </div>
 

@@ -14,9 +14,11 @@ export function QueryStatus({ children, tone = "muted", compact = false }: Query
       aria-live={tone === "error" ? "assertive" : "polite"}
       aria-atomic="true"
       className={cn(
-        "min-w-0 rounded-lg px-3 py-2 text-sm wrap-break-word",
-        compact ? "text-xs" : "text-sm",
-        tone === "error" ? "bg-red-500/10 text-red-200" : "bg-muted text-muted-foreground"
+        "min-w-0 rounded-lg border leading-relaxed wrap-break-word",
+        compact ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm",
+        tone === "error"
+          ? "border-destructive/20 bg-destructive/10 text-destructive"
+          : "border-border bg-card text-muted-foreground"
       )}
     >
       {children}

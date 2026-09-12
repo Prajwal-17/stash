@@ -31,7 +31,7 @@ export function DeleteReadingListDialog({
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto overscroll-contain rounded-xl p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-md">
         <DialogHeader className="px-5 pt-6 pb-2 sm:px-6">
-          <DialogTitle className="text-xl font-semibold tracking-tight">
+          <DialogTitle className="pr-8 text-xl font-semibold tracking-tight">
             Remove from reading list
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm wrap-break-word">
