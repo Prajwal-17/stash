@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-function runDatabaseScript(script: string, environment: NodeJS.ProcessEnv = {}) {
+function runDatabaseScript(script: string, environment: Partial<NodeJS.ProcessEnv> = {}) {
   const result = spawnSync(process.execPath, ["--import", "tsx", "--eval", script], {
     cwd: process.cwd(),
     env: {
